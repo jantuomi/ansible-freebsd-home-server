@@ -14,5 +14,27 @@
     group: wheel
     mode: "0755"
 
-- name: Enable and start zpool_gpt_labels service
-  shell: service zpool_gpt_labels enable && service zpool_gpt_labels start
+- name: Enable and start zpool_gpt_labels
+  service:
+    name: zpool_gpt_labels
+    enabled: true
+    state: started
+
+- name: Install smartd
+  package:
+    name: smartmontools
+    state: present
+
+- name: Configure smartd.conf
+  template:
+    src: usr_local_etc_smartd.conf.j2
+    dest: /usr/local/etc/smartd.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+
+- name: Enable and start smartd
+  service:
+    name: smartd
+    enabled: true
+    state: started

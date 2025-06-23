@@ -37,3 +37,6 @@
 - name: Restart sshd
   shell: service sshd restart
   when: etc_sshd_config.changed
+
+- name: Disable syslogd remote listening
+  shell: sysrc syslogd_flags="-s" && service syslogd restart
