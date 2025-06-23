@@ -40,3 +40,21 @@
 
 - name: Disable syslogd remote listening
   shell: sysrc syslogd_flags="-s" && service syslogd restart
+
+- name: Configure pf
+  template:
+    src: etc_pf.conf.j2
+    dest: /etc/pf.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+    backup: yes
+
+- name: Enable and start pf
+  service:
+    name: pf
+    enabled: true
+    state: started
+
+- name: Reload pf rules
+  shell: pfctl -f /etc/pf.conf

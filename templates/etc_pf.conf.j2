@@ -1,0 +1,31 @@
+lan_if = "lan0"
+wan_if = "wan0"
+
+# Default policy
+set skip on lo
+set block-policy return
+block in all
+
+# Allow all outbound traffic
+pass out all keep state
+
+# Allow inbound HTTP/HTTPS on both interfaces
+pass in on $wan_if proto tcp from any to ($wan_if) port { 80, 443 } keep state
+pass in on $lan_if proto tcp from any to ($lan_if) port { 80, 443 } keep state
+
+# Allow SSH only on lan0
+pass in on $lan_if proto tcp from any to ($lan_if) port 22 keep state
+
+# Allow DHCPv4 (client side): from server port 67 to client port 68
+pass in quick on $lan_if proto udp from any port 67 to any port 68 keep state
+pass in quick on $wan_if proto udp from any port 67 to any port 68 keep state
+
+# Allow DHCPv6 (client side): from server port 547 to client port 546
+pass in quick on $lan_if proto udp from any port 547 to any port 546 keep state
+pass in quick on $wan_if proto udp from any port 547 to any port 546 keep state
+
+# Allow all ICMPv6 (required for IPv6 to function correctly)
+pass inet6 proto ipv6-icmp from any to any keep state
+
+# Allow all ICMPv4
+pass inet proto icmp from any to any keep state
