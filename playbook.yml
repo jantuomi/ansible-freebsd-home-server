@@ -29,3 +29,6 @@
 
     - name: Run ZFS tasks
       import_tasks: tasks/zfs.yml
+
+    - name: Run jails tasks
+      import_tasks: tasks/jails.yml

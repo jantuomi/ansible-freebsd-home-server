@@ -40,6 +40,7 @@
 
 - name: Run newaliases
   shell: newaliases
+  when: etc_aliases_conf.changed
 
 - name: Test mail delivery
   when: etc_dma_dma_conf.changed or etc_dma_auth_conf.changed or etc_aliases_conf.changed

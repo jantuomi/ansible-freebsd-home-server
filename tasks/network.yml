@@ -1,26 +1,23 @@
-- name: Check existence of lan0
-  shell: ifconfig lan0 || echo "failed"
-  register: lan0_status
-
-- name: Check existence of wan0
-  shell: ifconfig wan0 || echo "failed"
-  register: wan0_status
-
 - name: Set up network interfaces
-  shell: |
-    sysrc -x ifconfig_igc0
-    sysrc -x ifconfig_igc0_ipv6
-    sysrc ifconfig_igc0_name="lan0"
-    sysrc ifconfig_igc1_name="wan0"
-    sysrc ifconfig_lan0="DHCP"
-    sysrc ifconfig_lan0_ipv6="inet6 accept_rtadv"
-    sysrc ifconfig_wan0="DHCP"
-    sysrc ifconfig_wan0_ipv6="inet6 accept_rtadv"
+  community.general.sysrc:
+    name: "{{ item.name }}"
+    value: "{{ item.value | default(omit) }}"
+    state: "{{ item.state | default(omit) }}"
+  loop:
+    - { name: "ifconfig_igc0", state: "absent" }
+    - { name: "ifconfig_igc1", state: "absent" }
+    - { name: "ifconfig_igc0_name", value: "lan0" }
+    - { name: "ifconfig_igc1_name", value: "wan0" }
+    - { name: "ifconfig_lan0", value: "DHCP" }
+    - { name: "ifconfig_wan0", value: "DHCP" }
+    - { name: "ifconfig_lan0_ipv6", value: "inet6 accept_rtadv" }
+    - { name: "ifconfig_wan0_ipv6", value: "inet6 accept_rtadv" }
+    - { name: "ifconfig_lan0_alias0", value: "inet 10.0.0.1/32" }
+  register: ifconfig_sysrc
 
-- name: Restart networking if custom interfaces do not exist
+- name: Restart networking if interface configuration changed
   shell: service netif restart
-  when: lan0_status.stdout.find('failed') != -1 or
-    wan0_status.stdout.find('failed') != -1
+  when: ifconfig_sysrc.changed
 
 - name: Update facts
   setup:
@@ -35,11 +32,27 @@
   register: etc_sshd_config
 
 - name: Restart sshd
-  shell: service sshd restart
+  service:
+    name: sshd
+    state: restarted
   when: etc_sshd_config.changed
 
 - name: Disable syslogd remote listening
-  shell: sysrc syslogd_flags="-s" && service syslogd restart
+  community.general.sysrc:
+    name: syslogd_flags
+    value: "-s"
+  register: syslogd_flags
+
+- name: Enable syslogd
+  service:
+    name: syslogd
+    enabled: true
+
+- name: Restart syslogd
+  service:
+    name: syslogd
+    state: restarted
+  when: syslogd_flags.changed
 
 - name: Configure pf
   template:
@@ -49,6 +62,7 @@
     group: wheel
     mode: "0644"
     backup: yes
+  register: pf_conf
 
 - name: Enable and start pf
   service:
@@ -58,3 +72,4 @@
 
 - name: Reload pf rules
   shell: pfctl -f /etc/pf.conf
+  when: pf_conf.changed

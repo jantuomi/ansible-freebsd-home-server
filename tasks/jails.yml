@@ -1,0 +1,7 @@
+- name: Ensure /usr/jails exists
+  file:
+    path: /usr/jails
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"

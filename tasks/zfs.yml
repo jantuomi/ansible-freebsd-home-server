@@ -13,12 +13,18 @@
     owner: root
     group: wheel
     mode: "0755"
+  register: rc_zpool_gpt_labels
 
-- name: Enable and start zpool_gpt_labels
+- name: Enable zpool_gpt_labels
   service:
     name: zpool_gpt_labels
     enabled: true
-    state: started
+
+- name: Restart zpool_gpt_labels
+  service:
+    name: zpool_gpt_labels
+    state: restarted
+  when: rc_zpool_gpt_labels.changed
 
 - name: Install smartd
   package:
@@ -32,9 +38,15 @@
     owner: root
     group: wheel
     mode: "0644"
+  register: smartd_conf
 
-- name: Enable and start smartd
+- name: Enable smartd
   service:
     name: smartd
     enabled: true
-    state: started
+
+- name: Restart smartd
+  service:
+    name: smartd
+    state: restarted
+  when: smartd_conf.changed
