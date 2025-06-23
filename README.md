@@ -31,6 +31,8 @@ PermitRootLogin yes
 
 ## Running the playbook
 
+Use an [.envrc file](https://direnv.net/) to provide secrets through the shell environment. Required variables are listed in `playbook.yml`.
+
 ```shell
 ansible-playbook -i inventory playbook.yml
 ```
