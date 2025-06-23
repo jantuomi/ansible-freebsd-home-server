@@ -1,0 +1,18 @@
+- name: Ensure /usr/local/etc/rc.d/ exists
+  file:
+    path: /usr/local/etc/rc.d/
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Add zpool_gpt_labels rc.d service
+  template:
+    src: usr_local_etc_rc.d_zpool_gpt_labels.j2
+    dest: /usr/local/etc/rc.d/zpool_gpt_labels
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Enable and start zpool_gpt_labels service
+  shell: service zpool_gpt_labels enable && service zpool_gpt_labels start

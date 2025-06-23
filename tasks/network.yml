@@ -1,0 +1,39 @@
+- name: Check existence of lan0
+  shell: ifconfig lan0 || echo "failed"
+  register: lan0_status
+
+- name: Check existence of wan0
+  shell: ifconfig wan0 || echo "failed"
+  register: wan0_status
+
+- name: Set up network interfaces
+  shell: |
+    sysrc -x ifconfig_igc0
+    sysrc -x ifconfig_igc0_ipv6
+    sysrc ifconfig_igc0_name="lan0"
+    sysrc ifconfig_igc1_name="wan0"
+    sysrc ifconfig_lan0="DHCP"
+    sysrc ifconfig_lan0_ipv6="inet6 accept_rtadv"
+    sysrc ifconfig_wan0="DHCP"
+    sysrc ifconfig_wan0_ipv6="inet6 accept_rtadv"
+
+- name: Restart networking if custom interfaces do not exist
+  shell: service netif restart
+  when: lan0_status.stdout.find('failed') != -1 or
+    wan0_status.stdout.find('failed') != -1
+
+- name: Update facts
+  setup:
+
+- name: Set up sshd
+  template:
+    src: etc_ssh_sshd_config.j2
+    dest: /etc/ssh/sshd_config
+    owner: root
+    group: wheel
+    mode: "0644"
+  register: etc_sshd_config
+
+- name: Restart sshd
+  shell: service sshd restart
+  when: etc_sshd_config.changed

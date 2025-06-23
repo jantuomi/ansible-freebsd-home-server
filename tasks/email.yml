@@ -1,0 +1,54 @@
+- name: Install dma
+  package:
+    name: dma
+    state: present
+
+- name: Create dma config directory
+  file:
+    path: /etc/dma
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Configure dma.conf
+  template:
+    src: etc_dma_dma.conf.j2
+    dest: /etc/dma/dma.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+  register: etc_dma_dma_conf
+
+- name: Configure auth.conf
+  template:
+    src: etc_dma_auth.conf.j2
+    dest: /etc/dma/auth.conf
+    owner: root
+    group: mail
+    mode: "0640"
+  register: etc_dma_auth_conf
+
+- name: Configure aliases
+  template:
+    src: etc_aliases.j2
+    dest: /etc/aliases
+    owner: root
+    group: wheel
+    mode: "0644"
+  register: etc_aliases_conf
+
+- name: Run newaliases
+  shell: newaliases
+
+- name: Test mail delivery
+  when: etc_dma_dma_conf.changed or etc_dma_auth_conf.changed or etc_aliases_conf.changed
+  block:
+    - name: Send email
+      shell: echo "DMA test message from Ansible" | mail -s "Test DMA" root
+      register: mail_result
+      changed_when: false
+
+    - name: Show mail result
+      debug:
+        var: mail_result

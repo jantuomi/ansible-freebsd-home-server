@@ -1,0 +1,33 @@
+#!/bin/sh
+
+# PROVIDE: zpool_gpt_labels
+# REQUIRE: zfs
+# BEFORE:  LOGIN
+# KEYWORD: nojail
+
+. /etc/rc.subr
+
+name="zpool_gpt_labels"
+rcvar="zpool_gpt_labels_enable"
+start_cmd="zpool_gpt_labels_start"
+
+zpool_gpt_labels_start() {
+	logger "Setting zpool vdev paths to GPT labels"
+	local zpool_status="$(zpool status)"
+	for i in 0 1 2 3; do
+	    local raw="nda${i}p4.eli"
+		local path="/dev/gpt/zfs${i}.eli"
+		case "$zpool_status" in
+		    *"$raw"*)
+				zpool set "path=${path}" zroot "${raw}"
+				logger "Setting ${raw} -> ${path}"
+				;;
+			*)
+			    logger "Skipping ${raw}..."
+				;;
+		esac
+	done
+}
+
+load_rc_config $name
+run_rc_command "$1"
