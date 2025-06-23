@@ -1,0 +1,8 @@
+SMARTHOST {{ smtp_host }}
+PORT {{ smtp_port }}
+AUTHPATH /etc/dma/auth.conf
+SECURETRANSFER
+STARTTLS
+MAILNAME {{ dma_mail_hostname }}
+MASQUERADE {{ ansible_hostname }}@{{ dma_mail_hostname }}
+#NULLCLIENT

@@ -1,0 +1,71 @@
+---
+- name: Configure dma with generic SMTP on FreeBSD
+  hosts: pursotin
+
+  pre_tasks:
+    - name: Fail if direnv wasn't loaded and SMTP_USER is missing
+      assert:
+        that:
+          - lookup('env', 'SMTP_USER') != ''
+        fail_msg: >
+          Required environment variables are missing. Did you forget to run `direnv allow` or load `.envrc`?
+      vars:
+        ansible_assert_no_log: true
+
+  vars:
+    smtp_user: "{{ lookup('env', 'SMTP_USER') }}"
+    smtp_password: "{{ lookup('env', 'SMTP_PASSWORD') }}"
+    smtp_host: "{{ lookup('env', 'SMTP_HOST') }}"
+    smtp_port: "{{ lookup('env', 'SMTP_PORT') }}"
+    dma_mail_hostname: "{{ lookup('env', 'DMA_MAILNAME') }}"
+    dma_to_address: "{{ lookup('env', 'DMA_TO_ADDRESS') }}"
+
+  tasks:
+    - name: Install dma
+      package:
+        name: dma
+        state: present
+
+    - name: Create dma config directory
+      file:
+        path: /etc/dma
+        state: directory
+        owner: root
+        group: wheel
+        mode: "0755"
+
+    - name: Configure dma.conf
+      template:
+        src: dma.conf.j2
+        dest: /etc/dma/dma.conf
+        owner: root
+        group: wheel
+        mode: "0644"
+
+    - name: Configure auth.conf
+      template:
+        src: auth.conf.j2
+        dest: /etc/dma/auth.conf
+        owner: root
+        group: mail
+        mode: "0640"
+
+    - name: Configure aliases
+      template:
+        src: aliases.j2
+        dest: /etc/aliases
+        owner: root
+        group: wheel
+        mode: "0644"
+
+    - name: Run newaliases
+      shell: newaliases
+
+    - name: Test mail delivery
+      shell: echo "DMA test message from Ansible" | mail -s "Test DMA" root
+      register: mail_result
+      changed_when: false
+
+    - name: Show mail result
+      debug:
+        var: mail_result
