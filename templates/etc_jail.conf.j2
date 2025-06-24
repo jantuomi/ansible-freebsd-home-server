@@ -1,0 +1,22 @@
+# STARTUP/LOGGING
+exec.start = "/bin/sh /etc/rc";
+exec.stop = "/bin/sh /etc/rc.shutdown";
+exec.consolelog = "/var/log/jail_console_${name}.log";
+
+# PERMISSIONS
+allow.raw_sockets;
+exec.clean;
+mount.devfs;
+
+# HOSTNAME/PATH
+host.hostname = "${name}";
+path = "/usr/local/jails/containers/${name}";
+
+# JAILS
+{% for jail in jails %}
+{{ jail.name }} {
+  ip4.addr = {{ jail.ip }};
+  interface = lan0;
+}
+
+{% endfor %}

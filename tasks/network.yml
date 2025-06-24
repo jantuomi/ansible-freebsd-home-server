@@ -12,7 +12,6 @@
     - { name: "ifconfig_wan0", value: "DHCP" }
     - { name: "ifconfig_lan0_ipv6", value: "inet6 accept_rtadv" }
     - { name: "ifconfig_wan0_ipv6", value: "inet6 accept_rtadv" }
-    - { name: "ifconfig_lan0_alias0", value: "inet 10.0.0.1/32" }
   register: ifconfig_sysrc
 
 - name: Restart networking if interface configuration changed

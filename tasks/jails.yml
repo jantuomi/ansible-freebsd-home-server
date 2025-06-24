@@ -1,7 +1,80 @@
-- name: Ensure /usr/jails exists
+- name: Ensure jails directory exists
   file:
-    path: /usr/jails
+    path: /usr/local/jails
     state: directory
     owner: root
     group: wheel
     mode: "0755"
+
+- name: Create ZFS datasets
+  loop:
+    - { name: "zroot/jails", mountpoint: "/usr/local/jails" }
+    - { name: "zroot/jails/media" }
+    - { name: "zroot/jails/templates" }
+    - { name: "zroot/jails/templates/14.3-RELEASE" }
+    - { name: "zroot/jails/containers" }
+  loop_control:
+    loop_var: dataset
+  include_tasks: jail_datasets.yml
+
+- name: Check if userland snapshot already exists
+  shell: zfs list -t snapshot -o name | grep -Fxq "zroot/jails/templates/14.3-RELEASE@base"
+  failed_when: false
+  changed_when: false
+  register: zfs_userland_check
+
+- name: Set up userland
+  when: zfs_userland_check.rc != 0
+  block:
+    - name: Download userland
+      get_url:
+        url: https://download.freebsd.org/ftp/releases/amd64/amd64/14.3-RELEASE/base.txz
+        dest: /usr/local/jails/media/14.3-RELEASE-base.txz
+        owner: root
+        group: wheel
+        mode: "0644"
+
+    - name: Unarchive userland
+      shell: tar -xzf /usr/local/jails/media/14.3-RELEASE-base.txz -C /usr/local/jails/templates/14.3-RELEASE
+
+    - name: Copy localtime and resolv.conf to jail userland
+      copy:
+        remote_src: true
+        src: "{{ item }}"
+        dest: "/usr/local/jails/templates/14.3-RELEASE{{ item }}"
+      loop:
+        - /etc/resolv.conf
+        - /etc/localtime
+
+    - name: Update userland to latest patch level
+      shell: freebsd-update -b /usr/local/jails/templates/14.3-RELEASE/ fetch install
+
+    - name: Create userland ZFS snapshot
+      shell: zfs snapshot zroot/jails/templates/14.3-RELEASE@base
+
+- name: Configure jails
+  vars:
+    jails:
+      - { name: nginx_test, ip: "192.168.2.1" }
+  block:
+    - name: Configure jail.conf
+      template:
+        src: etc_jail.conf.j2
+        dest: /etc/jail.conf
+        owner: root
+        group: wheel
+        mode: "0644"
+
+    - name: Configure individual jails
+      loop: "{{ jails }}"
+      loop_control:
+        loop_var: jail
+      include_tasks: jail_single.yml
+
+- name: Enable jails
+  community.general.sysrc:
+    name: "{{ item }}"
+    value: "YES"
+  loop:
+    - "jail_enable"
+    - "jail_parallel_start"

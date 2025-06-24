@@ -1,0 +1,19 @@
+- name: "Check if jail directory for {{ jail.name }} exists"
+  shell: zfs list -o name | grep -Fxq "zroot/jails/containers/{{ jail.name }}"
+  failed_when: false
+  changed_when: false
+  register: check_jail_directory
+
+- name: "ZFS clone snapshot to jail directory for {{ jail.name }}"
+  shell: zfs clone zroot/jails/templates/14.3-RELEASE@base "zroot/jails/containers/{{ jail.name }}"
+  when: check_jail_directory.rc != 0
+
+- name: "Check if jail {{ jail.name }} is running"
+  shell: jls -j "{{ jail.name }}"
+  failed_when: false
+  changed_when: false
+  register: check_jail_active
+
+- name: "Start jail {{ jail.name }}"
+  shell: service jail start "{{ jail.name }}"
+  when: check_jail_active.rc != 0
