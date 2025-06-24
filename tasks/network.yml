@@ -72,3 +72,28 @@
 - name: Reload pf rules
   shell: pfctl -f /etc/pf.conf
   when: pf_conf.changed
+
+- name: Install nginx
+  package:
+    name: nginx
+    state: present
+
+- name: Configure nginx.conf
+  template:
+    src: usr_local_etc_nginx_nginx.conf.j2
+    dest: /usr/local/etc/nginx/nginx.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+  register: nginx_conf
+
+- name: Enable nginx
+  service:
+    name: nginx
+    enabled: true
+
+- name: Restart nginx
+  service:
+    name: nginx
+    state: restarted
+  when: nginx_conf.changed

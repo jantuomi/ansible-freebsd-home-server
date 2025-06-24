@@ -19,6 +19,8 @@
     smtp_port: "{{ lookup('env', 'SMTP_PORT') }}"
     dma_mail_hostname: "{{ lookup('env', 'DMA_MAILNAME') }}"
     dma_to_address: "{{ lookup('env', 'DMA_TO_ADDRESS') }}"
+    jails:
+      - { name: nginx_test, ip: "192.168.2.1" }
 
   tasks:
     - name: Run network tasks
