@@ -11,14 +11,14 @@
     - { name: "zroot/jails", mountpoint: "/usr/local/jails" }
     - { name: "zroot/jails/media" }
     - { name: "zroot/jails/templates" }
-    - { name: "zroot/jails/templates/14.3-RELEASE" }
+    - { name: "zroot/jails/templates/{{ jail_userland_version }}" }
     - { name: "zroot/jails/containers" }
   loop_control:
     loop_var: dataset
   include_tasks: jail_datasets.yml
 
 - name: Check if userland snapshot already exists
-  shell: zfs list -t snapshot -o name | grep -Fxq "zroot/jails/templates/14.3-RELEASE@base"
+  shell: zfs list -t snapshot -o name | grep -Fxq "zroot/jails/templates/{{ jail_userland_version }}@base"
   failed_when: false
   changed_when: false
   register: zfs_userland_check
@@ -28,29 +28,29 @@
   block:
     - name: Download userland
       get_url:
-        url: https://download.freebsd.org/ftp/releases/amd64/amd64/14.3-RELEASE/base.txz
-        dest: /usr/local/jails/media/14.3-RELEASE-base.txz
+        url: https://download.freebsd.org/ftp/releases/amd64/amd64/{{ jail_userland_version }}/base.txz
+        dest: /usr/local/jails/media/{{ jail_userland_version }}-base.txz
         owner: root
         group: wheel
         mode: "0644"
 
     - name: Unarchive userland
-      shell: tar -xzf /usr/local/jails/media/14.3-RELEASE-base.txz -C /usr/local/jails/templates/14.3-RELEASE
+      shell: tar -xzf /usr/local/jails/media/{{ jail_userland_version }}-base.txz -C /usr/local/jails/templates/{{ jail_userland_version }}
 
     - name: Copy localtime and resolv.conf to jail userland
       copy:
         remote_src: true
         src: "{{ item }}"
-        dest: "/usr/local/jails/templates/14.3-RELEASE{{ item }}"
+        dest: "/usr/local/jails/templates/{{ jail_userland_version }}{{ item }}"
       loop:
         - /etc/resolv.conf
         - /etc/localtime
 
     - name: Update userland to latest patch level
-      shell: freebsd-update -b /usr/local/jails/templates/14.3-RELEASE/ fetch install
+      shell: freebsd-update -b /usr/local/jails/templates/{{ jail_userland_version }}/ fetch install
 
     - name: Create userland ZFS snapshot
-      shell: zfs snapshot zroot/jails/templates/14.3-RELEASE@base
+      shell: zfs snapshot zroot/jails/templates/{{ jail_userland_version }}@base
 
 - name: Configure jails
   block:
