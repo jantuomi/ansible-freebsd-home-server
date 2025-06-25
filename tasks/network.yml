@@ -12,11 +12,20 @@
     - { name: "ifconfig_wan0", value: "DHCP" }
     - { name: "ifconfig_lan0_ipv6", value: "inet6 accept_rtadv" }
     - { name: "ifconfig_wan0_ipv6", value: "inet6 accept_rtadv" }
-  register: ifconfig_sysrc
+  register: ifconfig_base_sysrc
+
+- name: Set up jail aliases on lan0
+  community.general.sysrc:
+    name: "ifconfig_lan0_alias{{ index }}"
+    value: "inet {{ item.ip }}/32"
+  loop: "{{ jails }}"
+  loop_control:
+    index_var: index
+  register: ifconfig_jail_sysrc
 
 - name: Restart networking if interface configuration changed
   shell: service netif restart
-  when: ifconfig_sysrc.changed
+  when: ifconfig_base_sysrc.changed or ifconfig_jail_sysrc.changed
 
 - name: Update facts
   setup:

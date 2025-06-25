@@ -16,7 +16,6 @@ path = "/usr/local/jails/containers/${name}";
 {% for jail in jails %}
 {{ jail.name }} {
   ip4.addr = {{ jail.ip }};
-  interface = lan0;
 }
 
 {% endfor %}

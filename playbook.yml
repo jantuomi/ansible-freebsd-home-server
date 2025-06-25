@@ -22,6 +22,7 @@
     jail_userland_version: 14.3-RELEASE
     jails:
       - { name: nginx_test, ip: "192.168.2.1" }
+      - { name: postgres, ip: "192.168.2.2" }
 
   tasks:
     - name: Run network tasks
