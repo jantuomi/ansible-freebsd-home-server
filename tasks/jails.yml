@@ -67,11 +67,3 @@
       loop_control:
         loop_var: jail
       include_tasks: jail_single.yml
-
-- name: Enable jails
-  community.general.sysrc:
-    name: "{{ item }}"
-    value: "YES"
-  loop:
-    - "jail_enable"
-    - "jail_parallel_start"

@@ -1,34 +1,15 @@
-- name: Set up network interfaces
-  community.general.sysrc:
-    name: "{{ item.name }}"
-    value: "{{ item.value | default(omit) }}"
-    state: "{{ item.state | default(omit) }}"
-  loop:
-    - { name: "ifconfig_igc0", state: "absent" }
-    - { name: "ifconfig_igc1", state: "absent" }
-    - { name: "ifconfig_igc0_name", value: "lan0" }
-    - { name: "ifconfig_igc1_name", value: "wan0" }
-    - { name: "ifconfig_lan0", value: "DHCP" }
-    - { name: "ifconfig_wan0", value: "DHCP" }
-    - { name: "ifconfig_lan0_ipv6", value: "inet6 accept_rtadv" }
-    - { name: "ifconfig_wan0_ipv6", value: "inet6 accept_rtadv" }
-  register: ifconfig_base_sysrc
-
-- name: Set up jail aliases on lan0
-  community.general.sysrc:
-    name: "ifconfig_lan0_alias{{ index }}"
-    value: "inet {{ item.ip }}/32"
-  loop: "{{ jails }}"
-  loop_control:
-    index_var: index
-  register: ifconfig_jail_sysrc
+- name: Set up resolv.conf
+  template:
+    src: etc_resolv.conf.j2
+    dest: /etc/resolv.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+  register: resolv_conf
 
 - name: Restart networking if interface configuration changed
-  shell: service netif restart
-  when: ifconfig_base_sysrc.changed or ifconfig_jail_sysrc.changed
-
-- name: Update facts
-  setup:
+  shell: service netif restart && service routing restart
+  when: rc_conf.changed or resolv_conf.changed
 
 - name: Set up sshd
   template:
@@ -39,28 +20,29 @@
     mode: "0644"
   register: etc_sshd_config
 
+- name: Start sshd
+  service:
+    name: sshd
+    state: started
+  register: started_sshd
+
 - name: Restart sshd
   service:
     name: sshd
     state: restarted
-  when: etc_sshd_config.changed
+  when: not started_sshd.changed and etc_sshd_config.changed
 
-- name: Disable syslogd remote listening
-  community.general.sysrc:
-    name: syslogd_flags
-    value: "-s"
-  register: syslogd_flags
-
-- name: Enable syslogd
+- name: Start syslogd
   service:
     name: syslogd
-    enabled: true
+    state: started
+  register: started_syslogd
 
 - name: Restart syslogd
   service:
     name: syslogd
     state: restarted
-  when: syslogd_flags.changed
+  when: not started_syslogd.changed and rc_conf.changed
 
 - name: Configure pf
   template:
@@ -72,10 +54,9 @@
     backup: yes
   register: pf_conf
 
-- name: Enable and start pf
+- name: Start pf
   service:
     name: pf
-    enabled: true
     state: started
 
 - name: Reload pf rules
@@ -96,13 +77,14 @@
     mode: "0644"
   register: nginx_conf
 
-- name: Enable nginx
+- name: Start nginx
   service:
     name: nginx
-    enabled: true
+    state: started
+  register: started_nginx
 
 - name: Restart nginx
   service:
     name: nginx
     state: restarted
-  when: nginx_conf.changed
+  when: not started_nginx.changed and nginx_conf.changed

@@ -19,12 +19,18 @@
     smtp_port: "{{ lookup('env', 'SMTP_PORT') }}"
     dma_mail_hostname: "{{ lookup('env', 'DMA_MAILNAME') }}"
     dma_to_address: "{{ lookup('env', 'DMA_TO_ADDRESS') }}"
+    lan_ipv4_cidr: 192.168.0.10/16
+    lan_ipv4_gateway: 192.168.0.1
+    lan_search_domain: local.jan.systems
     jail_userland_version: 14.3-RELEASE
     jails:
       - { name: nginx_test, ip: "192.168.2.1" }
       - { name: postgres, ip: "192.168.2.2" }
 
   tasks:
+    - name: Run general tasks
+      import_tasks: tasks/general.yml
+
     - name: Run network tasks
       import_tasks: tasks/network.yml
 

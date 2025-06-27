@@ -1,0 +1,16 @@
+- name: Set up periodic.conf
+  template:
+    src: etc_periodic.conf.j2
+    dest: /etc/periodic.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+
+- name: Set up /etc/rc.conf
+  template:
+    src: etc_rc.conf.j2
+    dest: /etc/rc.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+  register: rc_conf

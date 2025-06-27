@@ -15,16 +15,17 @@
     mode: "0755"
   register: rc_zpool_gpt_labels
 
-- name: Enable zpool_gpt_labels
+- name: Start zpool_gpt_labels
   service:
     name: zpool_gpt_labels
-    enabled: true
+    state: started
+  register: started_zpool_gpt_labels
 
 - name: Restart zpool_gpt_labels
   service:
     name: zpool_gpt_labels
     state: restarted
-  when: rc_zpool_gpt_labels.changed
+  when: not started_zpool_gpt_labels.changed and rc_zpool_gpt_labels.changed
 
 - name: Install smartd
   package:
@@ -40,13 +41,14 @@
     mode: "0644"
   register: smartd_conf
 
-- name: Enable smartd
+- name: Start smartd
   service:
     name: smartd
-    enabled: true
+    state: started
+  register: started_smartd
 
 - name: Restart smartd
   service:
     name: smartd
     state: restarted
-  when: smartd_conf.changed
+  when: not started_smartd.changed and smartd_conf.changed
