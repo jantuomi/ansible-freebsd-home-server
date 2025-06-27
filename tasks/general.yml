@@ -14,3 +14,16 @@
     group: wheel
     mode: "0644"
   register: rc_conf
+
+- name: Set up fstab
+  template:
+    src: etc_fstab.j2
+    dest: /etc/fstab
+    owner: root
+    group: wheel
+    mode: "0644"
+  register: fstab
+
+- name: Run mount -a
+  shell: mount -a
+  when: fstab.changed
