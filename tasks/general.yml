@@ -27,3 +27,8 @@
 - name: Run mount -a
   shell: mount -a
   when: fstab.changed
+
+- name: Start auditd
+  service:
+    name: auditd
+    state: started
