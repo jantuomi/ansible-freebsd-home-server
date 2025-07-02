@@ -77,6 +77,11 @@
     mode: "0644"
   register: nginx_conf
 
+- name: Copy over jan.systems HTML
+  ansible.posix.synchronize:
+    src: "{{ jan_systems_html_dir.rstrip('/') + '/' }}"
+    dest: /usr/local/www/jan.systems
+
 - name: Start nginx
   service:
     name: nginx

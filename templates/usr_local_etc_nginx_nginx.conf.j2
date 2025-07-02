@@ -20,6 +20,21 @@ http {
         }
     }
 
+    server {
+        listen 80;
+        server_name jan.systems;
+
+        root /usr/local/www/jan.systems;
+        index index.html;
+
+        location / {
+            try_files $uri $uri/ =404;
+        }
+
+        access_log /var/log/nginx/jan.systems/access.log;
+        error_log /var/log/nginx/jan.systems/error.log;
+    }
+
     {% for jail in jails -%}
     server {
         listen 80;

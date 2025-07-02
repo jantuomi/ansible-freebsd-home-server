@@ -19,6 +19,7 @@
     smtp_port: "{{ lookup('env', 'SMTP_PORT') }}"
     dma_mail_hostname: "{{ lookup('env', 'DMA_MAILNAME') }}"
     dma_to_address: "{{ lookup('env', 'DMA_TO_ADDRESS') }}"
+    jan_systems_html_dir: "{{ lookup('env', 'JAN_SYSTEMS_HTML_DIR') }}"
     lan_ipv4_cidr: 192.168.0.10/16
     lan_ipv4_gateway: 192.168.0.1
     lan_search_domain: local.jan.systems
