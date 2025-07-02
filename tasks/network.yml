@@ -88,3 +88,19 @@
     name: nginx
     state: restarted
   when: not started_nginx.changed and nginx_conf.changed
+
+- name: Set up restore_jail_aliases.sh
+  template:
+    src: usr_local_bin_restore_jail_aliases.sh.j2
+    dest: /usr/local/bin/restore_jail_aliases.sh
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Set up devd lan0_jail_restore.conf
+  template:
+    src: etc_devd_lan0_jail_restore.conf.j2
+    dest: /etc/devd/lan0_jail_restore.conf
+    owner: root
+    group: wheel
+    mode: "0644"

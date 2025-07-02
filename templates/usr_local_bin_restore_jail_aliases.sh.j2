@@ -1,0 +1,27 @@
+#!/bin/sh
+
+# The point of this script is to restore jail aliases
+# if the lan0 interface flaps
+
+if_lan="lan0"
+ipv4_out="$(ifconfig lan0 | grep "inet " | grep -v "0xffffffff")"
+ipv4_lan="$(echo "${ipv4_out}" | awk '{ print $2 }')"
+ipv4_mask="$(echo "${ipv4_out}" | awk '{ print $4 }')"
+
+if ! [ "$ipv4_mask" = "0xffff0000" ]; then
+    >&2 echo "Unexpected netmask on lan0: ${ipv4_mask}"
+    exit 1
+fi
+
+jls ip4.addr | while read ip; do
+    case "$ip" in
+        "192.168"*) ;;
+        *) continue ;;
+    esac
+    if ifconfig "$if_lan" | grep -q "$ip"; then
+        continue
+    fi
+
+    echo "Re-adding $ip to $if_lan"
+    ifconfig "$if_lan" inet "$ip/32" alias
+done
