@@ -4,6 +4,7 @@ wan_if = "wan0"
 # Default policy
 set skip on lo
 set block-policy return
+scrub in
 block in all
 
 # Allow all outbound traffic

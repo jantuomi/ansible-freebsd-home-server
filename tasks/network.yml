@@ -63,11 +63,6 @@
   shell: pfctl -f /etc/pf.conf
   when: pf_conf.changed
 
-- name: Install nginx
-  package:
-    name: nginx
-    state: present
-
 - name: Configure nginx.conf
   template:
     src: usr_local_etc_nginx_nginx.conf.j2
