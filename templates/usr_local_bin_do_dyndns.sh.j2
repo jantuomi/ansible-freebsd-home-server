@@ -21,7 +21,7 @@ while :; do
     IP4=$(ifconfig "$IF4" | awk '/inet / { print $2 }' | head -n1)
     DIGITALOCEAN_TOKEN=$(awk '{$1=$1; print}' "$DO_DYNDNS_AUTH_FILE")
 
-    echo "[INFO] Updating A record for $DOMAIN → $IP4"
+    echo "[INFO] Updating A record for hostname $HOSTNAME in domain $DOMAIN → $IP4"
 
     RECORD_ID=$(curl -s -H "Authorization: Bearer $DIGITALOCEAN_TOKEN" \
         "https://api.digitalocean.com/v2/domains/$DOMAIN/records?per_page=999999" |
@@ -32,7 +32,7 @@ while :; do
             -H "Authorization: Bearer $DIGITALOCEAN_TOKEN" \
             -H "Content-Type: application/json" \
             -d "{\"data\":\"$IP4\"}" \
-            "https://api.digitalocean.com/v2/domains/$DOMAIN/records/$RECORD_ID"
+            "https://api.digitalocean.com/v2/domains/$DOMAIN/records/$RECORD_ID" > /dev/null
         echo "[INFO] Record $RECORD_ID updated"
     else
         echo "[WARN] No A record found for hostname \"$HOSTNAME\" in domain \"$DOMAIN\". Skipping."
