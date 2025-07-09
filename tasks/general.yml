@@ -6,6 +6,8 @@
     - rsync
     - nginx
     - dma
+    - jq
+    - curl
 
 - name: Set up periodic.conf
   template:

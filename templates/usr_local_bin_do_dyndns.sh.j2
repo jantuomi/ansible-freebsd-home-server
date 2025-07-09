@@ -1,0 +1,51 @@
+#!/bin/sh
+set -eu
+
+: "${DO_DYNDNS_DOMAIN:?DO_DYNDNS_DOMAIN must be set}"
+: "${DO_DYNDNS_HOSTNAME:?DO_DYNDNS_HOSTNAME must be set}"
+: "${DO_DYNDNS_IF4:?DO_DYNDNS_IF4 must be set}"
+: "${DO_DYNDNS_INTERVAL:?DO_DYNDNS_INTERVAL must be set}"
+: "${DO_DYNDNS_AUTH_FILE:?DO_DYNDNS_AUTH_FILE must be set}"
+
+if [ ! -r "$DO_DYNDNS_AUTH_FILE" ]; then
+  echo "[ERROR] Auth file '$DO_DYNDNS_AUTH_FILE' not readable" >&2
+  exit 1
+fi
+
+DOMAIN="$DO_DYNDNS_DOMAIN"
+HOSTNAME="$DO_DYNDNS_HOSTNAME"
+IF4="$DO_DYNDNS_IF4"
+INTERVAL="$DO_DYNDNS_INTERVAL"
+
+while :; do
+    IP4=$(ifconfig "$IF4" | awk '/inet / { print $2 }' | head -n1)
+    DIGITALOCEAN_TOKEN=$(awk '{$1=$1; print}' "$DO_DYNDNS_AUTH_FILE")
+
+    echo "[INFO] Updating A record for $DOMAIN → $IP4"
+
+    RECORD_ID=$(curl -s -H "Authorization: Bearer $DIGITALOCEAN_TOKEN" \
+        "https://api.digitalocean.com/v2/domains/$DOMAIN/records?per_page=999999" |
+        jq -r ".domain_records[] | select(.type==\"A\" and .name==\"$HOSTNAME\") | .id")
+
+    if [ -n "$RECORD_ID" ]; then
+        curl -s -X PUT \
+            -H "Authorization: Bearer $DIGITALOCEAN_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"data\":\"$IP4\"}" \
+            "https://api.digitalocean.com/v2/domains/$DOMAIN/records/$RECORD_ID"
+        echo "[INFO] Record $RECORD_ID updated"
+    else
+        echo "[WARN] No A record found for hostname \"$HOSTNAME\" in domain \"$DOMAIN\". Skipping."
+    fi
+
+    SLEEP_SEC=$(printf "%s\n" "$INTERVAL" | awk '
+        /^[0-9]+s$/ { gsub(/s$/, ""); print $0; exit }
+        /^[0-9]+m$/ { gsub(/m$/, ""); print $0 * 60; exit }
+        /^[0-9]+h$/ { gsub(/h$/, ""); print $0 * 3600; exit }
+        /^[0-9]+d$/ { gsub(/d$/, ""); print $0 * 86400; exit }
+        /^[0-9]+$/  { print $0; exit }
+        { print "invalid"; exit 1 }
+    ')
+
+    sleep "$SLEEP_SEC"
+done
