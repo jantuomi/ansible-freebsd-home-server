@@ -43,3 +43,18 @@
   service:
     name: auditd
     state: started
+
+- name: Set up crontab
+  template:
+    src: etc_crontab.j2
+    dest: /etc/crontab
+    owner: root
+    group: wheel
+    mode: "0644"
+  register: etc_crontab
+
+- name: Restart cron
+  service:
+    name: cron
+    state: restarted
+  when: etc_crontab.changed

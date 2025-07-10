@@ -142,3 +142,11 @@
     name: do_dyndns
     state: restarted
   when: not do_dyndns_start.changed and (do_dyndns_sh.changed or do_dyndns_rc.changed)
+
+- name: Install gen_dhclient_conf.sh
+  template:
+    src: usr_local_bin_gen_dhclient_conf.sh.j2
+    dest: /usr/local/bin/gen_dhclient_conf.sh
+    owner: root
+    group: wheel
+    mode: "0755"
