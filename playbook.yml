@@ -28,6 +28,10 @@
     jails:
       - { name: nginx_test, ip: "192.168.2.1" }
       - { name: postgres, ip: "192.168.2.2" }
+    static_sites:
+      - { site: "jan.systems", host: "jan.systems", tls: false }
+      - { site: "jan.systems", host: "pursotin.jan.systems", tls: true }
+      - { site: "jan.systems", host: "local.jan.systems", tls: false }
 
   tasks:
     - name: Run general tasks

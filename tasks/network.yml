@@ -76,6 +76,11 @@
     mode: "0644"
   register: nginx_conf
 
+- name: Generate LetsEncrypt certs
+  shell: certbot certonly --standalone -n -m jan@jantuomi.fi --agree-tos -d {{ item }}
+  loop: "{{ static_sites | selectattr('tls') | map(attribute='host') }}"
+  when: nginx_conf.changed
+
 - name: Copy over jan.systems HTML
   ansible.posix.synchronize:
     src: "{{ jan_systems_html_dir.rstrip('/') + '/' }}"

@@ -20,21 +20,41 @@ http {
         }
     }
 
+    {% for site in static_sites -%}
+    {% if site.tls -%}
     server {
-        listen 80;
-        server_name jan.systems pursotin.jan.systems local.jan.systems;
+        listen 443 ssl;
+        server_name {{ site.host }};
 
-        root /usr/local/www/jan.systems;
+        root /usr/local/www/{{ site.site }};
         index index.html;
 
         location / {
             try_files $uri $uri.html $uri/ =404;
         }
 
-        access_log /var/log/nginx/jan.systems/access.log;
-        error_log /var/log/nginx/jan.systems/error.log;
+        access_log /var/log/nginx/{{ site.site }}/access.log;
+        error_log /var/log/nginx/{{ site.site }}/error.log;
+
+        ssl_certificate /usr/local/etc/letsencrypt/live/{{ site.host }}/fullchain.pem;
+        ssl_certificate_key /usr/local/etc/letsencrypt/live/{{ site.host }}/privkey.pem;
+        include /usr/local/etc/letsencrypt/options-ssl-nginx.conf;
+        ssl_dhparam /usr/local/etc/letsencrypt/ssl-dhparams.pem;
     }
 
+    {% endif -%}
+
+    server {
+        listen 80;
+        server_name {{ site.host }};
+
+        return 301 https://$host$request_uri;
+
+        access_log /var/log/nginx/{{ site.site }}/access.log;
+        error_log /var/log/nginx/{{ site.site }}/error.log;
+    }
+
+    {% endfor -%}
     {% for jail in jails -%}
     server {
         listen 80;
