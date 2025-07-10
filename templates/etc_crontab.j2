@@ -20,5 +20,3 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 # Adjust the time zone if the CMOS clock keeps local time, as opposed to
 # UTC time.  See adjkerntz(8) for details.
 1,31    0-5     *       *       *       root    adjkerntz -a
-# Generate /etc/dhclient.conf
-*/15    *       *       *       *       root    sh -c 'gen_dhclient_conf.sh | logger -t gen_dhclient_conf'
