@@ -37,17 +37,22 @@
     - name: Unarchive userland
       shell: tar -xzf /usr/local/jails/media/{{ jail_userland_version }}-base.txz -C /usr/local/jails/templates/{{ jail_userland_version }}
 
-    - name: Copy localtime and resolv.conf to jail userland
+    - name: Copy localtime to jail userland
       copy:
         remote_src: true
-        src: "{{ item }}"
-        dest: "/usr/local/jails/templates/{{ jail_userland_version }}{{ item }}"
-      loop:
-        - /etc/resolv.conf
-        - /etc/localtime
+        src: /etc/localtime
+        dest: /usr/local/jails/templates/{{ jail_userland_version }}/etc/localtime
+
+    - name: Copy resolv.conf to jail userland
+      shell: |
+        cat /etc/resolv.conf > /usr/local/jails/templates/{{ jail_userland_version }}/etc/resolv.conf
+        chmod 644 /usr/local/jails/templates/{{ jail_userland_version }}/etc/resolv.conf
 
     - name: Update userland to latest patch level
       shell: freebsd-update -b /usr/local/jails/templates/{{ jail_userland_version }}/ fetch install
+
+    - name: Disable syslogd in the template
+      shell: echo 'syslogd_enable="NO"' >> /usr/local/jails/templates/{{ jail_userland_version }}/etc/rc.conf
 
     - name: Create userland ZFS snapshot
       shell: zfs snapshot zroot/jails/templates/{{ jail_userland_version }}@base
@@ -67,3 +72,6 @@
       loop_control:
         loop_var: jail
       include_tasks: jail_single.yml
+
+- name: Configure ingress jail
+  include_tasks: jail_ingress.yml

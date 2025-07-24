@@ -12,7 +12,7 @@
   when: resolv_conf.changed
 
 - name: Restart networking if interface configuration changed
-  shell: service netif restart && service routing restart
+  shell: service netif restart && service routing restart && service dhclient restart wan0
   when: rc_conf.changed or resolv_conf.changed
 
 - name: Set up sshd
@@ -66,53 +66,6 @@
 - name: Reload pf rules
   shell: pfctl -f /etc/pf.conf
   when: pf_conf.changed
-
-- name: Configure nginx.conf
-  template:
-    src: usr_local_etc_nginx_nginx.conf.j2
-    dest: /usr/local/etc/nginx/nginx.conf
-    owner: root
-    group: wheel
-    mode: "0644"
-  register: nginx_conf
-
-- name: Generate LetsEncrypt certs
-  shell: certbot certonly --standalone -n -m jan@jantuomi.fi --agree-tos -d {{ item }}
-  loop: "{{ static_sites | selectattr('tls') | map(attribute='host') }}"
-  when: nginx_conf.changed
-
-- name: Copy over jan.systems HTML
-  ansible.posix.synchronize:
-    src: "{{ jan_systems_html_dir.rstrip('/') + '/' }}"
-    dest: /usr/local/www/jan.systems
-
-- name: Start nginx
-  service:
-    name: nginx
-    state: started
-  register: started_nginx
-
-- name: Restart nginx
-  service:
-    name: nginx
-    state: restarted
-  when: not started_nginx.changed and nginx_conf.changed
-
-- name: Set up restore_jail_aliases.sh
-  template:
-    src: usr_local_bin_restore_jail_aliases.sh.j2
-    dest: /usr/local/bin/restore_jail_aliases.sh
-    owner: root
-    group: wheel
-    mode: "0755"
-
-- name: Set up devd lan0_jail_restore.conf
-  template:
-    src: etc_devd_lan0_jail_restore.conf.j2
-    dest: /etc/devd/lan0_jail_restore.conf
-    owner: root
-    group: wheel
-    mode: "0644"
 
 - name: Set up /usr/local/etc/do_dyndns_auth
   template:

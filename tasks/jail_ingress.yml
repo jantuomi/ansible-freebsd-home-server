@@ -1,0 +1,64 @@
+- name: Install packages inside ingress jail
+  loop:
+    - { jail: ingress, package: nginx }
+    - { jail: ingress, package: py311-certbot }
+  include_tasks: pkg_jail_install.yml
+
+- name: Configure nginx.conf
+  template:
+    src: usr_local_etc_nginx_nginx.conf.j2
+    dest: /usr/local/jails/containers/ingress/usr/local/etc/nginx/nginx.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+  register: nginx_conf
+
+- name: Create static sites log dir
+  file:
+    path: /usr/local/jails/containers/ingress/var/log/nginx/{{ item }}
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+  loop: "{{ static_sites | map(attribute='site') | unique }}"
+
+- name: Create access.log for static sites
+  file:
+    path: /usr/local/jails/containers/ingress/var/log/nginx/{{ item }}/access.log
+    state: touch
+    owner: root
+    group: wheel
+    mode: "0644"
+  loop: "{{ static_sites | map(attribute='site') | unique }}"
+
+- name: Create error.log for static sites
+  file:
+    path: /usr/local/jails/containers/ingress/var/log/nginx/{{ item }}/error.log
+    state: touch
+    owner: root
+    group: wheel
+    mode: "0644"
+  loop: "{{ static_sites | map(attribute='site') | unique }}"
+
+#- name: Generate LetsEncrypt certs
+#  shell: jexec ingress certbot certonly --standalone -n -m jan@jantuomi.fi --agree-tos -d {{ item }}
+#  loop: "{{ static_sites | selectattr('tls') | map(attribute='host') }}"
+#  when: nginx_conf.changed
+
+- name: Copy over static HTML
+  ansible.posix.synchronize:
+    src: "{{ item.value.rstrip('/') + '/' }}"
+    dest: /usr/local/jails/containers/ingress/usr/local/www/{{ item.key }}
+  loop: "{{ static_site_dirs | dict2items }}"
+
+- name: Check if nginx is enabled
+  shell: service -j ingress nginx status
+  changed_when: false
+  failed_when: false
+  register: ingress_nginx_enabled
+
+- name: Enable and start nginx
+  shell: |
+    service -j ingress nginx enable
+    service -j ingress nginx onestart
+  when: ingress_nginx_enabled.rc != 0

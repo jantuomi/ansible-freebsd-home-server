@@ -22,7 +22,7 @@ http {
 
     {% for site in static_sites -%}
     {% if site.tls -%}
-    server {
+    {#server {
         listen 443 ssl;
         server_name {{ site.host }};
 
@@ -41,7 +41,7 @@ http {
         include /usr/local/etc/letsencrypt/options-ssl-nginx.conf;
         ssl_dhparam /usr/local/etc/letsencrypt/ssl-dhparams.pem;
     }
-
+    #}
     {% endif -%}
 
     server {
@@ -61,7 +61,7 @@ http {
         server_name {{ jail.name }}.jan.systems {{ jail.name }}.local.jan.systems;
 
         location / {
-            proxy_pass http://{{ jail.ip }};
+            proxy_pass http://192.168.2.{{ jail.num }};
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

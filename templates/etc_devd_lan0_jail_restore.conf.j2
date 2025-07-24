@@ -1,6 +1,0 @@
-notify 10 {
-    match "system"          "IFNET";
-    match "subsystem"       "lan0";
-    match "type"            "LINK_UP";
-    action "/usr/local/bin/restore_jail_aliases.sh";
-};

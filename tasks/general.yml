@@ -4,11 +4,9 @@
     state: present
   loop:
     - rsync
-    - nginx
     - dma
     - jq
     - curl
-    - py311-certbot
 
 - name: Set up periodic.conf
   template:
