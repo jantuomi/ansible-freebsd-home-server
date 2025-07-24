@@ -1,0 +1,9 @@
+- name: Check if {{ item.package }} is installed
+  shell: pkg -j {{ item.jail }} info {{ item.package }}
+  register: pkg_jail_installed
+  changed_when: false
+  failed_when: false
+
+- name: Install {{ item.package }}
+  shell: pkg -j {{ item.jail }} install -y {{ item.package }}
+  when: pkg_jail_installed.rc != 0

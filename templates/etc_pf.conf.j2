@@ -1,10 +1,23 @@
 lan_if = "lan0"
 wan_if = "wan0"
+jail_ingress_ip = "{{ jail_ingress_ip }}"
+jail_net = "{{ jail_net }}"
 
 # Default policy
 set skip on lo
 set block-policy return
 scrub in
+
+# NAT outbound connections from jails
+nat on $wan_if from $jail_net to any -> ($wan_if)
+
+# Redirect HTTP to ingress jail
+rdr on $wan_if proto tcp from any to ($wan_if) port 80 -> $jail_ingress_ip port 80
+rdr on $wan_if proto tcp from any to ($wan_if) port 443 -> $jail_ingress_ip port 443
+rdr on $lan_if proto tcp from any to ($lan_if) port 80 -> $jail_ingress_ip port 80
+rdr on $lan_if proto tcp from any to ($lan_if) port 443 -> $jail_ingress_ip port 443
+
+# Default block all
 block in all
 
 # Allow all outbound traffic

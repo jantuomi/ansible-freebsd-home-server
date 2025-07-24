@@ -19,19 +19,32 @@
     smtp_port: "{{ lookup('env', 'SMTP_PORT') }}"
     dma_mail_hostname: "{{ lookup('env', 'DMA_MAILNAME') }}"
     dma_to_address: "{{ lookup('env', 'DMA_TO_ADDRESS') }}"
-    jan_systems_html_dir: "{{ lookup('env', 'JAN_SYSTEMS_HTML_DIR') }}"
     do_api_token: "{{ lookup('env', 'DO_API_TOKEN') }}"
     lan_ipv4_cidr: 192.168.0.10/16
     lan_ipv4_gateway: 192.168.0.1
     lan_search_domain: local.jan.systems
+    jail_net: 192.168.2.0/24
     jail_userland_version: 14.3-RELEASE
+    jail_ingress_ip: "192.168.2.1"
     jails:
-      - { name: nginx_test, ip: "192.168.2.1" }
+      - { name: ingress, ip: "{{ jail_ingress_ip }}" }
       - { name: postgres, ip: "192.168.2.2" }
+      - { name: irc_thelounge, ip: "192.168.2.3" }
+      - { name: taulubot, ip: "192.168.2.4" }
+      - { name: veetibot, ip: "192.168.2.5" }
+      - { name: hommabot, ip: "192.168.2.6" }
+      - { name: aggro, ip: "192.168.2.7" }
+      - { name: diddle, ip: "192.168.2.8" }
+      - { name: gallery_sakari, ip: "192.168.2.9" }
+      - { name: gallery_leo, ip: "192.168.2.10" }
+      - { name: spliit, ip: "192.168.2.11" }
+      - { name: stirling-pdf, ip: "192.168.2.12" }
     static_sites:
-      - { site: "jan.systems", host: "jan.systems", tls: false }
-      - { site: "jan.systems", host: "pursotin.jan.systems", tls: true }
-      - { site: "jan.systems", host: "local.jan.systems", tls: false }
+      - { site: "homepage", host: "jan.systems", tls: false }
+      - { site: "homepage", host: "pursotin.jan.systems", tls: true }
+      - { site: "homepage", host: "local.jan.systems", tls: false }
+    static_site_dirs:
+      homepage: "{{ lookup('env', 'JAN_SYSTEMS_HTML_DIR') }}"
 
   tasks:
     - name: Run general tasks

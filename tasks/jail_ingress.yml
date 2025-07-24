@@ -1,0 +1,25 @@
+- name: Install packages inside ingress jail
+  loop:
+    - { jail: ingress, package: nginx }
+    - { jail: ingress, package: py311-certbot }
+  include_tasks: pkg_jail_install.yml
+
+- name: Configure nginx.conf
+  template:
+    src: usr_local_etc_nginx_nginx.conf.j2
+    dest: /usr/local/jails/containers/ingress/usr/local/etc/nginx/nginx.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+  register: nginx_conf
+
+- name: Generate LetsEncrypt certs
+  shell: jexec ingress certbot certonly --standalone -n -m jan@jantuomi.fi --agree-tos -d {{ item }}
+  loop: "{{ static_sites | selectattr('tls') | map(attribute='host') }}"
+  when: nginx_conf.changed
+
+- name: Copy over static HTML
+  ansible.posix.synchronize:
+    src: "{{ item.value.rstrip('/') + '/' }}"
+    dest: /usr/local/jails/containers/ingress/usr/local/www/{{ item.key }}
+  loop: "{{ static_site_dirs | dict2items }}"
