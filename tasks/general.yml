@@ -7,6 +7,7 @@
     - dma
     - jq
     - curl
+    - bash
 
 - name: Set up periodic.conf
   template:
@@ -57,3 +58,11 @@
     name: cron
     state: restarted
   when: etc_crontab.changed
+
+- name: Install logto
+  template:
+    src: usr_local_bin_logto.sh.j2
+    dest: /usr/local/bin/logto
+    owner: root
+    group: wheel
+    mode: "0755"

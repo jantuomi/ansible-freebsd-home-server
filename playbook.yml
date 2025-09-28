@@ -28,7 +28,7 @@
     jails:
       - { name: ingress, num: 1 }
       - { name: postgres, num: 2 }
-      - { name: irc_thelounge, num: 3 }
+      - { name: backup, num: 3 }
       - { name: taulubot, num: 4 }
       - { name: veetibot, num: 5 }
       - { name: hommabot, num: 6 }
@@ -39,6 +39,7 @@
       - { name: spliit, num: 11 }
       - { name: stirling-pdf, num: 12 }
       - { name: ente, num: 13 }
+      - { name: irc_thelounge, num: 14 }
     static_sites:
       - { site: "homepage", host: "jan.systems", tls: false }
       - { site: "homepage", host: "pursotin.jan.systems", tls: true }

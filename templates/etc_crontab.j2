@@ -20,3 +20,6 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 # Adjust the time zone if the CMOS clock keeps local time, as opposed to
 # UTC time.  See adjkerntz(8) for details.
 1,31    0-5     *       *       *       root    adjkerntz -a
+
+# Update dynamic DNS
+*/1     *       *       *       *       root    logto -e /var/log/do_dyndns.err /usr/local/bin/do_dyndns.sh

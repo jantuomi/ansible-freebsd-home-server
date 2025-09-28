@@ -1,18 +1,22 @@
 # STARTUP/LOGGING/VNET
-$epair            = "epair${num}"; # epairXa is host end, epairXb is jail end
+$tmp_epair      = "epair${num}";
+$epl            = "epl${num}"; # eplXa is host end (local network bridge), eplXb is jail end.
+                               # The corresponding pubnet interface is epwX, but that's not created for all jails.
 vnet;
-vnet.interface    = "${epair}b";
+vnet.interface    = "${epl}b";
 persist;
-exec.prestart    += "ifconfig $epair create || echo 'Failed to create $epair'";
-exec.prestart    += "ifconfig ${epair}a up";
-exec.prestart    += "ifconfig bridge0 addm ${epair}a";
+exec.prestart    += "ifconfig $tmp_epair create || echo 'Failed to create $tmp_epair'";
+exec.prestart    += "ifconfig ${tmp_epair}a name ${epl}a";
+exec.prestart    += "ifconfig ${tmp_epair}b name ${epl}b";
+exec.prestart    += "ifconfig ${epl}a up";
+exec.prestart    += "ifconfig brlan0 addm ${epl}a";
 exec.clean;
 exec.start        = "/bin/sh /etc/rc";
-exec.poststart    = "jexec ${name} ifconfig ${epair}b 192.168.2.${num}/16";
+exec.poststart    = "jexec ${name} ifconfig ${epl}b 192.168.2.${num}/16";
 exec.poststart   += "jexec ${name} route add default 192.168.0.1 || echo 'Failed to add default route'";
 exec.stop         = "/bin/sh /etc/rc.shutdown";
-exec.poststop    += "ifconfig ${epair}b -vnet $name"; # workaround to bug 238326: move ${epair}b from the jail to the host when stopping jail services
-exec.poststop    += "ifconfig ${epair}b destroy";     # and then destroy the pair by destroying one end of it
+exec.poststop    += "ifconfig ${epl}b -vnet $name"; # workaround to bug 238326: move ${epl}b from the jail to the host when stopping jail services
+exec.poststop    += "ifconfig ${epl}b destroy";     # and then destroy the pair by destroying one end of it
 exec.consolelog   = "/var/log/jail_console_${name}.log";
 
 # PERMISSIONS

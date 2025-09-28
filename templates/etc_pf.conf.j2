@@ -7,13 +7,6 @@ set skip on lo
 set block-policy return
 scrub in
 
-# Redirect HTTP to ingress jail
-# TODO: fix these redirects, they seem to not work
-rdr on $wan_if proto tcp from any to ($wan_if) port 80 -> $jail_ingress_ip port 80
-rdr on $wan_if proto tcp from any to ($wan_if) port 443 -> $jail_ingress_ip port 443
-rdr on $lan_if proto tcp from any to ($lan_if) port 80 -> $jail_ingress_ip port 80
-rdr on $lan_if proto tcp from any to ($lan_if) port 443 -> $jail_ingress_ip port 443
-
 # Default block all
 block in all
 
@@ -21,7 +14,7 @@ block in all
 pass out all keep state
 
 # Allow inbound HTTP/HTTPS on both interfaces
-pass in on $wan_if proto tcp from any to ($wan_if) port { 80, 443 } keep state
+pass in on $wan_if proto tcp from any to any port { 80, 443 } keep state
 pass in on $lan_if proto tcp from any to ($lan_if) port { 80, 443 } keep state
 
 # Allow SSH only on lan0

@@ -12,7 +12,7 @@
   when: resolv_conf.changed
 
 - name: Restart networking if interface configuration changed
-  shell: service netif restart && service routing restart && service dhclient restart wan0
+  shell: service netif restart && service routing restart
   when: rc_conf.changed or resolv_conf.changed
 
 - name: Set up sshd
@@ -83,24 +83,3 @@
     group: wheel
     mode: "0755"
   register: do_dyndns_sh
-
-- name: Set up /usr/local/etc/rc.d/do_dyndns
-  template:
-    src: usr_local_etc_rc.d_do_dyndns.j2
-    dest: /usr/local/etc/rc.d/do_dyndns
-    owner: root
-    group: wheel
-    mode: "0755"
-  register: do_dyndns_rc
-
-- name: Start do_dyndns
-  service:
-    name: do_dyndns
-    state: started
-  register: do_dyndns_start
-
-- name: Restart do_dyndns
-  service:
-    name: do_dyndns
-    state: restarted
-  when: not do_dyndns_start.changed and (do_dyndns_sh.changed or do_dyndns_rc.changed)
