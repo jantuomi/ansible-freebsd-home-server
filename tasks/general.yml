@@ -66,3 +66,27 @@
     owner: root
     group: wheel
     mode: "0755"
+
+- name: Copy backup SSH private key
+  copy:
+    src: "{{ backup_ssh_privkey_file }}"
+    dest: /root/.ssh/backup
+    owner: root
+    group: wheel
+    mode: "0600"
+
+- name: Copy backup SSH public key
+  copy:
+    src: "{{ backup_ssh_pubkey_file }}"
+    dest: /root/.ssh/backup.pub
+    owner: root
+    group: wheel
+    mode: "0644"
+
+- name: Copy SSH config
+  template:
+    src: root_ssh_config.j2
+    dest: /root/.ssh/config
+    owner: root
+    group: wheel
+    mode: "0644"
