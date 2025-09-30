@@ -1,48 +1,247 @@
-#!/usr/bin/env bash
+{% raw %}#!/usr/bin/env bash
 set -euo pipefail
 
+# ===== CONFIG (filled by Ansible) =====
+KEEP_LOCAL=30
+KEEP_REMOTE=10
 KEYFILE="/root/.ssh/backup"
-DATASET="{{ backup_zfs_dataset }}"
-USER="{{ backup_ssh_user }}"
-HOST="{{ backup_ssh_host }}"
-KEEP=10
+HOST_DIR="backup"
+DATASET="{% endraw %}{{ backup_zfs_dataset }}{% raw %}"
+USER="{% endraw %}{{ backup_ssh_user }}{% raw %}"
+HOST="{% endraw %}{{ backup_ssh_host }}{% raw %}"
+EMAIL_TO=root
+# =====================================
 
-# END OF CONFIG
+# ----- Helpers -----
+die() { echo "Error: $*" >&2; exit 1; }
 
-HOST_DIR=backup
-DATE="$(date +%Y-%m-%d-%H-%M-%S%z | tr '+' '-')"
-SNAPSHOT="${DATASET}@${DATE}"
-TARGET="${HOST}/${HOST_DIR}/${SNAPSHOT}.enc"
+require_cmds() {
+  local cmds=("$@")
+  for c in "${cmds[@]}"; do command -v "$c" >/dev/null 2>&1 || die "Missing command: $c"; done
+}
 
-echo "Taking snapshot \"$SNAPSHOT\""
-(set -x; zfs snapshot "$SNAPSHOT")
+timestamp() {
+  # Replace '+' with '-' so timezone is filename-safe and lexicographically sortable within TZ.
+  date +%Y-%m-%d-%H-%M-%S%z | tr '+' '-'
+}
 
-echo "Snapshot created"
-echo "Encrypting snapshot and backing up to target \"${TARGET}\""
+latest_snapshot_for_dataset() {
+  # Latest snapshot on the TOP dataset only (newest first). Returns e.g. zroot@2025-09-30-...
+  zfs list -t snapshot -o name -S creation "$DATASET" 2>/dev/null \
+    | awk 'NR==2{print; exit}'
+}
 
-(set -x; zfs send "$SNAPSHOT" | age -e -i "$KEYFILE" | curl --key "$KEYFILE" -u ${USER}: -T - "sftp://${TARGET}")
+list_top_snapshots_newest_first() {
+  # Only list snapshots on the top dataset (not children), newest first.
+  zfs list -t snapshot -o name -S creation "$DATASET" 2>/dev/null \
+    | awk 'NR>1{print $1}'
+}
 
-echo "Getting listing of existing backups"
-# Note: sorting only produces a time-ordered list inside one timezone
-# This is fine because we're only taking a snapshot every day, so the timezone issue is not relevant
-BACKUPS=$(set -x; echo "ls ${HOST_DIR}" | sftp -i "${KEYFILE}" "${USER}@${HOST}" 2>/dev/null | tail -n +2 | sort)
-COUNT=$(set -x; echo $BACKUPS | wc -w | awk '{print $1}')
+list_remote_backups_sorted() {
+  # Note: sorting strictly orders only within the same timezone in the name, which is fine for our daily cadence.
+  # We store files under ${HOST_DIR}/<dataset>@<timestamp>.enc
+  echo "ls ${HOST_DIR}" \
+    | sftp -q -i "${KEYFILE}" "${USER}@${HOST}" 2>/dev/null \
+    | tail -n +2 | sort
+}
 
-if [ ! "$COUNT" -gt "$KEEP" ]; then
-    echo "Acceptable number of backups on remote, no need to prune"
-    echo "Done"
-    exit 0
-fi
+# Upload a local file to the storage box path "${HOST_DIR}/<remote_name>"
+sftp_put() {
+  local local_file="$1"
+  local remote_name="$2"  # just the filename, no directory
+  sftp -i "${KEYFILE}" "${USER}@${HOST}" <<EOF
+put ${local_file} ${HOST_DIR}/${remote_name}
+EOF
+}
 
-echo "Pruning old backups, keeping latest ${KEEP}"
-for BACKUP in $BACKUPS; do
-    if [ ! "$COUNT" -gt "$KEEP" ]; then
-        echo "Acceptable number of backups on remote, no need to prune"
-        break
+# ----- Subcommands -----
+cmd_init_remote() {
+  echo ""
+  echo "[init-remote]"
+  require_cmds sftp
+
+  echo "Checking for remote directory: ${HOST_DIR}"
+  if echo "ls ${HOST_DIR}" | sftp -i "${KEYFILE}" "${USER}@${HOST}" >/dev/null 2>&1; then
+    echo "Remote directory already exists: ${HOST_DIR}"
+    return 0
+  fi
+
+  echo "Creating remote directory: ${HOST_DIR}"
+  set +e
+  sftp -i "${KEYFILE}" "${USER}@${HOST}" <<EOF
+mkdir ${HOST_DIR}
+EOF
+  rc=$?
+  set -e
+  if [[ $rc -ne 0 ]]; then
+    die "Failed to create remote directory ${HOST_DIR}"
+  fi
+
+  # Re-check
+  if echo "ls ${HOST_DIR}" | sftp -q -i "${KEYFILE}" "${USER}@${HOST}" >/dev/null 2>&1; then
+    echo "Remote directory created: ${HOST_DIR}"
+  else
+    die "Remote directory ${HOST_DIR} not found after creation"
+  fi
+}
+
+cmd_snapshot() {
+  echo ""
+  echo "[snapshot]"
+  require_cmds zfs date tr
+  local ts snap
+  ts="$(timestamp)"
+  snap="${DATASET}@${ts}"
+  echo "Taking recursive snapshot \"${snap}\""
+  (set -x; zfs snapshot -r "${snap}")
+  echo "Recursive snapshot \"${snap}\" created"
+}
+
+cmd_send_to_remote() {
+  echo ""
+  echo "[send-to-remote]"
+  require_cmds zfs age sftp mktemp stat
+
+  local snap base target tmp size_bytes
+  snap="$(latest_snapshot_for_dataset)"
+  [[ -n "${snap}" ]] || die "No snapshot found to send. Run 'snapshot' first or ensure the dataset has snapshots."
+
+  base="$(basename "${snap}")"       # e.g., zroot@2025-09-30-12-00-00-0300
+  target="${base}.enc"
+  tmp="$(mktemp -t backup_send.XXXXXX)"
+  trap 'rm -f "${tmp}"' EXIT
+
+  echo "Creating encrypted replication stream to temp file: ${tmp}"
+  # -R: recursive hierarchy, -v: progress to stderr, -c: send compressed (keeps on-disk compression)
+  (set -x; zfs send -Rvc "${snap}" | age -e -i "${KEYFILE}" > "${tmp}")
+
+  size_bytes="$(stat -f %z "${tmp}" 2>/dev/null || stat -c %s "${tmp}" 2>/dev/null || echo "unknown")"
+  echo "Local stream size: ${size_bytes} bytes"
+
+  echo "Uploading via SFTP to ${HOST}:${HOST_DIR}/${target}"
+  if sftp_put "${tmp}" "${target}"; then
+    echo "Upload complete"
+  else
+    die "SFTP upload failed (does the remote directory '${HOST_DIR}' exist? Run 'init-remote')"
+  fi
+
+  rm -f "${tmp}"
+  trap - EXIT
+}
+
+cmd_prune_remote() {
+  echo ""
+  echo "[prune-remote]"
+  require_cmds sftp awk sort wc
+
+  echo "Fetching remote backup listing from sftp://${HOST}/${HOST_DIR}"
+  BACKUPS="$(list_remote_backups_sorted || true)"
+  mapfile -t BACKUP_ARR < <(printf "%s\n" "${BACKUPS}")
+  local count="${#BACKUP_ARR[@]}"
+
+  if [[ "${count}" -le "${KEEP_REMOTE}" ]]; then
+    echo "Remote backups (${count}) <= KEEP_REMOTE (${KEEP_REMOTE}); nothing to prune."
+    return 0
+  fi
+
+  echo "Pruning remote backups, keeping latest ${KEEP_REMOTE} (will delete $(("${count}" - "${KEEP_REMOTE}")))"
+  local to_delete_count=$((count - KEEP_REMOTE))
+  local deleted=0
+  for ((i=0; i<to_delete_count; i++)); do
+    b="${BACKUP_ARR[$i]}"
+    [[ -n "${b}" ]] || continue
+    echo "Deleting remote: ${b}"
+    set +e
+    echo "rm ${HOST_DIR}/${b}" | sftp -i "${KEYFILE}" "${USER}@${HOST}"
+    rc=$?
+    set -e
+    if [[ $rc -ne 0 ]]; then
+      die "Failed to delete remote file: ${b}"
     fi
+    deleted=$((deleted+1))
+  done
+  echo "Remote prune done. Deleted: ${deleted}"
+}
 
-    (set -x; echo "rm ${BACKUP}" | sftp -i "${KEYFILE}" "${USER}@${HOST}")
-    COUNT=$((COUNT - 1))
-done
+cmd_prune_local() {
+  echo ""
+  echo "[prune-local]"
+  require_cmds zfs awk
 
-echo "Done"
+  echo "Pruning local snapshots on dataset: ${DATASET}; keeping latest ${KEEP_LOCAL}"
+  mapfile -t snaps < <(list_top_snapshots_newest_first)
+  local total="${#snaps[@]}"
+  if [[ "${total}" -le "${KEEP_LOCAL}" ]]; then
+    echo "Local snapshots (${total}) <= KEEP_LOCAL (${KEEP_LOCAL}); nothing to prune."
+    return 0
+  fi
+
+  local deleted=0
+  # List is newest-first; skip first KEEP_LOCAL and destroy the rest RECURSIVELY across the tree
+  for ((i=KEEP_LOCAL; i<total; i++)); do
+    s="${snaps[$i]}"   # e.g., zroot@2025-09-30-...
+    echo "Destroying recursive snapshot: ${s}"
+    (set -x; zfs destroy -r "${s}")
+    deleted=$((deleted+1))
+  done
+  echo "Local prune done. Deleted: ${deleted}"
+}
+
+cmd_notify() {
+    echo "Sending notification email..."
+    local latest=$(latest_snapshot_for_dataset "${DATASET}")
+    echo "Backup of snapshot ${latest} completed at $(date)" | mail -s "Backup completed" "${EMAIL_TO}"
+}
+
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") [subcommand [subcommand ...]]
+
+Subcommands (executed in order):
+  init-remote      Create the remote backup directory (\$HOST_DIR). Succeeds if it already exists.
+  snapshot         Create a new **recursive** ZFS snapshot for \$DATASET
+  send-to-remote   Create encrypted replication stream to a temp file, then upload via SFTP
+  prune-remote     Keep latest \$KEEP_REMOTE backups on remote (default ${KEEP_REMOTE})
+  prune-local      Keep latest \$KEEP_LOCAL local snapshots on the top dataset (default ${KEEP_LOCAL})
+  notify           Send notification email
+
+Notes:
+  - Run 'init-remote' once before the first upload, or anytime after changing \$HOST_DIR.
+  - Local pruning destroys older snapshots **recursively** to maintain consistency across descendants.
+
+Examples:
+  $(basename "$0") init-remote snapshot send-to-remote prune-remote prune-local
+EOF
+}
+
+# ----- Main -----
+main() {
+  if [[ $# -eq 0 ]]; then
+    usage
+    exit 1
+  fi
+
+  # sanity
+  [[ -n "${DATASET}" ]] || die "DATASET not set"
+  [[ -n "${USER}" && -n "${HOST}" ]] || die "USER/HOST not set"
+  [[ -r "${KEYFILE}" ]] || die "KEYFILE not readable: ${KEYFILE}"
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      init-remote)    cmd_init_remote ;;
+      snapshot)        cmd_snapshot ;;
+      send-to-remote)  cmd_send_to_remote ;;
+      prune-remote)    cmd_prune_remote ;;
+      prune-local)     cmd_prune_local ;;
+      notify)          cmd_notify ;;
+      -h|--help|help)  usage; exit 0 ;;
+      *) die "Unknown subcommand: $1" ;;
+    esac
+    shift
+  done
+
+  echo "Done."
+}
+
+main "$@"
+{% endraw %}

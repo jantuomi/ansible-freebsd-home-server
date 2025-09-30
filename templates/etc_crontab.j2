@@ -24,5 +24,7 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 # Update dynamic DNS
 */1     *       *       *       *       root    logto -e /var/log/do_dyndns.err /usr/local/bin/do_dyndns.sh
 
-# Take backups every day at 3:05 AM
-5       3       *       *       *       root    logto /var/log/backup /usr/local/bin/backup
+# Take snapshots every day at 3:05 AM
+5       3       *       *       *       root    logto /var/log/backup /usr/local/bin/backup snapshot prune-local
+# Send backup snapshots to remote every third day at 4:05 AM
+5       4       */3     *       *       root    logto /var/log/backup /usr/local/bin/backup send-to-remote prune-remote notify
