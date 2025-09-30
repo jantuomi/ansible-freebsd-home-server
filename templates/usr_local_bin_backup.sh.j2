@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+KEYFILE="/root/.ssh/backup"
+DATASET="{{ backup_zfs_dataset }}"
+USER="{{ backup_ssh_user }}"
+HOST="{{ backup_ssh_host }}"
+KEEP=10
+
+# END OF CONFIG
+
+HOST_DIR=backup
+DATE="$(date +%Y-%m-%d-%H-%M-%S%z | tr '+' '-')"
+SNAPSHOT="${DATASET}@${DATE}"
+TARGET="${HOST}/${HOST_DIR}/${SNAPSHOT}.enc"
+
+echo "Taking snapshot \"$SNAPSHOT\""
+(set -x; zfs snapshot "$SNAPSHOT")
+
+echo "Snapshot created"
+echo "Encrypting snapshot and backing up to target \"${TARGET}\""
+
+(set -x; zfs send "$SNAPSHOT" | age -e -i "$KEYFILE" | curl --key "$KEYFILE" -u ${USER}: -T - "sftp://${TARGET}")
+
+echo "Getting listing of existing backups"
+# Note: sorting only produces a time-ordered list inside one timezone
+# This is fine because we're only taking a snapshot every day, so the timezone issue is not relevant
+BACKUPS=$(set -x; echo "ls ${HOST_DIR}" | sftp -i "${KEYFILE}" "${USER}@${HOST}" 2>/dev/null | tail -n +2 | sort)
+COUNT=$(set -x; echo $BACKUPS | wc -w | awk '{print $1}')
+
+if [ ! "$COUNT" -gt "$KEEP" ]; then
+    echo "Acceptable number of backups on remote, no need to prune"
+    echo "Done"
+    exit 0
+fi
+
+echo "Pruning old backups, keeping latest ${KEEP}"
+for BACKUP in $BACKUPS; do
+    if [ ! "$COUNT" -gt "$KEEP" ]; then
+        echo "Acceptable number of backups on remote, no need to prune"
+        break
+    fi
+
+    (set -x; echo "rm ${BACKUP}" | sftp -i "${KEYFILE}" "${USER}@${HOST}")
+    COUNT=$((COUNT - 1))
+done
+
+echo "Done"

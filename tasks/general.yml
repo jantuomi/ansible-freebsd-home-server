@@ -90,3 +90,11 @@
     owner: root
     group: wheel
     mode: "0644"
+
+- name: Copy backup script
+  template:
+    src: usr_local_bin_backup.sh.j2
+    dest: /usr/local/bin/backup
+    owner: root
+    group: wheel
+    mode: "0755"

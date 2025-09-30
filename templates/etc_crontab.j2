@@ -23,3 +23,6 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
 # Update dynamic DNS
 */1     *       *       *       *       root    logto -e /var/log/do_dyndns.err /usr/local/bin/do_dyndns.sh
+
+# Take backups every day at 3:05 AM
+5       3       *       *       *       root    logto /var/log/backup /usr/local/bin/backup

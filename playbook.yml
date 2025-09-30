@@ -24,6 +24,7 @@
     backup_ssh_user: "{{ lookup('env', 'BACKUP_SSH_USER') }}"
     backup_ssh_privkey_file: "{{ lookup('env', 'BACKUP_SSH_PRIVKEY_FILE') }}"
     backup_ssh_pubkey_file: "{{ lookup('env', 'BACKUP_SSH_PUBKEY_FILE') }}"
+    backup_zfs_dataset: zroot
     lan_ipv4_cidr: 192.168.0.10/16
     lan_ipv4_gateway: 192.168.0.1
     lan_search_domain: local.jan.systems
@@ -32,7 +33,7 @@
     jails:
       - { name: ingress, num: 1 }
       - { name: postgres, num: 2 }
-      - { name: backup, num: 3 }
+      - { name: irc_thelounge, num: 3 }
       - { name: taulubot, num: 4 }
       - { name: veetibot, num: 5 }
       - { name: hommabot, num: 6 }
@@ -43,7 +44,6 @@
       - { name: spliit, num: 11 }
       - { name: stirling-pdf, num: 12 }
       - { name: ente, num: 13 }
-      - { name: irc_thelounge, num: 14 }
     static_sites:
       - { site: "homepage", host: "jan.systems", tls: false }
       - { site: "homepage", host: "pursotin.jan.systems", tls: true }
