@@ -66,20 +66,3 @@
 - name: Reload pf rules
   shell: pfctl -f /etc/pf.conf
   when: pf_conf.changed
-
-- name: Set up /usr/local/etc/do_dyndns_auth
-  template:
-    src: usr_local_etc_do_dyndns_auth.j2
-    dest: /usr/local/etc/do_dyndns_auth
-    owner: root
-    group: wheel
-    mode: "0600"
-
-- name: Set up /usr/local/bin/do_dyndns.sh
-  template:
-    src: usr_local_bin_do_dyndns.sh.j2
-    dest: /usr/local/bin/do_dyndns.sh
-    owner: root
-    group: wheel
-    mode: "0755"
-  register: do_dyndns_sh

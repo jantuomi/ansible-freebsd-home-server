@@ -1,0 +1,66 @@
+#!/bin/sh
+# Minimal Hetzner DNS updater for pfSense/FreeBSD
+# - Always updates on startup (no pre-check)
+# - Then polls and only updates when IP changes
+# - Keeps last IP only in memory (no files)
+
+# --- CONFIG ---------------------------------------------------------------
+API_TOKEN="$(cat /usr/local/etc/hetzner_auth)"
+ZONE_ID="{{ hetzner_zone_id }}"
+RECORD_ID="{{ hetzner_record_id }}"
+RECORD_NAME=pursotin
+RECORD_TYPE="A"
+IFACE_CMD="ifconfig epw1b"
+
+POLL_INTERVAL=60
+API_BASE="https://dns.hetzner.com/api/v1"
+TTL="300"
+# --------------------------------------------------------------------------
+
+get_ip() {
+  # Expect FreeBSD-style ifconfig output; grab first IPv4 addr
+  # Example: 'inet 192.0.2.3 ...'
+  sh -c "$IFACE_CMD" 2>/dev/null | awk '/inet[[:space:]]/ {print $2; exit}'
+}
+
+update_record() {
+  ip="$1"
+  body=$(printf '{"type":"%s","name":"%s","value":"%s","zone_id":"%s","ttl":%s}' \
+               "$RECORD_TYPE" "$RECORD_NAME" "$ip" "$ZONE_ID" "$TTL")
+
+  http_code=$(
+    curl -sS -o /dev/null -w "%{http_code}" -X PUT \
+      -H "Content-Type: application/json" \
+      -H "Auth-API-Token: ${API_TOKEN}" \
+      --data "$body" \
+      "${API_BASE}/records/${RECORD_ID}"
+  )
+
+  [ "$http_code" = "200" ] || {
+    echo "$(date -u +"%F %T") update failed (HTTP $http_code)" >&2
+    return 1
+  }
+
+  echo "$(date -u +"%F %T") updated ${RECORD_NAME} to ${ip}"
+  return 0
+}
+
+# --- Startup: always update once (no check) --------------------------------
+last_ip=""
+ip="$(get_ip)"
+if [ -n "$ip" ]; then
+  update_record "$ip" && last_ip="$ip"
+else
+  echo "$(date -u +"%F %T") no IPv4 from: ${IFACE_CMD}; will retry..." >&2
+fi
+
+# --- Poll loop: update only on change --------------------------------------
+while :; do
+  ip="$(get_ip)"
+  if [ -n "$ip" ] && [ "$ip" != "$last_ip" ]; then
+    if update_record "$ip"; then
+      last_ip="$ip"
+    fi
+  fi
+  sleep "$POLL_INTERVAL"
+done

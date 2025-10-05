@@ -22,16 +22,22 @@ http {
 
     {% for site in static_sites -%}
     {% if site.tls -%}
-    {#server {
-        listen 443 ssl;
+    server {
         server_name {{ site.host }};
-
         root /usr/local/www/{{ site.site }};
+
+        listen 443 ssl;
+        listen [::]:443 ssl;
+        http2 on;
+
         index index.html;
 
         location / {
             try_files $uri $uri.html $uri/ =404;
         }
+
+        # See https://ssl-config.mozilla.org/#server=nginx&version=1.28.0&config=intermediate&openssl=3.4.0&guideline=5.7
+        add_header Strict-Transport-Security "max-age=63072000" always;
 
         access_log /var/log/nginx/{{ site.site }}/access.log;
         error_log /var/log/nginx/{{ site.site }}/error.log;
@@ -41,7 +47,6 @@ http {
         include /usr/local/etc/letsencrypt/options-ssl-nginx.conf;
         ssl_dhparam /usr/local/etc/letsencrypt/ssl-dhparams.pem;
     }
-    #}
     {% endif -%}
 
     server {

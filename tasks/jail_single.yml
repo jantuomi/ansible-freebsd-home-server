@@ -8,6 +8,9 @@
   shell: zfs clone zroot/jails/templates/{{ jail_userland_version }}@base "zroot/jails/containers/{{ jail.name }}"
   when: check_jail_directory.rc != 0
 
+- name: Make resolv.conf immutable
+  shell: chflags schg /usr/local/jails/containers/{{ jail.name }}/etc/resolv.conf
+
 - name: "Check if jail {{ jail.name }} is running"
   shell: jls -j "{{ jail.name }}"
   failed_when: false

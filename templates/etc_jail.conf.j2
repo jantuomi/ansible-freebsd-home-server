@@ -12,7 +12,7 @@ exec.prestart    += "ifconfig ${epl}a up";
 exec.prestart    += "ifconfig brlan0 addm ${epl}a";
 exec.clean;
 exec.start        = "/bin/sh /etc/rc";
-exec.poststart    = "jexec ${name} ifconfig ${epl}b 192.168.2.${num}/16";
+exec.poststart    = "jexec ${name} ifconfig ${epl}b 192.168.2.${num}/16 up";
 exec.poststart   += "jexec ${name} route add default 192.168.0.1 || echo 'Failed to add default route'";
 exec.stop         = "/bin/sh /etc/rc.shutdown";
 exec.poststop    += "ifconfig ${epl}b -vnet $name"; # workaround to bug 238326: move ${epl}b from the jail to the host when stopping jail services
@@ -32,6 +32,10 @@ path = "/usr/local/jails/containers/${name}";
 {% for jail in jails %}
 {{ jail.name }} {
   $num           = "{{ jail.num }}";
+  {% if jail.name == "ingress" %}
+  exec.poststart    = "jexec ${name} ifconfig ${epl}b 192.168.2.${num}/16 up";
+  exec.poststart    = "jexec ${name} ifconfig epw1b up";
+  exec.poststart   += "jexec ${name} service dhclient restart epw1b";
+  {% endif %}
 }
-
 {% endfor %}
