@@ -1,0 +1,10 @@
+# /etc/crontab - root's crontab for FreeBSD
+#
+#
+SHELL=/bin/sh
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+#
+#minute hour    mday    month   wday    who     command
+
+# Update LetsEncrypt certificates every day at 2:00 AM
+0       2       *       *       *       root    certbot certonly --nginx -n -m jan@jantuomi.fi --agree-tos -d {{ items }}
