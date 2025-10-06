@@ -64,32 +64,3 @@
     service -j ingress nginx enable
     service -j ingress nginx onestart
   when: ingress_nginx_enabled.rc != 0
-
-- name: Configure hetzner-ddns
-  template:
-    src: usr_local_etc_rc.d_hetzner_ddns.j2
-    dest: /usr/local/jails/containers/ingress/usr/local/etc/rc.d/hetzner_ddns
-    owner: root
-    group: wheel
-    mode: "0755"
-
-- name: Install hetzner-ddns script
-  template:
-    src: usr_local_bin_hetzner_ddns.sh.j2
-    dest: /usr/local/jails/containers/ingress/usr/local/bin/hetzner_ddns.sh
-    owner: root
-    group: wheel
-    mode: "0755"
-
-- name: Set up hetzner_auth
-  template:
-    src: usr_local_etc_hetzner_auth.j2
-    dest: /usr/local/jails/containers/ingress/usr/local/etc/hetzner_auth
-    owner: root
-    group: wheel
-    mode: "0600"
-
-- name: Restart hetzner-ddns
-  shell: |
-    service -j ingress hetzner_ddns enable
-    service -j ingress hetzner_ddns restart
