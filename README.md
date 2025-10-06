@@ -6,7 +6,6 @@ This repository describes my home server setup with Ansible. The server machine 
 
 1. Download a recent FreeBSD release. Tested with https://download.freebsd.org/releases/amd64/amd64/ISO-IMAGES/14.3/FreeBSD-14.3-RELEASE-amd64-memstick.img.
 2. Run the installer off a USB drive. During installation, configure:
-
    - a Finnish keymap
    - hostname "pursotin"
    - an Auto-ZFS setup with Root-on-ZFS, pool name "zroot"
@@ -34,8 +33,10 @@ PermitRootLogin yes
 Use an [.envrc file](https://direnv.net/) to provide secrets through the shell environment. Required variables are listed in `playbook.yml`.
 
 ```shell
-ansible-playbook -i inventory playbook.yml
+ansible-playbook -i inventory playbook.yml -t [tag1] [tag2] ...
 ```
+
+See `playbook.yml` for available tags.
 
 ## Author
 

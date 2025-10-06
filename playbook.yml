@@ -55,16 +55,25 @@
 
   tasks:
     - name: Run general tasks
+      tags: [general]
       import_tasks: tasks/general.yml
 
     - name: Run network tasks
+      tags: [network]
       import_tasks: tasks/network.yml
 
     - name: Run email tasks
+      tags: [email]
       import_tasks: tasks/email.yml
 
     - name: Run ZFS tasks
+      tags: [zfs]
       import_tasks: tasks/zfs.yml
 
-    - name: Run jails tasks
+    - name: Run common jails tasks
+      tags: [jails]
       import_tasks: tasks/jails.yml
+
+    - name: Run ingress jail tasks
+      tags: [jail_ingress]
+      import_tasks: tasks/jail_ingress.yml
