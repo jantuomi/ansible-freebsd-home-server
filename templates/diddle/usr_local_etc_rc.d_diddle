@@ -1,0 +1,43 @@
+#!/bin/sh
+#
+# PROVIDE: diddle
+# REQUIRE: NETWORKING
+# KEYWORD: shutdown
+#
+# Enable in /etc/rc.conf:
+#   diddle_enable="YES"
+#
+. /etc/rc.subr
+
+name="diddle"
+rcvar=diddle_enable
+
+load_rc_config $name
+
+: ${diddle_command:=/usr/local/bin/diddle}
+: ${diddle_log:=/var/log/${name}.log}
+
+start_cmd="${name}_start"
+stop_cmd="${name}_stop"
+status_cmd="${name}_status"
+
+extra_commands="status"
+
+diddle_start() {
+    /usr/local/bin/logto ${diddle_log} ${diddle_command} &
+}
+
+diddle_status() {
+    if ps aux | grep diddle | grep -v grep | grep -v rc.d/diddle; then
+        echo "diddle is running"
+    else
+        echo "diddle is not running"
+        exit 1
+    fi
+}
+
+diddle_stop() {
+    ps aux | grep diddle | grep -v grep | grep -v rc.d/diddle | awk '{print $2}' | xargs kill -TERM
+}
+
+run_rc_command "$1"

@@ -1,0 +1,17 @@
+#!/bin/sh
+
+set -eux
+
+PATH=$PATH:/usr/local/bin
+
+cd /root/diddle
+
+if [ ! -f venv ]; then
+    python3.11 -m venv venv
+fi
+
+PATH=$PATH:/root/diddle/venv/bin
+
+pip install -r requirements.txt
+python apply_migrations.py
+gunicorn --bind "0.0.0.0:80" -w 4 app:app

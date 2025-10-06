@@ -27,6 +27,8 @@
     backup_ssh_privkey_file: "{{ lookup('env', 'BACKUP_SSH_PRIVKEY_FILE') }}"
     backup_ssh_pubkey_file: "{{ lookup('env', 'BACKUP_SSH_PUBKEY_FILE') }}"
     backup_zfs_dataset: zroot
+    diddle_email_host_user: "{{ lookup('env', 'DIDDLE_EMAIL_HOST_USER') }}"
+    diddle_email_host_password: "{{ lookup('env', 'DIDDLE_EMAIL_HOST_PASSWORD') }}"
     lan_ipv4_cidr: 192.168.0.10/16
     lan_ipv4_gateway: 192.168.0.1
     lan_search_domain: local.jan.systems
@@ -77,3 +79,7 @@
     - name: Run ingress jail tasks
       tags: [jail_ingress]
       import_tasks: tasks/jail_ingress.yml
+
+    - name: Run diddle jail tasks
+      tags: [jail_diddle]
+      import_tasks: tasks/jail_diddle.yml

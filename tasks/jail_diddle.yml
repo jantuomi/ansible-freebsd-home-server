@@ -1,0 +1,63 @@
+- name: Install packages inside ingress jail
+  loop:
+    - { jail: diddle, package: python311 }
+    - { jail: diddle, package: py311-sqlite3 }
+    - { jail: diddle, package: git }
+  include_tasks: pkg_jail_install.yml
+
+- name: Install clone.sh
+  template:
+    src: diddle/root_clone.sh
+    dest: /usr/local/jails/containers/diddle/root/clone.sh
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Clone & update diddle
+  shell: jexec diddle sh /root/clone.sh
+  register: diddle_git
+  changed_when: diddle_git.rc == 100
+  failed_when: diddle_git.rc != 0 and diddle_git.rc != 100
+
+- name: Install diddle env file
+  template:
+    src: diddle/root_diddle_env.j2
+    dest: /usr/local/jails/containers/diddle/root/diddle/.env
+    owner: root
+    group: wheel
+    mode: "0600"
+  register: diddle_env
+
+- name: Install diddle startup script
+  template:
+    src: diddle/usr_local_bin_diddle
+    dest: /usr/local/jails/containers/diddle/usr/local/bin/diddle
+    owner: root
+    group: wheel
+    mode: "0755"
+  register: diddle_bin
+
+- name: Install diddle service
+  template:
+    src: diddle/usr_local_etc_rc.d_diddle
+    dest: /usr/local/jails/containers/diddle/usr/local/etc/rc.d/diddle
+    owner: root
+    group: wheel
+    mode: "0755"
+  register: diddle_rc
+
+- name: Check if diddle service is running
+  command: service -j diddle diddle status
+  changed_when: false
+  failed_when: false
+  register: diddle_status
+
+- name: Ensure diddle service is enabled
+  shell: service -j diddle diddle enable
+  changed_when: false
+  failed_when: false
+
+- name: (Re)start diddle service
+  shell: service -j diddle diddle restart
+  when: diddle_git.changed or diddle_bin.changed
+    or diddle_rc.changed or diddle_env.changed or diddle_status.rc != 0
