@@ -47,7 +47,6 @@ http {
         include /usr/local/etc/letsencrypt/options-ssl-nginx.conf;
         ssl_dhparam /usr/local/etc/letsencrypt/ssl-dhparams.pem;
     }
-    {% endif -%}
 
     server {
         listen 80;
@@ -58,12 +57,45 @@ http {
         access_log /var/log/nginx/{{ site.site }}/access.log;
         error_log /var/log/nginx/{{ site.site }}/error.log;
     }
+    {% else %}
+    server {
+        server_name {{ site.host }};
+        root /usr/local/www/{{ site.site }};
+
+        listen 80;
+        http2 on;
+
+        index index.html;
+
+        location / {
+            try_files $uri $uri.html $uri/ =404;
+        }
+
+        access_log /var/log/nginx/{{ site.site }}/access.log;
+        error_log /var/log/nginx/{{ site.site }}/error.log;
+    }
+    {% endif -%}
 
     {% endfor -%}
     {% for jail in jails -%}
     server {
+        server_name {{ jail.name }}.jan.systems;
+        http2 on;
+
+        {% if "tls" in jail and jail.tls -%}
+        listen 443 ssl;
+        listen [::]:443 ssl;
+
+        # See https://ssl-config.mozilla.org/#server=nginx&version=1.28.0&config=intermediate&openssl=3.4.0&guideline=5.7
+        add_header Strict-Transport-Security "max-age=63072000" always;
+
+        ssl_certificate /usr/local/etc/letsencrypt/live/{{ jail.name }}.jan.systems/fullchain.pem;
+        ssl_certificate_key /usr/local/etc/letsencrypt/live/{{ jail.name }}.jan.systems/privkey.pem;
+        include /usr/local/etc/letsencrypt/options-ssl-nginx.conf;
+        ssl_dhparam /usr/local/etc/letsencrypt/ssl-dhparams.pem;
+        {% else %}
         listen 80;
-        server_name {{ jail.name }}.jan.systems {{ jail.name }}.local.jan.systems;
+        {% endif %}
 
         location / {
             proxy_pass http://192.168.2.{{ jail.num }};

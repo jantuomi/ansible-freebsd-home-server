@@ -42,16 +42,14 @@
       - { name: veetibot, num: 5 }
       - { name: hommabot, num: 6 }
       - { name: aggro, num: 7 }
-      - { name: diddle, num: 8 }
+      - { name: diddle, num: 8, tls: true }
       - { name: gallery_sakari, num: 9 }
       - { name: gallery_leo, num: 10 }
       - { name: spliit, num: 11 }
       - { name: stirling-pdf, num: 12 }
       - { name: ente, num: 13 }
     static_sites:
-      - { site: "homepage", host: "jan.systems", tls: false }
-      - { site: "homepage", host: "pursotin.jan.systems", tls: true }
-      - { site: "homepage", host: "local.jan.systems", tls: false }
+      - { site: "homepage", host: "jan.systems", tls: true }
     static_site_dirs:
       homepage: "{{ lookup('env', 'JAN_SYSTEMS_HTML_DIR') }}"
 
