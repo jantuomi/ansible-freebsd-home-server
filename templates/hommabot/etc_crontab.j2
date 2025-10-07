@@ -1,0 +1,10 @@
+# /etc/crontab - root's crontab for FreeBSD
+#
+#
+SHELL=/bin/sh
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+#
+#minute hour    mday    month   wday    who     command
+
+# Run hommabot every Monday at 9:00 AM
+0       9       *       *       1       root    /bin/sh -c "cd /root/hommabot && node index.js"

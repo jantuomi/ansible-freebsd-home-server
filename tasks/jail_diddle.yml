@@ -1,4 +1,4 @@
-- name: Install packages inside ingress jail
+- name: Install packages inside jail
   loop:
     - { jail: diddle, package: python311 }
     - { jail: diddle, package: py311-sqlite3 }
@@ -7,14 +7,14 @@
 
 - name: Install clone.sh
   template:
-    src: diddle/root_clone.sh
+    src: root_clone.sh
     dest: /usr/local/jails/containers/diddle/root/clone.sh
     owner: root
     group: wheel
     mode: "0755"
 
 - name: Clone & update diddle
-  shell: jexec diddle sh /root/clone.sh
+  shell: jexec diddle sh /root/clone.sh https://github.com/jantuomi/diddle.git /root/diddle
   register: diddle_git
   changed_when: diddle_git.rc == 100
   failed_when: diddle_git.rc != 0 and diddle_git.rc != 100

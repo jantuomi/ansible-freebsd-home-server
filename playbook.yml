@@ -29,6 +29,10 @@
     backup_zfs_dataset: zroot
     diddle_email_host_user: "{{ lookup('env', 'DIDDLE_EMAIL_HOST_USER') }}"
     diddle_email_host_password: "{{ lookup('env', 'DIDDLE_EMAIL_HOST_PASSWORD') }}"
+    hommabot_telegram_bot_token: "{{ lookup('env', 'HOMMABOT_TELEGRAM_BOT_TOKEN') }}"
+    hommabot_g_sa_json_b64: "{{ lookup('env', 'HOMMABOT_G_SA_JSON_B64') }}"
+    hommabot_sheets_spreadsheet_id: "{{ lookup('env', 'HOMMABOT_SHEETS_SPREADSHEET_ID') }}"
+    hommabot_sheets_range: "{{ lookup('env', 'HOMMABOT_SHEETS_RANGE') }}"
     lan_ipv4_cidr: 192.168.0.10/16
     lan_ipv4_gateway: 192.168.0.1
     lan_search_domain: local.jan.systems
@@ -81,3 +85,7 @@
     - name: Run diddle jail tasks
       tags: [jail_diddle]
       import_tasks: tasks/jail_diddle.yml
+
+    - name: Run hommabot jail tasks
+      tags: [jail_hommabot]
+      import_tasks: tasks/jail_hommabot.yml

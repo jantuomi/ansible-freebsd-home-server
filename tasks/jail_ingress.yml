@@ -1,4 +1,4 @@
-- name: Install packages inside ingress jail
+- name: Install packages inside jail
   loop:
     - { jail: ingress, package: nginx }
     - { jail: ingress, package: py311-certbot }

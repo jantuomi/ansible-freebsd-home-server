@@ -1,0 +1,62 @@
+- name: Install packages inside jail
+  loop:
+    - { jail: hommabot, package: npm }
+  include_tasks: pkg_jail_install.yml
+
+- name: Build hommabot on this machine
+  delegate_to: localhost
+  shell: |
+    cd ../hommabot2
+    npm run build
+
+- name: Create hommabot directory
+  file:
+    path: /usr/local/jails/containers/hommabot/root/hommabot
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Install index.js
+  copy:
+    src: "{{ item }}"
+    dest: /usr/local/jails/containers/hommabot/root/hommabot/
+    owner: root
+    group: wheel
+    mode: "0644"
+  loop:
+    - "../hommabot2/build/index.js"
+    - "../hommabot2/package.json"
+    - "../hommabot2/package-lock.json"
+
+- name: Install hommabot env file
+  template:
+    src: hommabot/root_hommabot_env.j2
+    dest: /usr/local/jails/containers/hommabot/root/hommabot/.env
+    owner: root
+    group: wheel
+    mode: "0600"
+
+- name: Install deps.sh
+  copy:
+    src: templates/hommabot/root_hommabot_deps.sh
+    dest: /usr/local/jails/containers/hommabot/root/hommabot/deps.sh
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Install dependencies
+  shell: jexec hommabot /root/hommabot/deps.sh
+
+- name: Set up crontab
+  template:
+    src: hommabot/etc_crontab.j2
+    dest: /usr/local/jails/containers/hommabot/etc/crontab
+    owner: root
+    group: wheel
+    mode: "0644"
+  register: jail_hommabot_etc_crontab
+
+- name: Restart cron
+  shell: jexec hommabot service cron restart
+  when: jail_hommabot_etc_crontab.changed
