@@ -1,0 +1,10 @@
+- name: Install packages inside jail
+  loop:
+    - { jail: postgres, package: postgresql18-server }
+  include_tasks: pkg_jail_install.yml
+
+- name: Enable postgresql service inside jail
+  shell: |
+    service -j postgres postgresql enable
+  changed_when: false
+# Run initdb and start manually, not managed by Ansible

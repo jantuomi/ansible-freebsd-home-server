@@ -82,6 +82,10 @@
       tags: [jail_ingress]
       import_tasks: tasks/jail_ingress.yml
 
+    - name: Run postgres jail tasks
+      tags: [jail_postgres]
+      import_tasks: tasks/jail_postgres.yml
+
     - name: Run diddle jail tasks
       tags: [jail_diddle]
       import_tasks: tasks/jail_diddle.yml

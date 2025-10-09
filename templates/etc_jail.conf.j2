@@ -32,10 +32,13 @@ path = "/usr/local/jails/containers/${name}";
 {% for jail in jails %}
 {{ jail.name }} {
   $num           = "{{ jail.num }}";
-  {% if jail.name == "ingress" %}
+  {% if jail.name == "ingress" -%}
   exec.poststart    = "jexec ${name} ifconfig ${epl}b 192.168.2.${num}/16 up";
   exec.poststart    = "jexec ${name} ifconfig epw1b up";
   exec.poststart   += "jexec ${name} service dhclient restart epw1b";
+  {% endif %}
+  {%if jail.name == "postgres" -%}
+  allow.sysvipc;
   {% endif %}
 }
 {% endfor %}
