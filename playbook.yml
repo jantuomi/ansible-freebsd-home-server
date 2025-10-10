@@ -39,19 +39,20 @@
     jail_userland_version: 14.3-RELEASE
     jail_ingress_ip: "192.168.2.1"
     jails:
-      - { name: ingress, num: 1 }
-      - { name: postgres, num: 2 }
-      - { name: irc_thelounge, num: 3 }
-      - { name: taulubot, num: 4 }
-      - { name: veetibot, num: 5 }
-      - { name: hommabot, num: 6 }
-      - { name: aggro, num: 7 }
-      - { name: diddle, num: 8, tls: true }
-      - { name: gallery_sakari, num: 9 }
-      - { name: gallery_leo, num: 10 }
-      - { name: spliit, num: 11 }
-      - { name: stirling-pdf, num: 12 }
-      - { name: ente, num: 13 }
+      - { name: ingress, num: 1, tls: false }
+      - { name: postgres, num: 2, tls: false }
+      - { name: irc_thelounge, num: 3, tls: false }
+      - { name: taulubot, num: 4, tls: false }
+      - { name: veetibot, num: 5, tls: false }
+      - { name: hommabot, num: 6, tls: false }
+      - { name: aggro, num: 7, tls: false }
+      - { name: diddle, num: 8, tls: true, host: diddle.jan.systems }
+      - { name: gallery_sakari, num: 9, tls: false }
+      - { name: gallery_leo, num: 10, tls: false }
+      - { name: spliit, num: 11, tls: true, host: spliit.jan.systems }
+      - { name: stirling-pdf, num: 12, tls: false }
+      - { name: ente, num: 13, tls: false }
+      - { name: freshrss, num: 14, tls: true, host: freshrss.jan.systems }
     static_sites:
       - { site: "homepage", host: "jan.systems", tls: true }
     static_site_dirs:

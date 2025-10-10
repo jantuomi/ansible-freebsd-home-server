@@ -74,7 +74,8 @@
     mode: "0644"
   vars:
     # comma-separated list of sites
-    items: "{{ static_sites | selectattr('tls') | map(attribute='host') | join(',') }}"
+    items_list: "{{ static_sites + jails }}"
+    items: "{{ items_list | selectattr('tls') | map(attribute='host') }}"
   register: jail_ingress_etc_crontab
 
 - name: Restart cron
