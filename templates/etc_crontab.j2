@@ -21,9 +21,6 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 # UTC time.  See adjkerntz(8) for details.
 1,31    0-5     *       *       *       root    adjkerntz -a
 
-# Update dynamic DNS (Hetzner)
-*       *       *       *       *       root    logto /var/log/hetzner_ddns /usr/local/bin/hetzner_ddns.sh
-
 # Take snapshots every day at 3:05 AM
 5       3       *       *       *       root    logto /var/log/backup /usr/local/bin/backup snapshot prune-local
 # Send backup snapshots to remote every third day at 4:05 AM

@@ -76,6 +76,25 @@ http {
     }
     {% endif -%}
 
+    {# TODO: parameterize this properly -#}
+    server {
+        server_name jantuomi.fi;
+        http2 on;
+
+        listen 443 ssl;
+        listen [::]:443 ssl;
+
+        # See https://ssl-config.mozilla.org/#server=nginx&version=1.28.0&config=intermediate&openssl=3.4.0&guideline=5.7
+        add_header Strict-Transport-Security "max-age=63072000" always;
+
+        ssl_certificate /usr/local/etc/letsencrypt/live/jantuomi.fi/fullchain.pem;
+        ssl_certificate_key /usr/local/etc/letsencrypt/live/jantuomi.fi/privkey.pem;
+        include /usr/local/etc/letsencrypt/options-ssl-nginx.conf;
+        ssl_dhparam /usr/local/etc/letsencrypt/ssl-dhparams.pem;
+
+        return 307 https://jan.systems$request_uri;
+    }
+
     {% endfor -%}
     {% for jail in jails -%}
     server {

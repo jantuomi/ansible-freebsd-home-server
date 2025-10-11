@@ -3,36 +3,18 @@
   hosts: pursotin
 
   pre_tasks:
-    - name: Fail if direnv wasn't loaded and SMTP_USER is missing
+    - name: Fail if secrets.yml wasn't loaded and smtp_user is missing
       assert:
         that:
-          - lookup('env', 'SMTP_USER') != ''
+          - smtp_user != ''
         fail_msg: >
-          Required environment variables are missing. Did you forget to run `direnv allow` or load `.envrc`?
+          Required variables are missing. Did you forget to create a secrets.yml file?
       vars:
         ansible_assert_no_log: true
 
+  vars_files:
+    - secrets.yml
   vars:
-    smtp_user: "{{ lookup('env', 'SMTP_USER') }}"
-    smtp_password: "{{ lookup('env', 'SMTP_PASSWORD') }}"
-    smtp_host: "{{ lookup('env', 'SMTP_HOST') }}"
-    smtp_port: "{{ lookup('env', 'SMTP_PORT') }}"
-    dma_mail_hostname: "{{ lookup('env', 'DMA_MAILNAME') }}"
-    dma_to_address: "{{ lookup('env', 'DMA_TO_ADDRESS') }}"
-    hetzner_zone_id: "{{ lookup('env', 'HETZNER_ZONE_ID') }}"
-    hetzner_record_id: "{{ lookup('env', 'HETZNER_RECORD_ID') }}"
-    hetzner_pat: "{{ lookup('env', 'HETZNER_PAT') }}"
-    backup_ssh_host: "{{ lookup('env', 'BACKUP_SSH_HOST') }}"
-    backup_ssh_user: "{{ lookup('env', 'BACKUP_SSH_USER') }}"
-    backup_ssh_privkey_file: "{{ lookup('env', 'BACKUP_SSH_PRIVKEY_FILE') }}"
-    backup_ssh_pubkey_file: "{{ lookup('env', 'BACKUP_SSH_PUBKEY_FILE') }}"
-    backup_zfs_dataset: zroot
-    diddle_email_host_user: "{{ lookup('env', 'DIDDLE_EMAIL_HOST_USER') }}"
-    diddle_email_host_password: "{{ lookup('env', 'DIDDLE_EMAIL_HOST_PASSWORD') }}"
-    hommabot_telegram_bot_token: "{{ lookup('env', 'HOMMABOT_TELEGRAM_BOT_TOKEN') }}"
-    hommabot_g_sa_json_b64: "{{ lookup('env', 'HOMMABOT_G_SA_JSON_B64') }}"
-    hommabot_sheets_spreadsheet_id: "{{ lookup('env', 'HOMMABOT_SHEETS_SPREADSHEET_ID') }}"
-    hommabot_sheets_range: "{{ lookup('env', 'HOMMABOT_SHEETS_RANGE') }}"
     lan_ipv4_cidr: 192.168.0.10/16
     lan_ipv4_gateway: 192.168.0.1
     lan_search_domain: local.jan.systems
@@ -43,20 +25,20 @@
       - { name: postgres, num: 2, tls: false }
       - { name: irc_thelounge, num: 3, tls: false }
       - { name: taulubot, num: 4, tls: false }
-      - { name: veetibot, num: 5, tls: false }
+      #- { name: veetibot, num: 5, tls: false }
       - { name: hommabot, num: 6, tls: false }
-      - { name: aggro, num: 7, tls: false }
+      - { name: aggro, num: 7, tls: true, host: aggro.jan.systems }
       - { name: diddle, num: 8, tls: true, host: diddle.jan.systems }
-      - { name: gallery_sakari, num: 9, tls: false }
-      - { name: gallery_leo, num: 10, tls: false }
+      #- { name: gallery_sakari, num: 9, tls: false }
+      #- { name: gallery_leo, num: 10, tls: false }
       - { name: spliit, num: 11, tls: true, host: spliit.jan.systems }
-      - { name: stirling-pdf, num: 12, tls: false }
+      #- { name: stirling-pdf, num: 12, tls: false }
       - { name: ente, num: 13, tls: false }
       - { name: freshrss, num: 14, tls: true, host: freshrss.jan.systems }
     static_sites:
       - { site: "homepage", host: "jan.systems", tls: true }
     static_site_dirs:
-      homepage: "{{ lookup('env', 'JAN_SYSTEMS_HTML_DIR') }}"
+      homepage: "{{ jan_systems_html_dir }}"
 
   tasks:
     - name: Run general tasks

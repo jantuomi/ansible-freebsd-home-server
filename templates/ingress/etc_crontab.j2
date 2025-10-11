@@ -10,3 +10,8 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 {% for item in items %}
 {{ loop.index0 }}       2       *       *       *       root    certbot certonly --nginx -n -m jan@jantuomi.fi --agree-tos -d {{ item }}
 {% endfor %}
+
+# Update dynamic DNS (Hetzner)
+{% for elem in hetzner_zone_record_ids %}
+*       *       *       *       *       root    /usr/local/bin/hetzner_ddns.sh --zone-id '{{ elem.zone_id }}' --record-id '{{ elem.record_id }}' --record-name '{{ elem.name }}' --record-type '{{ elem.type }}' --ttl '{{ elem.ttl }}' --iface-cmd 'ifconfig epw1b' >>/var/log/hetzner_ddns.log 2>&1
+{% endfor %}
