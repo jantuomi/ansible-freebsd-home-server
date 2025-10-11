@@ -1,44 +1,6 @@
-# STARTUP/LOGGING/VNET
-$tmp_epair      = "epair${num}";
-$epl            = "epl${num}"; # eplXa is host end (local network bridge), eplXb is jail end.
-                               # The corresponding pubnet interface is epwX, but that's not created for all jails.
-vnet;
-vnet.interface    = "${epl}b";
-persist;
-exec.prestart    += "ifconfig $tmp_epair create || echo 'Failed to create $tmp_epair'";
-exec.prestart    += "ifconfig ${tmp_epair}a name ${epl}a";
-exec.prestart    += "ifconfig ${tmp_epair}b name ${epl}b";
-exec.prestart    += "ifconfig ${epl}a up";
-exec.prestart    += "ifconfig brlan0 addm ${epl}a";
-exec.clean;
-exec.start        = "/bin/sh /etc/rc";
-exec.poststart    = "jexec ${name} ifconfig ${epl}b 192.168.2.${num}/16 up";
-exec.poststart   += "jexec ${name} route add default 192.168.0.1 || echo 'Failed to add default route'";
-exec.stop         = "/bin/sh /etc/rc.shutdown";
-exec.poststop    += "ifconfig ${epl}b -vnet $name"; # workaround to bug 238326: move ${epl}b from the jail to the host when stopping jail services
-exec.poststop    += "ifconfig ${epl}b destroy";     # and then destroy the pair by destroying one end of it
-exec.consolelog   = "/var/log/jail_console_${name}.log";
-
-# PERMISSIONS
-allow.raw_sockets;
-exec.clean;
-mount.devfs;
-
-# HOSTNAME/PATH
-host.hostname = "${name}";
-path = "/usr/local/jails/containers/${name}";
-
-# JAILS
-{% for jail in jails %}
-{{ jail.name }} {
-  $num           = "{{ jail.num }}";
-  {% if jail.name == "ingress" -%}
-  exec.poststart    = "jexec ${name} ifconfig ${epl}b 192.168.2.${num}/16 up";
-  exec.poststart    = "jexec ${name} ifconfig epw1b up";
-  exec.poststart   += "jexec ${name} service dhclient restart epw1b";
-  {% endif %}
-  {%if jail.name == "postgres" -%}
-  allow.sysvipc;
-  {% endif %}
-}
-{% endfor %}
+# Include configurations from standard locations.
+.include "/etc/jail.conf.d/*.conf";
+.include "/etc/jail.*.conf";
+.include "/usr/local/etc/jail[.]conf";
+.include "/usr/local/etc/jail.conf.d/*.conf";
+.include "/usr/local/etc/jail.*.conf";

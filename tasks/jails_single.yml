@@ -11,6 +11,14 @@
 - name: Make resolv.conf immutable
   shell: chflags schg /usr/local/jails/containers/{{ jail.name }}/etc/resolv.conf
 
+- name: Configure jail.conf.d/{{ jail.name }}.conf
+  template:
+    src: etc_jail.conf.d_[jailname].conf.j2
+    dest: /etc/jail.conf.d/{{ jail.name }}.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+
 - name: "Check if jail {{ jail.name }} is running"
   shell: jls -j "{{ jail.name }}"
   failed_when: false

@@ -25,7 +25,7 @@
       - { name: postgres, num: 2, tls: false }
       - { name: irc_thelounge, num: 3, tls: false }
       - { name: taulubot, num: 4, tls: false }
-      #- { name: veetibot, num: 5, tls: false }
+      - { name: homepage, num: 5, tls: false }
       - { name: hommabot, num: 6, tls: false }
       - { name: aggro, num: 7, tls: true, host: aggro.jan.systems }
       - { name: diddle, num: 8, tls: true, host: diddle.jan.systems }
@@ -76,3 +76,7 @@
     - name: Run hommabot jail tasks
       tags: [jail_hommabot]
       import_tasks: tasks/jail_hommabot.yml
+
+    - name: Run jail homepage tasks
+      tags: [jail_homepage]
+      import_tasks: tasks/jail_homepage.yml
