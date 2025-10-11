@@ -19,26 +19,25 @@
     lan_ipv4_gateway: 192.168.0.1
     lan_search_domain: local.jan.systems
     jail_userland_version: 14.3-RELEASE
-    jail_ingress_ip: "192.168.2.1"
     jails:
-      - { name: ingress, num: 1, tls: false }
-      - { name: postgres, num: 2, tls: false }
-      - { name: irc_thelounge, num: 3, tls: false }
-      - { name: taulubot, num: 4, tls: false }
-      - { name: homepage, num: 5, tls: false }
-      - { name: hommabot, num: 6, tls: false }
-      - { name: aggro, num: 7, tls: true, host: aggro.jan.systems }
-      - { name: diddle, num: 8, tls: true, host: diddle.jan.systems }
-      #- { name: gallery_sakari, num: 9, tls: false }
-      #- { name: gallery_leo, num: 10, tls: false }
-      - { name: spliit, num: 11, tls: true, host: spliit.jan.systems }
-      #- { name: stirling-pdf, num: 12, tls: false }
-      - { name: ente, num: 13, tls: false }
-      - { name: freshrss, num: 14, tls: true, host: freshrss.jan.systems }
-    static_sites:
-      - { site: "homepage", host: "jan.systems", tls: true }
-    static_site_dirs:
-      homepage: "{{ jan_systems_html_dir }}"
+      - { num: 1, name: ingress }
+      - { num: 2, name: postgres }
+      - { num: 3, name: irc_thelounge }
+      - { num: 4, name: taulubot }
+      - { num: 5, name: homepage }
+      - { num: 6, name: hommabot }
+      - { num: 7, name: aggro }
+      - { num: 8, name: diddle }
+      - { num: 11, name: spliit }
+      - { num: 13, name: ente }
+      - { num: 14, name: freshrss }
+    ingress_routes:
+      - { host: jan.systems, jail: homepage }
+      - { host: jantuomi.fi, redirect: jan.systems }
+      - { host: aggro.jan.systems, jail: aggro }
+      - { host: diddle.jan.systems, jail: diddle }
+      - { host: spliit.jan.systems, jail: spliit }
+      - { host: freshrss.jan.systems, jail: freshrss }
 
   tasks:
     - name: Run general tasks
@@ -77,6 +76,6 @@
       tags: [jail_hommabot]
       import_tasks: tasks/jail_hommabot.yml
 
-    - name: Run jail homepage tasks
+    - name: Run homepage jail tasks
       tags: [jail_homepage]
       import_tasks: tasks/jail_homepage.yml

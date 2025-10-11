@@ -7,8 +7,8 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 #minute hour    mday    month   wday    who     command
 
 # Update LetsEncrypt certificates every day after 2:00 AM
-{% for item in items %}
-{{ loop.index0 }}       2       *       *       *       root    certbot certonly --nginx -n -m jan@jantuomi.fi --agree-tos -d {{ item }}
+{% for host in tls_hosts %}
+{{ loop.index0 }}       2       *       *       *       root    certbot certonly --nginx -n -m jan@jantuomi.fi --agree-tos -d {{ host }}
 {% endfor %}
 
 # Update dynamic DNS (Hetzner)
