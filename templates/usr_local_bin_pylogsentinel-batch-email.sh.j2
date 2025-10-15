@@ -1,0 +1,14 @@
+#!/bin/sh
+
+FILE=/tmp/pylogsentinel.daily
+
+if [ ! -f "$FILE" ]; then
+    echo "Nothing to do"
+    exit 0
+fi
+
+echo "Sending email"
+cat "$FILE" | mail -s "pylogsentinel alert batch" root
+
+echo "Removing batch file"
+rm "$FILE"
