@@ -38,6 +38,7 @@
       - { host: diddle.jan.systems, jail: diddle }
       - { host: spliit.jan.systems, jail: spliit }
       - { host: freshrss.jan.systems, jail: freshrss }
+      - { host: irc.jan.systems, jail: irc_thelounge }
 
   tasks:
     - name: Run general tasks
