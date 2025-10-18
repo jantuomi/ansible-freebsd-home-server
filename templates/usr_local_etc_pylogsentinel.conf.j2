@@ -2,12 +2,21 @@
 state_dir = /var/run/pylogsentinel
 max_block_size = 10M
 
-[logs]
-cmd = find / -type d -path '*/var/log'
+[logs.standard]
+cmd = find / -type f -path '*/var/log/*' ! -name 'access.log' ! -name '*.bz2'
+
+[logs.access]
+cmd = find / -type f -name 'access.log'
 
 [action.default]
 cmd = echo -e "---------\nMatched $RULE_ID in $FILE at line $LINE, context:\n\n$CONTEXT\n" >> /tmp/pylogsentinel.daily
 
 [rule.error]
 description = Error-like conditions
-pattern = /(error|fatal|exception|kill|crash)/i
+pattern = /(error|fatal|exception|kill)/i
+logs = standard
+
+[rule.access]
+description = HTTP code >=500 in access log
+pattern = /HTTP\/[0-9].[0-9]" 5[0-9][0-9]/
+logs = access
