@@ -39,6 +39,7 @@
       - { host: spliit.jan.systems, jail: spliit }
       - { host: freshrss.jan.systems, jail: freshrss }
       - { host: irc.jan.systems, jail: irc_thelounge }
+      - { host: goaccess.jan.systems, static: /var/www/goaccess }
 
   tasks:
     - name: Run general tasks

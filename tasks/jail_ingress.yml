@@ -3,6 +3,7 @@
     - { jail: ingress, package: nginx }
     - { jail: ingress, package: py311-certbot }
     - { jail: ingress, package: py311-certbot-nginx }
+    - { jail: ingress, package: goaccess }
   include_tasks: pkg_jail_install.yml
 
 - name: Generate LetsEncrypt certs
@@ -19,6 +20,16 @@
     group: wheel
     mode: "0644"
   register: nginx_conf
+
+- name: Create static directories
+  loop: "{{ ingress_routes | selectattr('static', 'defined') | map(attribute='static') | unique | list }}"
+  file:
+    path: "/usr/local/jails/containers/ingress{{ item }}"
+    state: directory
+    recurse: yes
+    owner: 80
+    group: 80
+    mode: "0755"
 
 - name: Check if nginx is enabled
   shell: service -j ingress nginx status

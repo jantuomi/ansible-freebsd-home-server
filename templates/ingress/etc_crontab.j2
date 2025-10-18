@@ -15,3 +15,6 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 {% for elem in hetzner_zone_record_ids %}
 *       *       *       *       *       root    /usr/local/bin/hetzner_ddns.sh --zone-id '{{ elem.zone_id }}' --record-id '{{ elem.record_id }}' --record-name '{{ elem.name }}' --record-type '{{ elem.type }}' --ttl '{{ elem.ttl }}' --iface-cmd 'ifconfig epw1b' >>/var/log/hetzner_ddns.log 2>&1
 {% endfor %}
+
+# Update goaccess report HTML
+0       *       *       *       *       www    (cat /var/log/nginx/access.log | awk '$8=$1$8' | /usr/local/bin/goaccess --log-format=VCOMBINED -j "$(($(nproc) + 1))" --keep-last=30 -a -o /var/www/goaccess/index.html --persist --restore)

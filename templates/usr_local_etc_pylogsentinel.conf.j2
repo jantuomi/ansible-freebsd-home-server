@@ -6,7 +6,7 @@ max_block_size = 10M
 cmd = find / -type f -path '*/var/log/*' ! -name 'access.log' ! -name '*.bz2'
 
 [logs.access]
-cmd = find / -type f -name 'access.log'
+paths = /usr/local/jails/containers/ingress/var/log/nginx/access.log
 
 [action.default]
 cmd = echo -e "---------\nMatched $RULE_ID in $FILE at line $LINE, context:\n\n$CONTEXT\n" >> /tmp/pylogsentinel.daily
