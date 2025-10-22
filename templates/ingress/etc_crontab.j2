@@ -17,4 +17,4 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 {% endfor %}
 
 # Update goaccess report HTML
-0       *       *       *       *       www    (cat /var/log/nginx/access.log | awk '$8=$1$8' | /usr/local/bin/goaccess --log-format=VCOMBINED -j "$(($(nproc) + 1))" --keep-last=30 -a -o /var/www/goaccess/index.html --persist --restore)
+0       *       *       *       *       root    /usr/local/bin/gen_goaccess.sh

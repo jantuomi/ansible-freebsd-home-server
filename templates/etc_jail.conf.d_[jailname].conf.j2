@@ -3,26 +3,44 @@
 {{ jail.name }} {
   # STARTUP/LOGGING/VNET
   vnet;
-  vnet.interface    = "epl{{ jail.num }}b";
   persist;
-  exec.prestart    += "ifconfig epair{{ jail.num }} create || echo 'Failed to create epair{{ jail.num }}'";
-  exec.prestart    += "ifconfig epair{{ jail.num }}a name epl{{ jail.num }}a";
-  exec.prestart    += "ifconfig epair{{ jail.num }}b name epl{{ jail.num }}b";
-  exec.prestart    += "ifconfig epl{{ jail.num }}a up";
-  exec.prestart    += "ifconfig brlan0 addm epl{{ jail.num }}a";
   exec.clean;
-  exec.start        = "/bin/sh /etc/rc";
-  exec.poststart    = "jexec ${name} ifconfig epl{{ jail.num }}b 192.168.2.{{ jail.num }}/16 up";
-  exec.poststart   += "ifconfig epl{{ jail.num }}a up";
-  exec.poststart   += "jexec ${name} route add default 192.168.0.1 || echo 'Failed to add default route'";
+  exec.prestart     = "ifconfig epair{{ jail.num }}000 create || echo 'Failed to create epair{{ jail.num }}000'";
+  exec.prestart    += "ifconfig epair{{ jail.num }}000a name epl{{ jail.num }}a";
+  exec.prestart    += "ifconfig epair{{ jail.num }}000b name epl{{ jail.num }}b";
+  exec.prestart    += "ifconfig brlan0 addm epl{{ jail.num }}a";
   {% if jail.name == "ingress" -%}
+  exec.prestart    += "ifconfig epair{{ jail.num }}001 create || echo 'Failed to create epair{{ jail.num }}001'";
+  exec.prestart    += "ifconfig epair{{ jail.num }}001a name epw1a";
+  exec.prestart    += "ifconfig epair{{ jail.num }}001b name epw1b";
+  exec.prestart    += "ifconfig brwan0 addm epw{{ jail.num }}a";
+  {% endif %}
+
+  exec.start        = "/bin/sh /etc/rc";
+
+  exec.poststart    = "ifconfig epl{{ jail.num }}b vnet ${name}";
+  exec.poststart   += "jexec ${name} ifconfig epl{{ jail.num }}b up";
+  exec.poststart   += "ifconfig epl{{ jail.num }}a up";
+  exec.poststart   += "jexec ${name} ifconfig epl{{ jail.num }}b 192.168.2.{{ jail.num }}/16";
+  {% for ing in jails -%}
+  {% if ing.name == "ingress" -%}
+  exec.poststart   += "jexec ${name} route add default 192.168.2.{{ ing.num }} || echo 'Failed to add default route'";
+  {% endif %}
+  {% endfor %}
+  {% if jail.name == "ingress" -%}
+  exec.poststart   += "ifconfig epw{{ jail.num }}b vnet ${name}";
   exec.poststart   += "jexec ${name} ifconfig epw{{ jail.num }}b up";
+  exec.poststart   += "ifconfig epw{{ jail.num }}a up";
   exec.poststart   += "jexec ${name} service dhclient restart epw{{ jail.num }}b";
   {% endif %}
 
   exec.stop         = "/bin/sh /etc/rc.shutdown";
-  exec.poststop    += "ifconfig epl{{ jail.num }}b -vnet $name"; # workaround to bug 238326: move epl{{ jail.num }}b from the jail to the host when stopping jail services
-  exec.poststop    += "ifconfig epl{{ jail.num }}b destroy";     # and then destroy the pair by destroying one end of it
+
+  exec.poststop    += "ifconfig epl{{ jail.num }}a destroy";
+  {% if jail.name == "ingress" -%}
+  exec.poststop    += "ifconfig epw{{ jail.num }}a destroy";
+  {% endif %}
+
   exec.consolelog   = "/var/log/jail_console_${name}.log";
 
   # PERMISSIONS
@@ -31,6 +49,9 @@
   mount.devfs;
   {%if jail.name == "postgres" -%}
   allow.sysvipc;
+  devfs_ruleset = 5;
+  {% else %}
+  devfs_ruleset = 4;
   {% endif %}
 
   # HOSTNAME/PATH

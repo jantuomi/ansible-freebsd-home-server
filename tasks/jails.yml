@@ -67,6 +67,14 @@
         group: wheel
         mode: "0644"
 
+    - name: Configure devfs.rules
+      template:
+        src: etc_devfs.rules.j2
+        dest: /etc/devfs.rules
+        owner: root
+        group: wheel
+        mode: "0644"
+
     - name: Configure individual jails
       loop: "{{ jails }}"
       loop_control:

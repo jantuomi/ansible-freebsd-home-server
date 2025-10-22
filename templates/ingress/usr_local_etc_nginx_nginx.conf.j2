@@ -101,6 +101,9 @@ http {
         include /usr/local/etc/letsencrypt/options-ssl-nginx.conf;
         ssl_dhparam /usr/local/etc/letsencrypt/ssl-dhparams.pem;
 
+        # No error logging for static files
+        error_log off;
+
         location / {
             root {{ route.static }};
             index index.html;

@@ -6,6 +6,29 @@
     - { jail: ingress, package: goaccess }
   include_tasks: pkg_jail_install.yml
 
+- name: Configure pf.conf
+  template:
+    src: ingress/etc_pf.conf.j2
+    dest: /usr/local/jails/containers/ingress/etc/pf.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+
+- name: Enable gateway mode
+  shell: jexec ingress sysrc gateway_enable=YES && jexec ingress sysctl net.inet.ip.forwarding=1
+
+- name: Enable pf
+  shell: jexec ingress sysrc pf_enable=YES
+
+- name: Check if pf is running
+  shell: service -j ingress pf status
+  register: pf_status
+  changed_when: pf_status.rc != 0
+
+- name: Start pf
+  shell: service -j ingress pf start
+  when: pf_status.rc != 0
+
 - name: Generate LetsEncrypt certs
   shell: jexec ingress certbot certonly --nginx -n -m jan@jantuomi.fi --agree-tos -d {{ item }}
   loop: "{{ ingress_routes | map(attribute='host') | unique }}"
@@ -58,6 +81,14 @@
     owner: root
     group: wheel
     mode: "0600"
+
+- name: Set up gen_goaccess.sh
+  template:
+    src: ingress/usr_local_bin_gen_goaccess.sh.j2
+    dest: /usr/local/jails/containers/ingress/usr/local/bin/gen_goaccess.sh
+    owner: root
+    group: wheel
+    mode: "0755"
 
 - name: Set up crontab
   template:

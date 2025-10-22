@@ -1,0 +1,19 @@
+{% for jail in jails -%}
+{% if jail.name == 'ingress' -%}
+# Interfaces & nets
+lan = "epl{{ jail.num }}b"
+wan = "epw{{ jail.num }}b"
+lan_net = "{{ lan_ipv4_cidr }}"
+
+# Keep PF out of loopback, drop by default if you add blocks later
+set skip on lo0
+set block-policy drop
+
+# NAT: translate LAN traffic to the WAN interface address, and log it
+nat log on $wan from $lan_net to any -> ($wan)
+
+# Allow and log the LAN traffic so NAT can happen
+pass in  on $lan inet from $lan_net to any keep state
+pass out on $wan inet from $lan_net to any keep state
+{% endif %}
+{% endfor %}

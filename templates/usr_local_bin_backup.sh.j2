@@ -12,12 +12,26 @@ HOST="{% endraw %}{{ backup_ssh_host }}{% raw %}"
 EMAIL_TO=root
 # =====================================
 
+# ----- Globals for notification -----
+STARTED_AT="$(date '+%Y-%m-%dT%H:%M:%S%z')"
+FINISHED_AT=""
+MESSAGE_LOG=""
+BACKUP_NAME=""          # e.g. zroot@2025-09-30-12-00-00-0300.enc
+BACKUP_SIZE_BYTES=""    # numeric bytes
+
 # ----- Helpers -----
 die() { echo "Error: $*" >&2; exit 1; }
 
 require_cmds() {
   local cmds=("$@")
   for c in "${cmds[@]}"; do command -v "$c" >/dev/null 2>&1 || die "Missing command: $c"; done
+}
+
+log_note() {
+  # Echo to console and append to message buffer
+  local msg="$1"
+  echo "$msg"
+  MESSAGE_LOG+="$msg"$'\n'
 }
 
 timestamp() {
@@ -38,7 +52,6 @@ list_top_snapshots_newest_first() {
 }
 
 list_remote_backups_sorted() {
-  # Note: sorting strictly orders only within the same timezone in the name, which is fine for our daily cadence.
   # We store files under ${HOST_DIR}/<dataset>@<timestamp>.enc
   echo "ls ${HOST_DIR}" \
     | sftp -q -i "${KEYFILE}" "${USER}@${HOST}" 2>/dev/null \
@@ -63,6 +76,7 @@ cmd_init_remote() {
   echo "Checking for remote directory: ${HOST_DIR}"
   if echo "ls ${HOST_DIR}" | sftp -i "${KEYFILE}" "${USER}@${HOST}" >/dev/null 2>&1; then
     echo "Remote directory already exists: ${HOST_DIR}"
+    log_note "init-remote: verified remote directory '${HOST_DIR}'"
     return 0
   fi
 
@@ -80,6 +94,7 @@ EOF
   # Re-check
   if echo "ls ${HOST_DIR}" | sftp -q -i "${KEYFILE}" "${USER}@${HOST}" >/dev/null 2>&1; then
     echo "Remote directory created: ${HOST_DIR}"
+    log_note "init-remote: created remote directory '${HOST_DIR}'"
   else
     die "Remote directory ${HOST_DIR} not found after creation"
   fi
@@ -95,6 +110,7 @@ cmd_snapshot() {
   echo "Taking recursive snapshot \"${snap}\""
   (set -x; zfs snapshot -r "${snap}")
   echo "Recursive snapshot \"${snap}\" created"
+  log_note "snapshot: created recursive snapshot '${snap}'"
 }
 
 cmd_send_to_remote() {
@@ -125,6 +141,11 @@ cmd_send_to_remote() {
     die "SFTP upload failed (does the remote directory '${HOST_DIR}' exist? Run 'init-remote')"
   fi
 
+  # Set globals for notify()
+  BACKUP_NAME="${target}"
+  BACKUP_SIZE_BYTES="${size_bytes}"
+
+  log_note "send-to-remote: uploaded '${snap}' as '${target}' (${size_bytes} bytes) to ${HOST}:${HOST_DIR}"
   rm -f "${tmp}"
   trap - EXIT
 }
@@ -141,6 +162,7 @@ cmd_prune_remote() {
 
   if [[ "${count}" -le "${KEEP_REMOTE}" ]]; then
     echo "Remote backups (${count}) <= KEEP_REMOTE (${KEEP_REMOTE}); nothing to prune."
+    log_note "prune-remote: kept ${count} (<= ${KEEP_REMOTE}); no deletions"
     return 0
   fi
 
@@ -161,6 +183,7 @@ cmd_prune_remote() {
     deleted=$((deleted+1))
   done
   echo "Remote prune done. Deleted: ${deleted}"
+  log_note "prune-remote: deleted ${deleted}, kept ${KEEP_REMOTE}"
 }
 
 cmd_prune_local() {
@@ -173,6 +196,7 @@ cmd_prune_local() {
   local total="${#snaps[@]}"
   if [[ "${total}" -le "${KEEP_LOCAL}" ]]; then
     echo "Local snapshots (${total}) <= KEEP_LOCAL (${KEEP_LOCAL}); nothing to prune."
+    log_note "prune-local: kept ${total} (<= ${KEEP_LOCAL}); no deletions"
     return 0
   fi
 
@@ -185,12 +209,43 @@ cmd_prune_local() {
     deleted=$((deleted+1))
   done
   echo "Local prune done. Deleted: ${deleted}"
+  log_note "prune-local: deleted ${deleted}, kept ${KEEP_LOCAL}"
 }
 
 cmd_notify() {
-    echo "Sending notification email..."
-    local latest=$(latest_snapshot_for_dataset "${DATASET}")
-    echo "Backup of snapshot ${latest} completed at $(date)" | mail -s "Backup completed" "${EMAIL_TO}"
+  echo ""
+  echo "[notify]"
+  require_cmds mail date
+  FINISHED_AT="$(date '+%Y-%m-%dT%H:%M:%S%z')"
+
+  # Derive snapshot name if not set yet (best-effort)
+  if [[ -z "${BACKUP_NAME}" ]]; then
+    # Try to infer from latest snapshot
+    latest="$(latest_snapshot_for_dataset || true)"
+    if [[ -n "${latest}" ]]; then
+      BACKUP_NAME="$(basename "${latest}").enc"
+    else
+      BACKUP_NAME="unknown"
+    fi
+  fi
+
+  # Compose subject and body
+  local subject="Backup completed: ${BACKUP_NAME}"
+  local body=""
+  body+="Backup run summary"$'\n'
+  body+="Started:  ${STARTED_AT}"$'\n'
+  body+="Finished: ${FINISHED_AT}"$'\n'
+  body+="Dataset:  ${DATASET}"$'\n'
+  body+="Remote:   ${USER}@${HOST}:${HOST_DIR}"$'\n'
+  body+="Name:     ${BACKUP_NAME}"$'\n'
+  body+="Size:     ${BACKUP_SIZE_BYTES:-unknown} bytes"$'\n'
+  body+=$'\n'
+  body+="Steps:"$'\n'
+  body+="${MESSAGE_LOG:-<no steps recorded>}"$'\n'
+
+  echo "Sending notification email..."
+  printf "%s\n" "$body" | mail -s "$subject" "${EMAIL_TO}"
+  log_note "notify: email sent to ${EMAIL_TO}"
 }
 
 usage() {
@@ -203,14 +258,14 @@ Subcommands (executed in order):
   send-to-remote   Create encrypted replication stream to a temp file, then upload via SFTP
   prune-remote     Keep latest \$KEEP_REMOTE backups on remote (default ${KEEP_REMOTE})
   prune-local      Keep latest \$KEEP_LOCAL local snapshots on the top dataset (default ${KEEP_LOCAL})
-  notify           Send notification email
+  notify           Send notification email (includes steps, timestamps, backup name & size)
 
 Notes:
   - Run 'init-remote' once before the first upload, or anytime after changing \$HOST_DIR.
   - Local pruning destroys older snapshots **recursively** to maintain consistency across descendants.
 
 Examples:
-  $(basename "$0") init-remote snapshot send-to-remote prune-remote prune-local
+  $(basename "$0") init-remote snapshot send-to-remote prune-remote prune-local notify
 EOF
 }
 
