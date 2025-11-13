@@ -50,6 +50,8 @@
   {%if jail.name == "postgres" -%}
   allow.sysvipc;
   devfs_ruleset = 5;
+  {% elif jail.name == "ingress" -%}
+  devfs_ruleset = 6;
   {% else %}
   devfs_ruleset = 4;
   {% endif %}

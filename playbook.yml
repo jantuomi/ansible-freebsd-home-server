@@ -16,6 +16,7 @@
     - secrets.yml
   vars:
     lan_ipv4_cidr: 192.168.0.10/16
+    lan_ipv4_network: 192.168.0.0/16
     lan_ipv4_gateway: 192.168.0.1
     lan_search_domain: local.jan.systems
     jail_userland_version: 14.3-RELEASE

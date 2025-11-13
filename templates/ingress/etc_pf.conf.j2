@@ -3,17 +3,18 @@
 # Interfaces & nets
 lan = "epl{{ jail.num }}b"
 wan = "epw{{ jail.num }}b"
-lan_net = "{{ lan_ipv4_cidr }}"
+lan_net = "{{ lan_ipv4_network }}"
 
 # Keep PF out of loopback, drop by default if you add blocks later
 set skip on lo0
 set block-policy drop
 
-# NAT: translate LAN traffic to the WAN interface address, and log it
-nat log on $wan from $lan_net to any -> ($wan)
+# NAT: translate LAN traffic to the WAN interface address
+nat on $wan from $lan_net to any -> ($wan)
 
-# Allow and log the LAN traffic so NAT can happen
-pass in  on $lan inet from $lan_net to any keep state
-pass out on $wan inet from $lan_net to any keep state
+# Allow all outbound traffic from the jail and LAN via both interfaces
+# NAT will be applied automatically when source is in $lan_net and going out $wan
+pass out on $wan all keep state
+pass out on $lan all keep state
 {% endif %}
 {% endfor %}
