@@ -16,5 +16,7 @@ nat on $wan from $lan_net to any -> ($wan)
 # NAT will be applied automatically when source is in $lan_net and going out $wan
 pass out on $wan all keep state
 pass out on $lan all keep state
+
+pass in on $wan inet proto {tcp, udp} from any to any port {80, 443} keep state
 {% endif %}
 {% endfor %}

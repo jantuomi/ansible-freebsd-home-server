@@ -22,12 +22,14 @@
   exec.poststart   += "jexec ${name} ifconfig epl{{ jail.num }}b up";
   exec.poststart   += "ifconfig epl{{ jail.num }}a up";
   exec.poststart   += "jexec ${name} ifconfig epl{{ jail.num }}b 192.168.2.{{ jail.num }}/16";
+  exec.poststart   += "jexec ${name} route delete default || echo 'No default route to delete'";
+  {% if jail.name != "ingress" %}
   {% for ing in jails -%}
   {% if ing.name == "ingress" -%}
   exec.poststart   += "jexec ${name} route add default 192.168.2.{{ ing.num }} || echo 'Failed to add default route'";
   {% endif %}
   {% endfor %}
-  {% if jail.name == "ingress" -%}
+  {% else %}
   exec.poststart   += "ifconfig epw{{ jail.num }}b vnet ${name}";
   exec.poststart   += "jexec ${name} ifconfig epw{{ jail.num }}b up";
   exec.poststart   += "ifconfig epw{{ jail.num }}a up";

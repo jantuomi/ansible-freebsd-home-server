@@ -14,6 +14,9 @@
     group: wheel
     mode: "0644"
 
+- name: Reload pf.conf
+  shell: jexec ingress pfctl -f /etc/pf.conf
+
 - name: Enable gateway mode
   shell: jexec ingress sysrc gateway_enable=YES && jexec ingress sysctl net.inet.ip.forwarding=1
 

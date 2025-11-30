@@ -42,28 +42,8 @@
     name: syslogd
     state: started
   register: started_syslogd
-
 #- name: Restart syslogd
 #  service:
 #    name: syslogd
 #    state: restarted
 #  when: not started_syslogd.changed and rc_conf.changed
-
-- name: Configure pf
-  template:
-    src: etc_pf.conf.j2
-    dest: /etc/pf.conf
-    owner: root
-    group: wheel
-    mode: "0644"
-    backup: yes
-  register: pf_conf
-
-- name: Start pf
-  service:
-    name: pf
-    state: started
-
-- name: Reload pf rules
-  shell: pfctl -f /etc/pf.conf
-  when: pf_conf.changed
