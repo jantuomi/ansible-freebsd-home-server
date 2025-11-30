@@ -13,7 +13,7 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
 # Update dynamic DNS (Hetzner)
 {% for elem in hetzner_zone_record_ids %}
-*       *       *       *       *       root    /usr/local/bin/hetzner_ddns.sh --zone-id '{{ elem.zone_id }}' --record-id '{{ elem.record_id }}' --record-name '{{ elem.name }}' --record-type '{{ elem.type }}' --ttl '{{ elem.ttl }}' --iface-cmd 'ifconfig epw1b' >>/var/log/hetzner_ddns.log 2>&1
+*       *       *       *       *       root    /usr/local/bin/hetzner_ddns.sh --zone '{{ elem.zone }}' --rr-id '{{ elem.rr_id }}' --iface-cmd 'ifconfig epw1b' >>/var/log/hetzner_ddns.log 2>&1
 {% endfor %}
 
 # Update goaccess report HTML

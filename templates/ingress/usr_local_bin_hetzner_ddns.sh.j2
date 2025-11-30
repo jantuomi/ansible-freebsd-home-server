@@ -1,20 +1,6 @@
 #!/bin/sh
 #
 # Hetzner DNS record updater (one-shot for cron)
-#
-# Adds named CLI args:
-#   --zone-id        --record-id     --record-name
-#   --record-type    --ttl           --iface-cmd
-#
-# Env overrides (with sensible defaults):
-#   API_TOKEN_FILE   (default: /usr/local/etc/hetzner_auth)
-#   API_BASE         (default: https://dns.hetzner.com/api/v1)
-#
-# Exit codes:
-#   0 = Updated or already up-to-date
-#   1 = Transient issue (no local IP, API/network)
-#   2 = Config error (bad/missing args, token)
-#
 # Requirements: curl, awk
 
 set -eu
@@ -22,7 +8,7 @@ set -eu
 # ---------------------------- Defaults ---------------------------------------
 # Env-overridable:
 : "${API_TOKEN_FILE:=/usr/local/etc/hetzner_auth}"
-: "${API_BASE:=https://dns.hetzner.com/api/v1}"
+: "${API_BASE:=https://api.hetzner.cloud/v1}"
 # -----------------------------------------------------------------------------
 
 
@@ -31,54 +17,50 @@ usage() {
 Usage: hetzner_ddns.sh [OPTIONS]
 
 Options (named):
-  --zone-id ID            Hetzner zone ID
-  --record-id ID          Record ID to update
-  --record-name NAME      Record name (e.g., "host" part)
-  --record-type TYPE      Record type (e.g., A, AAAA, TXT)
-  --ttl SECONDS           TTL in seconds
+  --zone NAME_OR_ID       Hetzner Zone name or ID (primary mode only)
+  --rr-id ID              RRSet identifier in the form "rr-name/rr-type" (e.g., "host/A")
   --iface-cmd CMD         Command that prints interface info (for IP discovery)
   -h, --help              Show this help
 
 Environment:
   API_TOKEN_FILE          Path to file containing ONLY the API token
                           (default: /usr/local/etc/hetzner_auth)
-  API_BASE                Hetzner DNS API base URL
-                          (default: https://dns.hetzner.com/api/v1)
+  API_BASE                Hetzner Cloud DNS API base URL
+                          (default: https://api.hetzner.cloud/v1)
 
 Examples:
   API_TOKEN_FILE=/secret/token \
   ./hetzner_ddns.sh \
-    --zone-id ZONE123 --record-id REC456 \
-    --record-name example --record-type A \
-    --ttl 300 --iface-cmd "ifconfig em0"
+    --zone example.com --rr-name host --rr-type A \
+    --iface-cmd "ifconfig em0"
 USAGE
 }
+
+ts() { date +"%Y-%m-%dT%H:%M:%S%z"; }
+fail()  { echo "$(ts) ERROR: $*" >&2; exit 2; }
+error() { echo "$(ts) ERROR: $*" >&2; }
+warn()  { echo "$(ts) WARN: $*" >&2; }
+info()  { echo "$(ts) INFO: $*"; }
 
 # ----------------------------- Arg parsing -----------------------------------
 # Accept both `--key value` and `--key=value`
 while [ $# -gt 0 ]; do
   case "$1" in
-    --zone-id=*)     ZONE_ID=${1#*=} ;;
-    --zone-id)       ZONE_ID=$2; shift ;;
-    --record-id=*)   RECORD_ID=${1#*=} ;;
-    --record-id)     RECORD_ID=$2; shift ;;
-    --record-name=*) RECORD_NAME=${1#*=} ;;
-    --record-name)   RECORD_NAME=$2; shift ;;
-    --record-type=*) RECORD_TYPE=${1#*=} ;;
-    --record-type)   RECORD_TYPE=$2; shift ;;
-    --ttl=*)         TTL=${1#*=} ;;
-    --ttl)           TTL=$2; shift ;;
+    --zone=*)        ZONE=${1#*=} ;;
+    --zone)          ZONE=$2; shift ;;
+    --rr-id=*)       RR_ID=${1#*=} ;;
+    --rr-id)         RR_ID=$2; shift ;;
     --iface-cmd=*)   IFACE_CMD=${1#*=} ;;
     --iface-cmd)     IFACE_CMD=$2; shift ;;
     -h|--help)       usage; exit 0 ;;
     --)              shift; break ;;
     -*)
-      echo "ERROR: Unknown option: $1" >&2
+      error "Unknown option: $1"
       usage
       exit 2
       ;;
     *)
-      echo "ERROR: Unexpected positional argument: $1" >&2
+      error "Unexpected positional argument: $1"
       usage
       exit 2
       ;;
@@ -86,26 +68,17 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-fail() { echo "ERROR: $*" >&2; exit 2; }
-warn() { echo "WARN: $*" >&2; }
-info() { echo "INFO: $*"; }
-
 # ----------------------------- Validation ------------------------------------
-[ -n "${ZONE_ID}" ]     || fail "Missing --zone-id"
-[ -n "${RECORD_ID}" ]   || fail "Missing --record-id"
-[ -n "${RECORD_NAME}" ] || fail "Missing --record-name"
-[ -n "${RECORD_TYPE}" ] || fail "Missing --record-type"
-[ -n "${TTL}" ]         || fail "Missing --ttl"
-case "${TTL}" in (*[!0-9]*|'') fail "--ttl must be an integer";; esac
-[ -n "${IFACE_CMD}" ]   || fail "Missing --iface-cmd"
+[ -n "${ZONE:-}" ]      || fail "Missing --zone"
+[ -n "${RR_ID:-}" ]     || fail "Missing --rr-id"
+[ -n "${IFACE_CMD:-}" ] || fail "Missing --iface-cmd"
 
 # ------------------------------ Auth -----------------------------------------
 if [ ! -r "${API_TOKEN_FILE}" ]; then
-  echo "ERROR: Token file missing or unreadable: ${API_TOKEN_FILE}" >&2
-  exit 2
+  fail "Token file missing or unreadable: ${API_TOKEN_FILE}"
 fi
 API_TOKEN="$(cat "${API_TOKEN_FILE}" | tr -d '[:space:]')"
-[ -n "${API_TOKEN}" ] || { echo "ERROR: API token is empty" >&2; exit 2; }
+[ -n "${API_TOKEN}" ] || fail "API token is empty"
 
 # ------------------------------ Helpers --------------------------------------
 get_ip() {
@@ -120,24 +93,24 @@ if [ -z "${IFACE_IP}" ]; then
   exit 1
 fi
 
-BODY=$(printf '{"type":"%s","name":"%s","value":"%s","zone_id":"%s","ttl":%s}' \
-              "${RECORD_TYPE}" "${RECORD_NAME}" "${IFACE_IP}" "${ZONE_ID}" "${TTL}")
+BODY=$(printf '{"records":[{"value":"%s","comment":"Updated by hetzner_ddns.sh at %s"}]}' \
+              "${IFACE_IP}" "$(ts)")
 
 HTTP_CODE=$(
-  curl -sS -o /dev/null -w "%{http_code}" -X PUT \
+  curl -sS -o /dev/null -w "%{http_code}" -X POST \
     -H "Content-Type: application/json" \
-    -H "Auth-API-Token: ${API_TOKEN}" \
+    -H "Authorization: Bearer ${API_TOKEN}" \
     --data "${BODY}" \
-    "${API_BASE}/records/${RECORD_ID}"
+    "${API_BASE}/zones/${ZONE}/rrsets/${RR_ID}/actions/update_records"
 )
 
 case "${HTTP_CODE}" in
   200)
-    info "Updated zone ${ZONE_ID} record ${RECORD_ID} -> ${RECORD_TYPE} ${RECORD_NAME} ${IFACE_IP} with TTL ${TTL}"
+    info "Updated zone ${ZONE} RRSet ${RR_ID} -> ${IFACE_IP}"
     exit 0
     ;;
   4*)
-    echo "ERROR: Client error from API (HTTP ${HTTP_CODE}) - check IDs/token/body" >&2
+    error "Client error from API (HTTP ${HTTP_CODE}) - check zone/rr params/token/body"
     exit 2
     ;;
   5*)
