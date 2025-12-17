@@ -32,6 +32,7 @@
       - { num: 11, name: spliit }
       - { num: 13, name: ente }
       - { num: 14, name: freshrss }
+      - { num: 15, name: paste }
     ingress_routes:
       - { host: jan.systems, jail: homepage }
       - { host: jantuomi.fi, redirect: jan.systems }
@@ -41,6 +42,14 @@
       - { host: freshrss.jan.systems, jail: freshrss }
       - { host: irc.jan.systems, jail: irc_thelounge }
       - { host: goaccess.jan.systems, static: /var/www/goaccess }
+      - { host: paste.jan.systems, jail: paste }
+    cert_domains:
+      - "jan.systems"
+      - "*.jan.systems"
+      - "jantuomi.fi"
+      - "*.jantuomi.fi"
+    cert_name: "{{ cert_domains[0] }}"
+    contact_email: jan@jantuomi.fi
 
   tasks:
     - name: Run general tasks

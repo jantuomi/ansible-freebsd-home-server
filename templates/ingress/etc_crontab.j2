@@ -7,9 +7,7 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 #minute hour    mday    month   wday    who     command
 
 # Update LetsEncrypt certificates every day after 2:00 AM
-{% for host in tls_hosts %}
-{{ loop.index0 }}       2       *       *       *       root    certbot certonly --nginx -n -m jan@jantuomi.fi --agree-tos -d {{ host }}
-{% endfor %}
+0       2       *       *       *       root    certbot certonly -n -m {{ contact_email }} --agree-tos --manual --manual-auth-hook /usr/local/bin/acme-dns-auth.py --preferred-challenges dns --debug-challenges {% for domain in cert_domains %}-d '{{ domain }}' {% endfor %} || echo "ERROR: Failed to renew certs" >&2
 
 # Update dynamic DNS (Hetzner)
 {% for elem in hetzner_zone_record_ids %}
