@@ -12,3 +12,44 @@
     zfs create -p "{{ dataset.name }}"
     {% endif %}
   when: check_dataset_exists.rc != 0
+
+- name: Check if userland snapshot already exists
+  shell: zfs list -t snapshot -o name | grep -Fxq "{{ dataset.name }}@base"
+  failed_when: false
+  changed_when: false
+  register: zfs_userland_check
+  when: dataset.userland is defined
+
+- name: Set up userland
+  when: dataset.userland is defined and zfs_userland_check.rc != 0
+  block:
+    - name: Download userland
+      get_url:
+        url: https://download.freebsd.org/ftp/releases/amd64/amd64/{{ dataset.userland }}/base.txz
+        dest: /usr/local/jails/media/{{ dataset.userland }}-base.txz
+        owner: root
+        group: wheel
+        mode: "0644"
+
+    - name: Unarchive userland
+      shell: tar -xzf /usr/local/jails/media/{{ dataset.userland }}-base.txz -C /usr/local/jails/templates/{{ dataset.userland }}
+
+    - name: Copy localtime to jail userland
+      copy:
+        remote_src: true
+        src: /etc/localtime
+        dest: /usr/local/jails/templates/{{ dataset.userland }}/etc/localtime
+
+    - name: Copy resolv.conf to jail userland
+      shell: |
+        cat /etc/resolv.conf > /usr/local/jails/templates/{{ dataset.userland }}/etc/resolv.conf
+        chmod 644 /usr/local/jails/templates/{{ dataset.userland }}/etc/resolv.conf
+
+    - name: Update userland to latest patch level
+      shell: freebsd-update -b /usr/local/jails/templates/{{ dataset.userland }}/ fetch install
+
+    - name: Disable syslogd in the template
+      shell: echo 'syslogd_enable="NO"' >> /usr/local/jails/templates/{{ dataset.userland }}/etc/rc.conf
+
+    - name: Create userland ZFS snapshot
+      shell: zfs snapshot zroot/jails/templates/{{ dataset.userland }}@base

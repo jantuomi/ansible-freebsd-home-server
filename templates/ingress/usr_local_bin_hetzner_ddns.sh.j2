@@ -101,11 +101,11 @@ HTTP_CODE=$(
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer ${API_TOKEN}" \
     --data "${BODY}" \
-    "${API_BASE}/zones/${ZONE}/rrsets/${RR_ID}/actions/update_records"
+    "${API_BASE}/zones/${ZONE}/rrsets/${RR_ID}/actions/set_records"
 )
 
 case "${HTTP_CODE}" in
-  200)
+  20*)
     info "Updated zone ${ZONE} RRSet ${RR_ID} -> ${IFACE_IP}"
     exit 0
     ;;

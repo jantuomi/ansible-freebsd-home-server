@@ -19,20 +19,21 @@
     lan_ipv4_network: 192.168.0.0/16
     lan_ipv4_gateway: 192.168.0.1
     lan_search_domain: local.jan.systems
-    jail_userland_version: 14.3-RELEASE
+    jail_userland_14_3: 14.3-RELEASE
+    jail_userland_15_0: 15.0-RELEASE
     jails:
-      - { num: 1, name: ingress }
-      - { num: 2, name: postgres }
-      - { num: 3, name: irc_thelounge }
-      - { num: 4, name: taulubot }
-      - { num: 5, name: homepage }
-      - { num: 6, name: hommabot }
-      - { num: 7, name: aggro }
-      - { num: 8, name: diddle }
-      - { num: 11, name: spliit }
-      - { num: 13, name: ente }
-      - { num: 14, name: freshrss }
-      - { num: 15, name: paste }
+      - { userland: "{{ jail_userland_14_3 }}", num: 1, name: ingress }
+      - { userland: "{{ jail_userland_14_3 }}", num: 2, name: postgres }
+      - { userland: "{{ jail_userland_14_3 }}", num: 3, name: irc_thelounge }
+      - { userland: "{{ jail_userland_14_3 }}", num: 4, name: taulubot }
+      - { userland: "{{ jail_userland_14_3 }}", num: 5, name: homepage }
+      - { userland: "{{ jail_userland_14_3 }}", num: 6, name: hommabot }
+      - { userland: "{{ jail_userland_14_3 }}", num: 7, name: aggro }
+      - { userland: "{{ jail_userland_14_3 }}", num: 8, name: diddle }
+      - { userland: "{{ jail_userland_14_3 }}", num: 11, name: spliit }
+      - { userland: "{{ jail_userland_15_0 }}", num: 13, name: immich }
+      - { userland: "{{ jail_userland_14_3 }}", num: 14, name: freshrss }
+      - { userland: "{{ jail_userland_14_3 }}", num: 15, name: paste }
     ingress_routes:
       - { host: jan.systems, jail: homepage }
       - { host: jantuomi.fi, redirect: jan.systems }

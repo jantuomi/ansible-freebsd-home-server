@@ -11,51 +11,18 @@
     - { name: "zroot/jails", mountpoint: "/usr/local/jails" }
     - { name: "zroot/jails/media" }
     - { name: "zroot/jails/templates" }
-    - { name: "zroot/jails/templates/{{ jail_userland_version }}" }
+    - {
+        name: "zroot/jails/templates/{{ jail_userland_14_3 }}",
+        userland: "{{ jail_userland_14_3 }}",
+      }
+    - {
+        name: "zroot/jails/templates/{{ jail_userland_15_0 }}",
+        userland: "{{ jail_userland_15_0 }}",
+      }
     - { name: "zroot/jails/containers" }
   loop_control:
     loop_var: dataset
   include_tasks: jails_dataset.yml
-
-- name: Check if userland snapshot already exists
-  shell: zfs list -t snapshot -o name | grep -Fxq "zroot/jails/templates/{{ jail_userland_version }}@base"
-  failed_when: false
-  changed_when: false
-  register: zfs_userland_check
-
-- name: Set up userland
-  when: zfs_userland_check.rc != 0
-  block:
-    - name: Download userland
-      get_url:
-        url: https://download.freebsd.org/ftp/releases/amd64/amd64/{{ jail_userland_version }}/base.txz
-        dest: /usr/local/jails/media/{{ jail_userland_version }}-base.txz
-        owner: root
-        group: wheel
-        mode: "0644"
-
-    - name: Unarchive userland
-      shell: tar -xzf /usr/local/jails/media/{{ jail_userland_version }}-base.txz -C /usr/local/jails/templates/{{ jail_userland_version }}
-
-    - name: Copy localtime to jail userland
-      copy:
-        remote_src: true
-        src: /etc/localtime
-        dest: /usr/local/jails/templates/{{ jail_userland_version }}/etc/localtime
-
-    - name: Copy resolv.conf to jail userland
-      shell: |
-        cat /etc/resolv.conf > /usr/local/jails/templates/{{ jail_userland_version }}/etc/resolv.conf
-        chmod 644 /usr/local/jails/templates/{{ jail_userland_version }}/etc/resolv.conf
-
-    - name: Update userland to latest patch level
-      shell: freebsd-update -b /usr/local/jails/templates/{{ jail_userland_version }}/ fetch install
-
-    - name: Disable syslogd in the template
-      shell: echo 'syslogd_enable="NO"' >> /usr/local/jails/templates/{{ jail_userland_version }}/etc/rc.conf
-
-    - name: Create userland ZFS snapshot
-      shell: zfs snapshot zroot/jails/templates/{{ jail_userland_version }}@base
 
 - name: Configure jails
   block:

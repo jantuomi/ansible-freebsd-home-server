@@ -5,7 +5,7 @@
   register: check_jail_directory
 
 - name: "ZFS clone snapshot to jail directory for {{ jail.name }}"
-  shell: zfs clone zroot/jails/templates/{{ jail_userland_version }}@base "zroot/jails/containers/{{ jail.name }}"
+  shell: zfs clone zroot/jails/templates/{{ jail.userland }}@base "zroot/jails/containers/{{ jail.name }}"
   when: check_jail_directory.rc != 0
 
 - name: Make resolv.conf immutable
