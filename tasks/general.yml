@@ -10,6 +10,7 @@
     - bash
     - python
     - py311-pip
+    - vm-bhyve
 
 - name: Set up periodic.conf
   template:
@@ -126,3 +127,18 @@
     owner: root
     group: wheel
     mode: "0755"
+
+- name: Check if zroot/vm exists
+  shell: zfs list zroot/vm
+  register: zroot_vm_check
+  failed_when: false
+  changed_when: false
+
+- name: Add vm dataset for bhyve and init
+  when: zroot_vm_check.rc != 0
+  block:
+    - name: Create vm dataset
+      shell: zfs create zroot/vm
+
+    - name: Run vm init
+      shell: vm init
