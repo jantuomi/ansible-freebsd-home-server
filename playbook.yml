@@ -31,7 +31,9 @@
       - { userland: "{{ jail_userland_14_3 }}", num: 7, name: aggro }
       - { userland: "{{ jail_userland_14_3 }}", num: 8, name: diddle }
       - { userland: "{{ jail_userland_15_0 }}", num: 9, name: redis }
+      - { userland: "{{ jail_userland_15_0 }}", num: 10, name: samba }
       - { userland: "{{ jail_userland_14_3 }}", num: 11, name: spliit }
+      - { userland: "{{ jail_userland_15_0 }}", num: 12, name: goaccess }
       - { userland: "{{ jail_userland_14_3 }}", num: 14, name: freshrss }
       - { userland: "{{ jail_userland_14_3 }}", num: 15, name: paste }
     ingress_routes:
@@ -42,7 +44,6 @@
       - { host: spliit.jan.systems, jail: spliit }
       - { host: freshrss.jan.systems, jail: freshrss }
       - { host: irc.jan.systems, jail: irc_thelounge }
-      - { host: goaccess.jan.systems, static: /var/www/goaccess }
       - { host: paste.jan.systems, jail: paste }
       - { host: immich.jan.systems, ip: 192.168.3.3, port: 2283 } # vms aren't configured in ansible
     cert_domains:

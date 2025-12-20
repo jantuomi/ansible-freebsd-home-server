@@ -85,30 +85,6 @@ http {
 
         return 307 https://{{ route.redirect }}$request_uri;
     }
-    {% elif route.static is defined -%}
-    server {
-        server_name {{ route.host }};
-        http2 on;
-
-        listen 443 ssl;
-        listen [::]:443 ssl;
-
-        # See https://ssl-config.mozilla.org/#server=nginx&version=1.28.0&config=intermediate&openssl=3.4.0&guideline=5.7
-        add_header Strict-Transport-Security "max-age=63072000" always;
-
-        ssl_certificate /usr/local/etc/letsencrypt/live/{{ cert_name }}/fullchain.pem;
-        ssl_certificate_key /usr/local/etc/letsencrypt/live/{{ cert_name }}/privkey.pem;
-        include /usr/local/etc/letsencrypt/options-ssl-nginx.conf;
-        ssl_dhparam /usr/local/etc/letsencrypt/ssl-dhparams.pem;
-
-        # No error logging for static files
-        error_log off;
-
-        location / {
-            root {{ route.static }};
-            index index.html;
-        }
-    }
     {% elif route.ip is defined -%}
     server {
         server_name {{ route.host }};

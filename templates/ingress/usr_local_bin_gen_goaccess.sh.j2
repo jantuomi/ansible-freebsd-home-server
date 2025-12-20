@@ -1,6 +1,8 @@
 #!/bin/sh
 
-cat /var/log/nginx/access.log | awk '$8=$1$8' | /usr/local/bin/goaccess --log-format=VCOMBINED -j "$(($(nproc) + 1))" --keep-last=30 -a -o /var/www/goaccess/index.html --persist --restore
-chmod 644 /var/www/goaccess/index.html
-chown www /var/www/goaccess/index.html
-chgrp www /var/www/goaccess/index.html
+TARGET=/mnt/www_goaccess/index.html
+
+cat /var/log/nginx/access.log | awk '$8=$1$8' | /usr/local/bin/goaccess --log-format=VCOMBINED -j "$(($(nproc) + 1))" --keep-last=30 -a -o $TARGET --restore --persist
+chmod 644 $TARGET
+chown www $TARGET
+chgrp www $TARGET

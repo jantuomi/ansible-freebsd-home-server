@@ -27,6 +27,8 @@
   {% for ing in jails -%}
   {% if ing.name == "ingress" -%}
   exec.poststart   += "jexec ${name} route add default 192.168.2.{{ ing.num }} || echo 'Failed to add default route'";
+  exec.poststart   += "jexec ${name} route add 10.6.210.0/24 192.168.0.1 || echo 'Failed to add Wireguard return route'";
+  exec.poststart   += "mount -t nullfs /usr/local/jails/containers/goaccess/var/www/goaccess /usr/local/jails/containers/ingress/mnt/www_goaccess"
   {% endif %}
   {% endfor %}
   {% else %}
