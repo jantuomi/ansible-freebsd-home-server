@@ -110,7 +110,7 @@
   shell: |
     service -j ingress nginx enable
     service -j ingress nginx onestart
-  when: ingress_nginx_enabled.rc != 0
+  when: ingress_nginx_enabled.rc != 0 or nginx_conf.changed
 
 - name: Install hetzner_ddns.sh
   template:

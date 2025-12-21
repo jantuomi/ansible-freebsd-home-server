@@ -28,7 +28,6 @@
   {% if ing.name == "ingress" -%}
   exec.poststart   += "jexec ${name} route add default 192.168.2.{{ ing.num }} || echo 'Failed to add default route'";
   exec.poststart   += "jexec ${name} route add 10.6.210.0/24 192.168.0.1 || echo 'Failed to add Wireguard return route'";
-  exec.poststart   += "mount -t nullfs /usr/local/jails/containers/goaccess/var/www/goaccess /usr/local/jails/containers/ingress/mnt/www_goaccess"
   {% endif %}
   {% endfor %}
   {% else %}
@@ -36,6 +35,7 @@
   exec.poststart   += "jexec ${name} ifconfig epw{{ jail.num }}b up";
   exec.poststart   += "ifconfig epw{{ jail.num }}a up";
   exec.poststart   += "jexec ${name} service dhclient restart epw{{ jail.num }}b";
+  exec.poststart   += "mount -t nullfs /usr/local/jails/containers/goaccess/var/www/goaccess /usr/local/jails/containers/ingress/mnt/www_goaccess";
   {% endif %}
 
   exec.stop         = "/bin/sh /etc/rc.shutdown";
@@ -43,6 +43,7 @@
   exec.poststop    += "ifconfig epl{{ jail.num }}a destroy";
   {% if jail.name == "ingress" -%}
   exec.poststop    += "ifconfig epw{{ jail.num }}a destroy";
+  exec.poststop    += "umount /usr/local/jails/containers/ingress/mnt/www_goaccess";
   {% endif %}
 
   exec.consolelog   = "/var/log/jail_console_${name}.log";
