@@ -1,0 +1,15 @@
+devfs_ruleset = 6;
+
+{% include 'jail_confs/_epl_network.j2' %}
+
+exec.prestart    += "ifconfig epair{{ jail.num }}001 create || echo 'Failed to create epair{{ jail.num }}001'";
+exec.prestart    += "ifconfig epair{{ jail.num }}001a name epw1a";
+exec.prestart    += "ifconfig epair{{ jail.num }}001b name epw1b";
+exec.prestart    += "ifconfig brwan0 addm epw{{ jail.num }}a";
+
+exec.poststart   += "ifconfig epw{{ jail.num }}b vnet ${name}";
+exec.poststart   += "jexec ${name} ifconfig epw{{ jail.num }}b up";
+exec.poststart   += "ifconfig epw{{ jail.num }}a up";
+exec.poststart   += "jexec ${name} service dhclient restart epw{{ jail.num }}b";
+
+exec.poststop    += "ifconfig epw{{ jail.num }}a destroy";

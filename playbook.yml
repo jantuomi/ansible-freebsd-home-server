@@ -38,6 +38,7 @@
       - { userland: "{{ jail_userland_14_3 }}", num: 14, name: freshrss }
       - { userland: "{{ jail_userland_14_3 }}", num: 15, name: paste }
       - { userland: "{{ jail_userland_15_0 }}", num: 16, name: dl }
+    ingress_ip: 192.168.2.1
     ingress_routes:
       - { host: jan.systems, jail: homepage }
       - { host: jantuomi.fi, redirect: jan.systems }

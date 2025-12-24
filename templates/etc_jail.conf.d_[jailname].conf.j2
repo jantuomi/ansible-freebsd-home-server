@@ -5,53 +5,13 @@
   vnet;
   persist;
   exec.clean;
-  exec.prestart     = "ifconfig epair{{ jail.num }}000 create || echo 'Failed to create epair{{ jail.num }}000'";
-  exec.prestart    += "ifconfig epair{{ jail.num }}000a name epl{{ jail.num }}a";
-  exec.prestart    += "ifconfig epair{{ jail.num }}000b name epl{{ jail.num }}b";
-  exec.prestart    += "ifconfig epl{{ jail.num }}b ether random";
-  exec.prestart    += "ifconfig brlan0 addm epl{{ jail.num }}a";
-  {% if jail.name == "ingress" -%}
-  exec.prestart    += "ifconfig epair{{ jail.num }}001 create || echo 'Failed to create epair{{ jail.num }}001'";
-  exec.prestart    += "ifconfig epair{{ jail.num }}001a name epw1a";
-  exec.prestart    += "ifconfig epair{{ jail.num }}001b name epw1b";
-  exec.prestart    += "ifconfig brwan0 addm epw{{ jail.num }}a";
-  {% endif %}
 
+  exec.prestart     = "";
   exec.start        = "/bin/sh /etc/rc";
-
-  exec.poststart    = "ifconfig epl{{ jail.num }}b vnet ${name}";
-  exec.poststart   += "jexec ${name} ifconfig epl{{ jail.num }}b up";
-  exec.poststart   += "ifconfig epl{{ jail.num }}a up";
-  exec.poststart   += "jexec ${name} ifconfig epl{{ jail.num }}b 192.168.2.{{ jail.num }}/16";
-  exec.poststart   += "jexec ${name} route delete default || echo 'No default route to delete'";
-  {% if jail.name != "ingress" %}
-  {% for ing in jails -%}
-  {% if ing.name == "ingress" -%}
-  exec.poststart   += "jexec ${name} route add default 192.168.2.{{ ing.num }} || echo 'Failed to add default route'";
-  exec.poststart   += "jexec ${name} route add 10.6.210.0/24 192.168.0.1 || echo 'Failed to add Wireguard return route'";
-  {% endif %}
-  {% endfor %}
-  {% else %}
-  exec.poststart   += "ifconfig epw{{ jail.num }}b vnet ${name}";
-  exec.poststart   += "jexec ${name} ifconfig epw{{ jail.num }}b up";
-  exec.poststart   += "ifconfig epw{{ jail.num }}a up";
-  exec.poststart   += "jexec ${name} service dhclient restart epw{{ jail.num }}b";
-  exec.poststart   += "mount -t nullfs /usr/local/jails/containers/goaccess/var/www/goaccess /usr/local/jails/containers/ingress/mnt/www_goaccess";
-  {% endif %}
-
-  {% if jail.name == "dl" -%}
-  exec.poststart   += "jexec ${name} sh ~/random_tunnel.sh";
-  {% elif jail.name == "plex" -%}
-  exec.poststart   += "jexec ${name} sh ~/start_plex.sh";
-  {% endif %}
-
+  exec.poststart    = "";
+  exec.prestop      = "";
   exec.stop         = "/bin/sh /etc/rc.shutdown";
-
-  exec.poststop    += "ifconfig epl{{ jail.num }}a destroy";
-  {% if jail.name == "ingress" -%}
-  exec.poststop    += "ifconfig epw{{ jail.num }}a destroy";
-  exec.poststop    += "umount /usr/local/jails/containers/ingress/mnt/www_goaccess";
-  {% endif %}
+  exec.poststop     = "";
 
   exec.consolelog   = "/var/log/jail_console_${name}.log";
 
@@ -59,19 +19,25 @@
   allow.raw_sockets;
   exec.clean;
   mount.devfs;
-  {%if jail.name == "postgres" -%}
-  allow.sysvipc;
-  devfs_ruleset = 5;
-  {% elif jail.name == "ingress" -%}
-  devfs_ruleset = 6;
-  {% elif jail.name == "dl" -%}
-  devfs_ruleset = 4;
-  allow.mlock;
-  {% else %}
-  devfs_ruleset = 4;
-  {% endif %}
 
   # HOSTNAME/PATH
   host.hostname = "${name}";
   path = "/usr/local/jails/containers/${name}";
+
+  # JAIL-SPECIFIC CONFIGURATION
+{% set t = lookup(
+  'ansible.builtin.first_found',
+  {
+    'files': [
+        'jail_confs/' ~ jail.name ~ '.j2',
+        'jail_confs/_default.j2',
+    ],
+    'paths': [ playbook_dir ~ '/templates' ]
+  },
+  errors='ignore'
+) %}
+
+{% if t %}
+{{ lookup('ansible.builtin.template', t) | indent(2, true) }}
+{% endif %}
 }

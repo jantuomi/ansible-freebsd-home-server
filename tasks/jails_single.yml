@@ -15,13 +15,13 @@
     owner: root
     group: wheel
     mode: "0644"
-
-- name: "Check if jail {{ jail.name }} is running"
-  shell: jls -j "{{ jail.name }}"
-  failed_when: false
-  changed_when: false
-  register: check_jail_active
-
-- name: "(Re)start jail {{ jail.name }}"
-  shell: service jail restart "{{ jail.name }}"
-  when: check_jail_active.rc != 0
+#
+#- name: "Check if jail {{ jail.name }} is running"
+#  shell: jls -j "{{ jail.name }}"
+#  failed_when: false
+#  changed_when: false
+#  register: check_jail_active
+#
+#- name: "(Re)start jail {{ jail.name }}"
+#  shell: service jail restart "{{ jail.name }}"
+#  when: check_jail_active.rc != 0

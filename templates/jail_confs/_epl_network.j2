@@ -1,0 +1,17 @@
+## _epl_network begin
+exec.prestart    += "ifconfig epair{{ jail.num }}000 create || echo 'Failed to create epair{{ jail.num }}000'";
+exec.prestart    += "ifconfig epair{{ jail.num }}000a name epl{{ jail.num }}a";
+exec.prestart    += "ifconfig epair{{ jail.num }}000b name epl{{ jail.num }}b";
+exec.prestart    += "ifconfig epl{{ jail.num }}b ether random";
+exec.prestart    += "ifconfig brlan0 addm epl{{ jail.num }}a";
+
+exec.poststart   += "ifconfig epl{{ jail.num }}b vnet ${name}";
+exec.poststart   += "jexec ${name} ifconfig epl{{ jail.num }}b up";
+exec.poststart   += "ifconfig epl{{ jail.num }}a up";
+exec.poststart   += "jexec ${name} ifconfig epl{{ jail.num }}b 192.168.2.{{ jail.num }}/16";
+exec.poststart   += "jexec ${name} route delete default || echo 'No default route to delete'";
+
+exec.poststart   += "jexec ${name} route add 10.6.210.0/24 {{ lan_ipv4_gateway }} || echo 'Failed to add Wireguard return route'";
+
+exec.poststop    += "ifconfig epl{{ jail.num }}a destroy";
+## _epl_network end

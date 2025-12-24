@@ -1,0 +1,5 @@
+{% include 'jail_confs/_epl_network.j2' %}
+devfs_ruleset = 4;
+allow.mlock;
+
+exec.poststart   += "jexec ${name} sh ~/random_tunnel.sh";

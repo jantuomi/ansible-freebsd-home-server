@@ -1,0 +1,5 @@
+devfs_ruleset = 4;
+
+{% include 'jail_confs/_epl_network.j2' %}
+
+exec.poststart   += "jexec ${name} route add default {{ ingress_ip }} || echo 'Failed to add default route'";
