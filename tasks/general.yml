@@ -11,6 +11,8 @@
     - python
     - py311-pip
     - vm-bhyve
+    - fastfetch
+    - drm-kmod
 
 - name: Set up periodic.conf
   template:
@@ -142,3 +144,11 @@
 
     - name: Run vm init
       shell: vm init
+
+- name: Install .bashrc
+  file:
+    src: templates/root_bashr
+    dest: /root/.bashrc
+    owner: root
+    group: wheel
+    mode: "0644"

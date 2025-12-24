@@ -45,6 +45,9 @@
         cat /etc/resolv.conf > /usr/local/jails/templates/{{ dataset.userland }}/etc/resolv.conf
         chmod 644 /usr/local/jails/templates/{{ dataset.userland }}/etc/resolv.conf
 
+    - name: Disable resolvconf in the template
+      shell: echo 'resolvconf=NO' >> /usr/local/jails/templates/{{ dataset.userland }}/etc/resolvconf.conf
+
     - name: Update userland to latest patch level
       shell: freebsd-update -b /usr/local/jails/templates/{{ dataset.userland }}/ fetch install
 

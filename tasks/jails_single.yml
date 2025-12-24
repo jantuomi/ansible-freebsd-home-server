@@ -8,9 +8,6 @@
   shell: zfs clone zroot/jails/templates/{{ jail.userland }}@base "zroot/jails/containers/{{ jail.name }}"
   when: check_jail_directory.rc != 0
 
-- name: Make resolv.conf immutable
-  shell: chflags schg /usr/local/jails/containers/{{ jail.name }}/etc/resolv.conf
-
 - name: Configure jail.conf.d/{{ jail.name }}.conf
   template:
     src: etc_jail.conf.d_[jailname].conf.j2

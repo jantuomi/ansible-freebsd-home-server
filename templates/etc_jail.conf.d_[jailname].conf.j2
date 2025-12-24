@@ -8,6 +8,7 @@
   exec.prestart     = "ifconfig epair{{ jail.num }}000 create || echo 'Failed to create epair{{ jail.num }}000'";
   exec.prestart    += "ifconfig epair{{ jail.num }}000a name epl{{ jail.num }}a";
   exec.prestart    += "ifconfig epair{{ jail.num }}000b name epl{{ jail.num }}b";
+  exec.prestart    += "ifconfig epl{{ jail.num }}b ether random";
   exec.prestart    += "ifconfig brlan0 addm epl{{ jail.num }}a";
   {% if jail.name == "ingress" -%}
   exec.prestart    += "ifconfig epair{{ jail.num }}001 create || echo 'Failed to create epair{{ jail.num }}001'";
@@ -38,6 +39,12 @@
   exec.poststart   += "mount -t nullfs /usr/local/jails/containers/goaccess/var/www/goaccess /usr/local/jails/containers/ingress/mnt/www_goaccess";
   {% endif %}
 
+  {% if jail.name == "dl" -%}
+  exec.poststart   += "jexec ${name} sh ~/random_tunnel.sh";
+  {% elif jail.name == "plex" -%}
+  exec.poststart   += "jexec ${name} sh ~/start_plex.sh";
+  {% endif %}
+
   exec.stop         = "/bin/sh /etc/rc.shutdown";
 
   exec.poststop    += "ifconfig epl{{ jail.num }}a destroy";
@@ -57,6 +64,9 @@
   devfs_ruleset = 5;
   {% elif jail.name == "ingress" -%}
   devfs_ruleset = 6;
+  {% elif jail.name == "dl" -%}
+  devfs_ruleset = 4;
+  allow.mlock;
   {% else %}
   devfs_ruleset = 4;
   {% endif %}
