@@ -146,8 +146,8 @@
       shell: vm init
 
 - name: Install .bashrc
-  file:
-    src: templates/root_bashr
+  copy:
+    src: templates/root_bashrc
     dest: /root/.bashrc
     owner: root
     group: wheel

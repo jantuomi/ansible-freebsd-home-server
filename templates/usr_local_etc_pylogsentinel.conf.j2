@@ -3,7 +3,7 @@ state_dir = /var/run/pylogsentinel
 max_block_size = 10M
 
 [logs.standard]
-cmd = find / -type f -path '*/var/log/*' ! -name '*access.log' ! -name '*.bz2'
+cmd = find / -type f -path '*/var/log/*' ! -name '*access.log' ! -name '*.bz2' ! -name 'dmesg*'
 
 [logs.access]
 paths = /usr/local/jails/containers/ingress/var/log/nginx/access.log
