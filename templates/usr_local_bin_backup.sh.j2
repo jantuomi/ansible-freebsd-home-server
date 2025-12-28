@@ -174,7 +174,7 @@ cmd_prune_remote() {
     [[ -n "${b}" ]] || continue
     echo "Deleting remote: ${b}"
     set +e
-    echo "rm ${HOST_DIR}/${b}" | sftp -i "${KEYFILE}" "${USER}@${HOST}"
+    echo "rm ${b}" | sftp -i "${KEYFILE}" "${USER}@${HOST}"
     rc=$?
     set -e
     if [[ $rc -ne 0 ]]; then
