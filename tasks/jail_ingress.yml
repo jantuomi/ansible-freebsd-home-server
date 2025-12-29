@@ -39,6 +39,24 @@
   shell: jexec ingress sysctl net.inet.ip.forwarding=1
   when: ingress_ip_forwarding_enabled.rc != 0
 
+- name: Install pf-ban-socket.py
+  copy:
+    src: templates/ingress/pf-ban-socket.py
+    dest: /usr/local/jails/containers/ingress/usr/local/bin/pf-ban-socket.py
+    owner: root
+    group: wheel
+    mode: "0755"
+  register: ingress_pf_ban_socket_py
+
+- name: Install pf-ban-socket service
+  copy:
+    src: templates/ingress/usr_local_etc_rc.d_pf_ban_socket
+    dest: /usr/local/jails/containers/ingress/usr/local/etc/rc.d/pf_ban_socket
+    owner: root
+    group: wheel
+    mode: "0755"
+  register: ingress_pf_ban_socket_service
+
 - name: Check if pf enabled
   shell: jexec ingress sysrc pf_enable | grep -q "YES"
   register: ingress_pf_enabled
@@ -57,6 +75,12 @@
 - name: Start pf
   shell: service -j ingress pf start
   when: ingress_pf_status.rc != 0
+
+- name: Enable pf-ban-socket service
+  shell: |
+    service -j ingress pf_ban_socket enable
+    service -j ingress pf_ban_socket restart
+  when: ingress_pf_ban_socket_service.changed or ingress_pf_ban_socket_py.changed
 
 - name: Copy acme-dns-auth.py
   copy:
@@ -90,6 +114,22 @@
     mode: "0644"
   register: nginx_conf
 
+- name: Create nginx snippets directory
+  file:
+    path: "/usr/local/jails/containers/ingress/usr/local/etc/nginx/snippets"
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Include ban.inc
+  template:
+    src: ingress/nginx_snippet_ban.inc
+    dest: /usr/local/jails/containers/ingress/usr/local/etc/nginx/snippets/ban.inc
+    owner: root
+    group: wheel
+    mode: "0644"
+
 - name: Create static directories
   loop: "{{ ingress_routes | selectattr('static', 'defined') | map(attribute='static') | unique | list }}"
   file:
@@ -109,7 +149,7 @@
 - name: Enable and start nginx
   shell: |
     service -j ingress nginx enable
-    service -j ingress nginx onestart
+    service -j ingress nginx restart
   when: ingress_nginx_enabled.rc != 0 or nginx_conf.changed
 
 - name: Install hetzner_ddns.sh

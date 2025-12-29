@@ -1,0 +1,43 @@
+#!/bin/sh
+#
+# PROVIDE: pf_ban_socket
+# REQUIRE: NETWORKING pf
+# KEYWORD: shutdown
+#
+# Enable in /etc/rc.conf:
+#   pf_ban_socket_enable="YES"
+#
+. /etc/rc.subr
+
+name="pf_ban_socket"
+rcvar=pf_ban_socket_enable
+
+load_rc_config $name
+
+: ${pf_ban_socket_command:=/usr/local/bin/pf-ban-socket.py}
+: ${pf_ban_socket_log:=/var/log/${name}.log}
+
+start_cmd="${name}_start"
+stop_cmd="${name}_stop"
+status_cmd="${name}_status"
+
+extra_commands="status"
+
+pf_ban_socket_start() {
+    /usr/local/bin/logto ${pf_ban_socket_log} ${pf_ban_socket_command} &
+}
+
+pf_ban_socket_status() {
+    if pgrep -f "pf-ban-socket.py"; then
+        echo "pf_ban_socket is running"
+    else
+        echo "pf_ban_socket is not running"
+        exit 1
+    fi
+}
+
+pf_ban_socket_stop() {
+    pkill "pf-ban-socket.py"
+}
+
+run_rc_command "$1"
