@@ -22,7 +22,7 @@
     owner: root
     group: wheel
     mode: "0644"
-  register: nginx_conf
+  register: homepage_nginx_conf
 
 - name: Check if nginx is enabled
   shell: service -j homepage nginx status
@@ -32,9 +32,9 @@
 
 - name: Enable and start nginx
   shell: |
-    service -j homepage nginx enable
-    service -j homepage nginx onestart
-  when: homepage_nginx_enabled.rc != 0
+    service -j ingress nginx enable
+    service -j ingress nginx restart
+  when: homepage_nginx_enabled.rc != 0 or homepage_nginx_conf.changed
 
 - name: Set up crontab
   template:

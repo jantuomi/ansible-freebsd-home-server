@@ -19,6 +19,14 @@ http {
 
         index index.html;
 
+        # Migration redirects from legacy site
+        location ~ ^/archive(?:/(.*))?$ {
+            return 302 /posts/$1$is_args$args;
+        }
+        location = /feed.xml {
+            return 302 /atom.xml;
+        }
+
         location / {
             try_files $uri $uri.html $uri/ =404;
         }
