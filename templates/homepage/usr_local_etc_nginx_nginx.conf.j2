@@ -41,10 +41,11 @@ http {
 
         # Migration redirects from legacy site
         location ~ ^/archive(?:/(.*))?$ {
-            return 302 /posts/$1$is_args$args;
+            return 307 /posts/$1$is_args$args;
         }
         location = /feed.xml {
-            return 302 /atom.xml;
+            # Serve atom.xml content at the legacy feed.xml URL (no redirect)
+            rewrite ^ /atom.xml break;
         }
 
         location / {

@@ -42,6 +42,16 @@ http {
 
     {% for route in ingress_routes -%}
     server {
+        listen 80;
+        listen [::]:80;
+        server_name {{ route.host }};
+
+        include /usr/local/etc/nginx/snippets/ban.inc;
+
+        return 307 https://$host$request_uri;
+    }
+
+    server {
         server_name {{ route.host }};
         http2 on;
 
