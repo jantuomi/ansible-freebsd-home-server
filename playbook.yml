@@ -39,6 +39,7 @@
       - { userland: "{{ jail_userland_14_3 }}", num: 15, name: paste }
       - { userland: "{{ jail_userland_15_0 }}", num: 16, name: dl }
       - { userland: "{{ jail_userland_15_0 }}", num: 17, name: syncthing }
+      - { userland: "{{ jail_userland_15_0 }}", num: 18, name: komga }
     ingress_ip: 192.168.2.1
     ingress_routes:
       - { host: jan.systems, jail: homepage }
@@ -51,6 +52,7 @@
       - { host: paste.jan.systems, jail: paste }
       - { host: immich.jan.systems, ip: 192.168.3.3, port: 2283 } # vms aren't configured in ansible
       - { host: plex.jan.systems, jail: plex, port: 32400 }
+      - { host: komga.jan.systems, jail: komga, port: 25600 }
     cert_domains:
       - "jan.systems"
       - "*.jan.systems"
