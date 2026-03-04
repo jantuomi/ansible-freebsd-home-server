@@ -1,0 +1,4 @@
+{% include 'jail_confs/_default.j2' %}
+
+exec.prestart    += "mount -t nullfs /usr/local/jails/volumes/storage /usr/local/jails/containers/samba/mnt/storage || echo 'Failed to mount'";
+exec.poststop    += "umount /usr/local/jails/containers/samba/mnt/storage || echo 'Failed to umount'";

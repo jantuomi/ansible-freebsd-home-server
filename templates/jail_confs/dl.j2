@@ -1,3 +1,6 @@
 {% include 'jail_confs/_epl_network.j2' %}
 devfs_ruleset = 4;
 allow.mlock;
+
+exec.prestart    += "mount -t nullfs /usr/local/jails/volumes/storage /usr/local/jails/containers/dl/mnt/storage || echo 'Failed to mount'";
+exec.poststop    += "umount /usr/local/jails/containers/dl/mnt/storage || echo 'Failed to umount'";

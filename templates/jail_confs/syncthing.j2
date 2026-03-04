@@ -1,0 +1,9 @@
+{% include 'jail_confs/_default.j2' %}
+
+exec.prestart    += "mount -t nullfs /usr/local/jails/volumes/storage/docs /usr/local/jails/containers/syncthing/mnt/docs || echo 'Failed to mount'";
+exec.prestart    += "mount -t nullfs /usr/local/jails/volumes/storage/vault /usr/local/jails/containers/syncthing/mnt/vault || echo 'Failed to mount'";
+exec.prestart    += "mount -t nullfs /usr/local/jails/volumes/storage/jan-systems-2025-content /usr/local/jails/containers/syncthing/mnt/jan-systems-2025-content || echo 'Failed to mount'";
+
+exec.poststop    += "umount /usr/local/jails/containers/syncthing/mnt/jan-systems-2025-content || echo 'Failed to umount'";
+exec.poststop    += "umount /usr/local/jails/containers/syncthing/mnt/vault || echo 'Failed to umount'";
+exec.poststop    += "umount /usr/local/jails/containers/syncthing/mnt/docs || echo 'Failed to umount'";

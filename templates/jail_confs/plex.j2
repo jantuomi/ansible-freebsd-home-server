@@ -1,0 +1,4 @@
+{% include 'jail_confs/_default.j2' %}
+
+exec.prestart    += "mount -t nullfs /usr/local/jails/volumes/storage/media /usr/local/jails/containers/plex/mnt/media || echo 'Failed to mount'";
+exec.poststop    += "umount /usr/local/jails/containers/plex/mnt/media || echo 'Failed to umount'";

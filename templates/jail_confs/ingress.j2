@@ -12,4 +12,6 @@ exec.poststart   += "jexec ${name} ifconfig epw{{ jail.num }}b up";
 exec.poststart   += "ifconfig epw{{ jail.num }}a up";
 exec.poststart   += "jexec ${name} service dhclient restart epw{{ jail.num }}b";
 
+exec.prestart    += "mount -t nullfs /usr/local/jails/containers/goaccess/var/www/goaccess /usr/local/jails/containers/ingress/mnt/www_goaccess || echo 'Failed to mount'";
+exec.poststop    += "umount /usr/local/jails/containers/ingress/mnt/www_goaccess || echo 'Failed to umount'";
 exec.poststop    += "ifconfig epw{{ jail.num }}a destroy";
