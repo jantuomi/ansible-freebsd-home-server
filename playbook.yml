@@ -40,6 +40,7 @@
       - { userland: "{{ jail_userland_15_0 }}", num: 16, name: dl }
       - { userland: "{{ jail_userland_15_0 }}", num: 17, name: syncthing }
       - { userland: "{{ jail_userland_15_0 }}", num: 18, name: komga }
+      - { userland: "{{ jail_userland_15_0 }}", num: 19, name: leolalla_fi }
     ingress_ip: 192.168.2.1
     ingress_routes:
       - { host: jan.systems, jail: homepage }
@@ -50,6 +51,7 @@
       - { host: freshrss.jan.systems, jail: freshrss }
       - { host: irc.jan.systems, jail: irc_thelounge }
       - { host: paste.jan.systems, jail: paste }
+      - { host: leolalla.fi, jail: leolalla_fi }
       - { host: immich.jan.systems, ip: 192.168.3.3, port: 2283 } # vms aren't configured in ansible
       - { host: plex.jan.systems, jail: plex, port: 32400 }
       - { host: komga.jan.systems, jail: komga, port: 25600 }
@@ -58,6 +60,8 @@
       - "*.jan.systems"
       - "jantuomi.fi"
       - "*.jantuomi.fi"
+      - "leolalla.fi"
+      - "*.leolalla.fi"
     cert_name: "{{ cert_domains[0] }}"
     contact_email: jan@jantuomi.fi
 
