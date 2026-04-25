@@ -11,6 +11,8 @@ set -eu
 : "${API_BASE:=https://api.hetzner.cloud/v1}"
 # -----------------------------------------------------------------------------
 
+# Defaults
+TTL=300
 
 usage() {
   cat <<'USAGE' >&2
@@ -20,6 +22,7 @@ Options (named):
   --zone NAME_OR_ID       Hetzner Zone name or ID (primary mode only)
   --rr-id ID              RRSet identifier in the form "rr-name/rr-type" (e.g., "host/A")
   --iface-cmd CMD         Command that prints interface info (for IP discovery)
+  --ttl TTL               Time-to-live of the record (optional)
   -h, --help              Show this help
 
 Environment:
@@ -44,6 +47,7 @@ info()  { echo "$(ts) INFO: $*"; }
 
 # ----------------------------- Arg parsing -----------------------------------
 # Accept both `--key value` and `--key=value`
+
 while [ $# -gt 0 ]; do
   case "$1" in
     --zone=*)        ZONE=${1#*=} ;;
@@ -52,6 +56,8 @@ while [ $# -gt 0 ]; do
     --rr-id)         RR_ID=$2; shift ;;
     --iface-cmd=*)   IFACE_CMD=${1#*=} ;;
     --iface-cmd)     IFACE_CMD=$2; shift ;;
+    --ttl=*)         TTL=${1#*=} ;;
+    --ttl)           TTL=$2; shift ;;
     -h|--help)       usage; exit 0 ;;
     --)              shift; break ;;
     -*)
@@ -93,8 +99,8 @@ if [ -z "${IFACE_IP}" ]; then
   exit 1
 fi
 
-BODY=$(printf '{"records":[{"value":"%s","comment":"Updated by hetzner_ddns.sh at %s"}]}' \
-              "${IFACE_IP}" "$(ts)")
+BODY=$(printf '{"records":[{"value":"%s","comment":"Updated by hetzner_ddns.sh at %s","ttl":"%s"}]}' \
+              "${IFACE_IP}" "$(ts)" "${TTL}")
 
 HTTP_CODE=$(
   curl -sS -o /dev/null -w "%{http_code}" -X POST \
@@ -105,7 +111,7 @@ HTTP_CODE=$(
 )
 
 case "${HTTP_CODE}" in
-  20*)
+  2*)
     info "Updated zone ${ZONE} RRSet ${RR_ID} -> ${IFACE_IP}"
     exit 0
     ;;
