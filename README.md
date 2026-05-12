@@ -37,10 +37,10 @@ Use a `secrets.yml` file to provide secrets for Ansible to use. Required variabl
 Run the playbook or only some tagged sub-playbooks:
 
 ```shell
-ansible-playbook -i inventory playbook.yml -t [tag1] [tag2] ...
+ansible-playbook -i inventory.prod site.yml
 ```
 
-See `playbook.yml` for available tags.
+See `site.yml` for available tags.
 
 ## Author
 

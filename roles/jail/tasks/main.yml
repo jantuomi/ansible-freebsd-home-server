@@ -1,0 +1,175 @@
+# Host-side setup (runs on the jail host via SSH)
+- name: "Check if {{ jail_name }} container exists"
+  shell: "zfs list -o name | grep -Fxq 'zroot/jails/containers/{{ jail_name }}'"
+  failed_when: false
+  changed_when: false
+  register: jail_exists
+  delegate_to: "{{ jail_delegate_host }}"
+
+- name: "Check {{ jail_name }} userland version"
+  shell: "zfs get -H -o value origin zroot/jails/containers/{{ jail_name }}"
+  register: jail_origin
+  changed_when: false
+  when: jail_exists.rc == 0
+  delegate_to: "{{ jail_delegate_host }}"
+
+- name: "*** MIGRATION REQUIRED: {{ jail_name }} ***"
+  pause:
+    prompt: |
+
+      ════════════════════════════════════════════════════════════════
+        JAIL USERLAND MIGRATION: {{ jail_name }}
+      ════════════════════════════════════════════════════════════════
+        Current: {{ jail_origin.stdout | trim }}
+        Target:  zroot/jails/templates/{{ userland }}@base
+
+        This will:
+          1. Stop the jail
+          2. Rename existing dataset to *.old.<timestamp>
+          3. Clone fresh from {{ userland }}
+      ════════════════════════════════════════════════════════════════
+
+      Press Enter to continue or Ctrl+C to abort
+  when:
+    - jail_exists.rc == 0
+    - "userland + '@base' not in jail_origin.stdout"
+
+- name: "Migrate {{ jail_name }} to {{ userland }}"
+  shell: |
+    service jail stop {{ jail_name }} || true
+    zfs rename zroot/jails/containers/{{ jail_name }} zroot/jails/containers/{{ jail_name }}.old.$(date +%s)
+  when:
+    - jail_exists.rc == 0
+    - "userland + '@base' not in jail_origin.stdout"
+  delegate_to: "{{ jail_delegate_host }}"
+
+- name: "Clone {{ jail_name }} from template"
+  shell: "zfs clone zroot/jails/templates/{{ userland }}@base zroot/jails/containers/{{ jail_name }}"
+  when: jail_exists.rc != 0 or (jail_origin.stdout is defined and userland + '@base' not in jail_origin.stdout)
+  delegate_to: "{{ jail_delegate_host }}"
+
+- name: "Create directories for {{ jail_name }}"
+  file:
+    path: "/usr/local/jails/containers/{{ jail_name }}{{ item }}"
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+  loop: "{{ dirs | default([]) }}"
+  delegate_to: "{{ jail_delegate_host }}"
+
+- name: "Create mount point sources for {{ jail_name }}"
+  file:
+    path: "{{ item.src }}"
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+  loop: "{{ nullfs | default([]) }}"
+  loop_control:
+    label: "{{ item.src }}"
+  delegate_to: "{{ jail_delegate_host }}"
+
+- name: "Create mount point destinations for {{ jail_name }}"
+  file:
+    path: "/usr/local/jails/containers/{{ jail_name }}{{ item.dst }}"
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+  loop: "{{ nullfs | default([]) }}"
+  loop_control:
+    label: "{{ item.dst }}"
+  delegate_to: "{{ jail_delegate_host }}"
+
+- name: "Deploy jail.conf.d/{{ jail_name }}.conf"
+  template:
+    src: jail_conf.j2
+    dest: "/etc/jail.conf.d/{{ jail_name }}.conf"
+    owner: root
+    group: wheel
+    mode: "0644"
+  vars:
+    jail:
+      name: "{{ jail_name }}"
+      num: "{{ jail_num }}"
+      ip: "{{ jail_lan_cidr | ipv4_nth_cidr(jail_num | int + jail_lan_offset | int) }}"
+      devfs_ruleset: "{{ devfs_ruleset | default(4) }}"
+      options: "{{ jail_conf_options | default([]) }}"
+      default_route: "{{ not no_default_route | default(false) }}"
+      exec_prestart: "{{ exec_prestart | default([]) }}"
+      exec_start: "{{ exec_start | default([]) }}"
+      exec_poststart: "{{ exec_poststart | default([]) }}"
+      exec_prestop: "{{ exec_prestop | default([]) }}"
+      exec_stop: "{{ exec_stop | default([]) }}"
+      exec_poststop: "{{ exec_poststop | default([]) }}"
+      mounts: "{{ nullfs | default([]) }}"
+  delegate_to: "{{ jail_delegate_host }}"
+
+- name: "Start {{ jail_name }} jail"
+  shell: "service jail start {{ jail_name }}"
+  register: jail_start
+  failed_when: "jail_start.rc != 0 and 'already exists' not in jail_start.stdout"
+  changed_when: "'already exists' not in jail_start.stdout"
+  delegate_to: "{{ jail_delegate_host }}"
+
+# In-jail provisioning (runs inside the jail via jailexec)
+- name: Install packages
+  shell: "pkg install -y {{ pkg | join(' ') }}"
+  environment:
+    ASSUME_ALWAYS_YES: "yes"
+  when: pkg is defined and pkg | length > 0
+  register: pkg_result
+  changed_when: "'Number of packages to be installed' in pkg_result.stdout"
+
+- name: Create parent directories for files
+  file:
+    path: "{{ item.dest | dirname }}"
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+  loop: "{{ files | default([]) }}"
+  loop_control:
+    label: "{{ item.dest | dirname }}"
+  when: files is defined
+
+- name: Deploy files
+  template:
+    src: "{{ jail_role_dir }}/templates/{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('wheel') }}"
+    mode: "{{ item.mode | default('0644') }}"
+  loop: "{{ files | default([]) }}"
+  loop_control:
+    label: "{{ item.dest }}"
+  when: files is defined
+  notify: Restart jail services
+
+- name: Enable services
+  community.general.sysrc:
+    name: "{{ item }}_enable"
+    value: "YES"
+  loop: "{{ services | default([]) }}"
+
+- name: Start services
+  service:
+    name: "{{ item }}"
+    state: started
+  loop: "{{ services | default([]) }}"
+
+- name: Set sysctl values
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: present
+  loop: "{{ sysctl | default([]) }}"
+  when: sysctl is defined
+
+- name: Set sysrc values
+  community.general.sysrc:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+  loop: "{{ sysrc | default([]) }}"
+  when: sysrc is defined

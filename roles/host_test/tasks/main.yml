@@ -1,0 +1,13 @@
+- name: Set up /etc/rc.conf
+  template:
+    src: "{{ playbook_dir }}/roles/host/templates/etc_rc.conf.j2"
+    dest: /etc/rc.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+  vars:
+    is_prod: false
+  notify: Apply rc.conf
+
+- name: Flush handlers
+  meta: flush_handlers

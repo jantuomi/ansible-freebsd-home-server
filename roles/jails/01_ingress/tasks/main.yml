@@ -1,0 +1,49 @@
+- name: Set WAN hooks (test)
+  set_fact:
+    exec_prestart:
+      - "ifconfig epw{{ jail_num }}a destroy 2>/dev/null || true"
+      - "ifconfig epair{{ jail_num }}001 create"
+      - "ifconfig epair{{ jail_num }}001a name epw{{ jail_num }}a"
+      - "ifconfig epair{{ jail_num }}001b name epw{{ jail_num }}b"
+      - "ifconfig brlan0 addm epw{{ jail_num }}a"
+    exec_poststart:
+      - "ifconfig epw{{ jail_num }}b vnet {{ jail_name }}"
+      - "ifconfig epw{{ jail_num }}a up"
+      - "jexec {{ jail_name }} ifconfig epw{{ jail_num }}b up"
+      - "jexec {{ jail_name }} ifconfig epw{{ jail_num }}b inet {{ ingress_wan_static }}"
+      - "jexec {{ jail_name }} route add default {{ lan_ipv4_gateway }}"
+    exec_poststop:
+      - "ifconfig epw{{ jail_num }}a destroy 2>/dev/null || true"
+  when: not is_prod
+
+- name: Set WAN hooks (prod)
+  set_fact:
+    exec_prestart:
+      - "ifconfig epw{{ jail_num }}a destroy 2>/dev/null || true"
+      - "ifconfig epair{{ jail_num }}001 create"
+      - "ifconfig epair{{ jail_num }}001a name epw{{ jail_num }}a"
+      - "ifconfig epair{{ jail_num }}001b name epw{{ jail_num }}b"
+      - "ifconfig brwan0 addm epw{{ jail_num }}a"
+    exec_poststart:
+      - "ifconfig epw{{ jail_num }}b vnet {{ jail_name }}"
+      - "ifconfig epw{{ jail_num }}a up"
+      - "jexec {{ jail_name }} ifconfig epw{{ jail_num }}b up"
+      - "jexec {{ jail_name }} service dhclient restart epw{{ jail_num }}b"
+      - "jexec {{ jail_name }} route add 10.6.210.0/24 {{ lan_ipv4_gateway }} || true"
+    exec_poststop:
+      - "ifconfig epw{{ jail_num }}a destroy 2>/dev/null || true"
+  when: is_prod
+
+- import_role:
+    name: jail
+
+- name: Check if TLS certs exist
+  stat:
+    path: "/usr/local/etc/letsencrypt/live/{{ cert_name }}"
+  register: _certbot_certs
+  when: is_prod
+
+- name: Pause for manual certbot setup
+  pause:
+    prompt: "Run certbot manually in the ingress jail to obtain certs, then press Enter."
+  when: is_prod and not (_certbot_certs.stat.exists | default(true))

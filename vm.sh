@@ -43,7 +43,7 @@ SEED_ISO="${VM_DIR}/seed.iso"
 SSH_KEY="${VM_DIR}/id_ed25519"
 
 SSH_PORT_LAN=22
-VM_RAM=2048
+VM_RAM=4096
 VM_CPUS=2
 DISK_SIZE=20G
 
@@ -100,6 +100,7 @@ runcmd:
   - cp /usr/share/zoneinfo/Europe/Helsinki /etc/localtime
   - sysrc ifconfig_vtnet0="inet 10.0.20.2/24"
   - sysrc defaultrouter="10.0.20.1"
+  - echo 'vfs.zfs.arc.max=1073741824' >> /boot/loader.conf
   - ifconfig vtnet0 inet 10.0.20.2/24
   - route add default 10.0.20.1
   - sed -i '' 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
@@ -151,8 +152,6 @@ cmd_up() {
         -cdrom "$SEED_ISO" \
         -netdev vmnet-shared,id=lan,start-address=10.0.20.1,end-address=10.0.20.254,subnet-mask=255.255.255.0 \
         -device virtio-net-pci,netdev=lan \
-        -netdev vmnet-shared,id=wan,start-address=10.0.20.1,end-address=10.0.20.254,subnet-mask=255.255.255.0 \
-        -device virtio-net-pci,netdev=wan \
         -serial unix:"$SERIAL_SOCK",server,nowait \
         -monitor unix:"$MONITOR_SOCK",server,nowait \
         -pidfile "$PID_FILE" \
@@ -207,7 +206,7 @@ cmd_reset() {
 }
 
 cmd_ssh() {
-    exec ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+    exec env SSH_AUTH_SOCK= ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o IdentityAgent=none \
         -i "$SSH_KEY" root@10.0.20.2 "$@"
 }
 

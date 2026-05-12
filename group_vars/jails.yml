@@ -1,0 +1,5 @@
+ansible_connection: jailexec
+ansible_jail_name: "{{ inventory_hostname }}"
+ansible_python_interpreter: /usr/local/bin/python3
+ansible_shell_executable: /bin/sh
+ansible_jail_privilege_escalation: none

@@ -1,0 +1,11 @@
+userland: "15.0-RELEASE"
+devfs_ruleset: 4
+no_default_route: true
+
+jail_conf_options:
+  - "allow.raw_sockets"
+  - "allow.mlock"
+
+nullfs:
+  - src: /usr/local/jails/volumes/storage
+    dst: /mnt/storage

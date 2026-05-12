@@ -1,0 +1,59 @@
+- name: "Create template dataset for {{ userland }}"
+  community.general.zfs:
+    name: "zroot/jails/templates/{{ userland }}"
+    state: present
+
+- name: "Check if {{ userland }} snapshot exists"
+  shell: zfs list -t snapshot -o name | grep -Fxq "zroot/jails/templates/{{ userland }}@base"
+  failed_when: false
+  changed_when: false
+  register: userland_snap
+
+- name: "Set up {{ userland }} template"
+  when: userland_snap.rc != 0
+  block:
+    - name: Download userland
+      get_url:
+        url: "https://download.freebsd.org/ftp/releases/{{ arch }}/{{ userland }}/base.txz"
+        dest: "/usr/local/jails/media/{{ userland }}-base.txz"
+        owner: root
+        group: wheel
+        mode: "0644"
+
+    - name: Unarchive userland
+      shell: "chflags -R noschg /usr/local/jails/templates/{{ userland }} 2>/dev/null; tar -xzf /usr/local/jails/media/{{ userland }}-base.txz -C /usr/local/jails/templates/{{ userland }}"
+
+    - name: Copy localtime
+      copy:
+        remote_src: true
+        src: /etc/localtime
+        dest: "/usr/local/jails/templates/{{ userland }}/etc/localtime"
+
+    - name: Deploy resolv.conf
+      template:
+        src: etc_resolv.conf.j2
+        dest: "/usr/local/jails/templates/{{ userland }}/etc/resolv.conf"
+        owner: root
+        group: wheel
+        mode: "0644"
+
+    - name: Disable resolvconf
+      lineinfile:
+        path: "/usr/local/jails/templates/{{ userland }}/etc/resolvconf.conf"
+        line: "resolvconf=NO"
+        create: true
+
+    - name: Update userland
+      shell: "freebsd-update -b /usr/local/jails/templates/{{ userland }}/ fetch install"
+
+    - name: Disable syslogd
+      lineinfile:
+        path: "/usr/local/jails/templates/{{ userland }}/etc/rc.conf"
+        line: 'syslogd_enable="NO"'
+        create: true
+
+    - name: Install packages in template
+      shell: "ASSUME_ALWAYS_YES=yes pkg -c /usr/local/jails/templates/{{ userland }} install -y python3 bash"
+
+    - name: Create snapshot
+      shell: "zfs snapshot zroot/jails/templates/{{ userland }}@base"

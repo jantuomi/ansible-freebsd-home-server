@@ -1,0 +1,153 @@
+- name: Set up /etc/rc.conf
+  template:
+    src: "{{ playbook_dir }}/roles/host/templates/etc_rc.conf.j2"
+    dest: /etc/rc.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+  vars:
+    is_prod: true
+  notify: Apply rc.conf
+
+- name: Flush handlers
+  meta: flush_handlers
+
+- name: Install hardware packages
+  package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - vm-bhyve
+    - drm-kmod
+
+- name: Set up fstab
+  template:
+    src: etc_fstab.j2
+    dest: /etc/fstab
+    owner: root
+    group: wheel
+    mode: "0644"
+  notify: Mount filesystems
+
+- name: Set up bhyve
+  block:
+    - name: Create vm dataset
+      community.general.zfs:
+        name: zroot/vm
+        state: present
+
+    - name: Check if vm-bhyve is initialized
+      stat:
+        path: /zroot/vm/.config
+      register: vm_init_check
+
+    - name: Run vm init
+      shell: vm init
+      when: not vm_init_check.stat.exists
+
+- name: Copy backup SSH private key
+  copy:
+    src: "{{ backup_ssh_privkey_file }}"
+    dest: /root/.ssh/backup
+    owner: root
+    group: wheel
+    mode: "0600"
+
+- name: Copy backup SSH public key
+  copy:
+    src: "{{ backup_ssh_pubkey_file }}"
+    dest: /root/.ssh/backup.pub
+    owner: root
+    group: wheel
+    mode: "0644"
+
+- name: Copy SSH config
+  template:
+    src: root_ssh_config.j2
+    dest: /root/.ssh/config
+    owner: root
+    group: wheel
+    mode: "0644"
+
+- name: Copy backup script
+  template:
+    src: usr_local_bin_backup.sh.j2
+    dest: /usr/local/bin/backup
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Create dma config directory
+  file:
+    path: /etc/dma
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Configure dma.conf
+  template:
+    src: etc_dma_dma.conf.j2
+    dest: /etc/dma/dma.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+
+- name: Configure dma auth.conf
+  template:
+    src: etc_dma_auth.conf.j2
+    dest: /etc/dma/auth.conf
+    owner: root
+    group: mail
+    mode: "0640"
+
+- name: Configure mail aliases
+  template:
+    src: etc_aliases.j2
+    dest: /etc/aliases
+    owner: root
+    group: wheel
+    mode: "0644"
+  notify: Run newaliases
+
+- name: Install smartmontools
+  package:
+    name: smartmontools
+    state: present
+
+- name: Deploy smartd.conf
+  template:
+    src: "{{ playbook_dir }}/roles/host/templates/usr_local_etc_smartd.conf.j2"
+    dest: /usr/local/etc/smartd.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+  notify: Restart smartd
+
+- name: Start smartd
+  service:
+    name: smartd
+    state: started
+
+- name: Deploy zpool_gpt_labels rc.d script
+  template:
+    src: "{{ playbook_dir }}/roles/host/templates/usr_local_etc_rc.d_zpool_gpt_labels.j2"
+    dest: /usr/local/etc/rc.d/zpool_gpt_labels
+    owner: root
+    group: wheel
+    mode: "0755"
+  register: zpool_gpt_labels_script
+
+- name: Run zpool_gpt_labels
+  service:
+    name: zpool_gpt_labels
+    state: started
+  when: zpool_gpt_labels_script is changed
+
+- name: Deploy safepf script
+  copy:
+    src: "{{ playbook_dir }}/roles/host_prod/templates/usr_local_bin_safepf.sh"
+    dest: /usr/local/bin/safepf
+    owner: root
+    group: wheel
+    mode: "0755"

@@ -1,0 +1,5 @@
+userland: "15.0-RELEASE"
+
+nullfs:
+  - src: /usr/local/jails/volumes/storage/media/manga
+    dst: /mnt/manga

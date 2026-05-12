@@ -1,0 +1,5 @@
+- name: Restart jail services
+  service:
+    name: "{{ item }}"
+    state: restarted
+  loop: "{{ services | default([]) }}"

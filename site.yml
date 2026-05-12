@@ -1,0 +1,74 @@
+---
+# Site playbook
+#
+# Usage:
+#   ansible-playbook -i inventory/test site.yml
+#   ansible-playbook -i inventory/test site.yml --limit test_vm
+#   ansible-playbook -i inventory/test site.yml --limit ingress
+#   ansible-playbook -i inventory/prod site.yml
+
+- name: Configure host
+  hosts: servers
+  tags: [host]
+  vars_files:
+    - secrets.yml
+  vars:
+    lan_ipv4_network: 192.168.0.0/16
+    lan_search_domain: local.jan.systems
+    ingress_ip: "{{ jail_lan_cidr | ipv4_nth(1 + jail_lan_offset | int) }}"
+  pre_tasks:
+    - name: Verify secrets are loaded
+      assert:
+        that: smtp_user != ''
+        fail_msg: "Required variables missing. Did you forget to create secrets.yml?"
+      no_log: true
+
+  tasks:
+    - name: Apply host roles
+      include_role:
+        name: "{{ item }}"
+      loop: "{{ host_roles }}"
+
+- name: Provision jails
+  hosts: jails
+  serial: 1
+  gather_facts: false
+  vars_files:
+    - secrets.yml
+  vars:
+    lan_ipv4_network: 192.168.0.0/16
+    lan_search_domain: local.jan.systems
+    ingress_ip: "{{ jail_lan_cidr | ipv4_nth(1 + jail_lan_offset | int) }}"
+  pre_tasks:
+    - name: Resolve jail role directory
+      set_fact:
+        jail_name: "{{ ansible_jail_name }}"
+        jail_num: "{{ _jail_dir | basename | split('_') | first | int }}"
+        jail_role_dir: "{{ _jail_dir }}"
+      vars:
+        _jail_dir: '{{ lookup(''pipe'', ''find '' + playbook_dir + ''/roles/jails -maxdepth 1 -type d -name "*_'' + ansible_jail_name + ''"'') }}'
+
+    - name: Discover jail directories
+      find:
+        paths: "{{ playbook_dir }}/roles/jails"
+        patterns: "main.yml"
+        file_type: file
+        recurse: true
+      delegate_to: localhost
+      register: _jail_specs
+
+    - name: Build jails list
+      set_fact:
+        jails: "{{ jails | default([]) + [{'num': _num, 'name': _name}] }}"
+      vars:
+        _num: "{{ item.path | regex_replace('.*/jails/([^/]+)/.*', '\\1') | split('_') | first | int }}"
+        _name: "{{ item.path | regex_replace('.*/jails/([^/]+)/.*', '\\1') | regex_replace('^[0-9]+_', '') }}"
+      loop: "{{ _jail_specs.files | sort(attribute='path') }}"
+      loop_control:
+        label: "{{ item.path | regex_replace('.*/jails/([^/]+)/.*', '\\1') }}"
+      when: "'/defaults/' in item.path"
+
+  tasks:
+    - name: Apply jail role
+      include_role:
+        name: "{{ jail_role_dir }}"

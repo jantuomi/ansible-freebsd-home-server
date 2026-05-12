@@ -1,0 +1,13 @@
+- name: Apply rc.conf
+  shell: service kld start; service netif restart && service routing restart
+
+- name: Mount filesystems
+  shell: mount -a
+
+- name: Restart smartd
+  service:
+    name: smartd
+    state: restarted
+
+- name: Run newaliases
+  shell: newaliases

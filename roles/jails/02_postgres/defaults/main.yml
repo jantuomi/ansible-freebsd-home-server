@@ -1,0 +1,9 @@
+userland: "14.3-RELEASE"
+devfs_ruleset: 5
+
+jail_conf_options:
+  - "allow.raw_sockets"
+  - "allow.sysvipc"
+
+pkg:
+  - postgresql18-server

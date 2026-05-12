@@ -1,0 +1,5 @@
+userland: "15.0-RELEASE"
+
+nullfs:
+  - src: /usr/local/jails/volumes/goaccess_www
+    dst: /var/www/goaccess

@@ -1,0 +1,217 @@
+- name: Disable resolvconf
+  copy:
+    content: "resolvconf=NO\n"
+    dest: /etc/resolvconf.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+
+- name: Set up resolv.conf
+  template:
+    src: etc_resolv.conf.j2
+    dest: /etc/resolv.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+
+- name: Install packages
+  package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - rsync
+    - dma
+    - jq
+    - curl
+    - bash
+    - python
+    - py311-pip
+    - fastfetch
+
+- name: Set up sshd
+  template:
+    src: etc_ssh_sshd_config.j2
+    dest: /etc/ssh/sshd_config
+    owner: root
+    group: wheel
+    mode: "0644"
+  notify: Restart sshd
+
+- name: Start sshd
+  service:
+    name: sshd
+    state: started
+
+- name: Deploy logto script
+  template:
+    src: usr_local_bin_logto.sh.j2
+    dest: /usr/local/bin/logto
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Check if pylogsentinel is installed
+  shell: pip show pylogsentinel
+  register: pylogsentinel_check
+  failed_when: false
+  changed_when: false
+
+- name: Install pylogsentinel
+  shell: pip install pylogsentinel==0.3.0 --force --no-input
+  when: pylogsentinel_check.rc != 0
+
+- name: Deploy pylogsentinel.conf
+  template:
+    src: usr_local_etc_pylogsentinel.conf.j2
+    dest: /usr/local/etc/pylogsentinel.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+
+- name: Deploy pylogsentinel-batch-email.sh
+  template:
+    src: usr_local_bin_pylogsentinel-batch-email.sh.j2
+    dest: /usr/local/bin/pylogsentinel-batch-email.sh
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Start syslogd
+  service:
+    name: syslogd
+    state: started
+
+- name: Start auditd
+  service:
+    name: auditd
+    state: started
+
+- name: Set up periodic.conf
+  template:
+    src: etc_periodic.conf.j2
+    dest: /etc/periodic.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+
+- name: Set up crontab
+  template:
+    src: etc_crontab.j2
+    dest: /etc/crontab
+    owner: root
+    group: wheel
+    mode: "0644"
+  notify: Restart cron
+
+- name: Install .bashrc
+  copy:
+    src: root_bashrc
+    dest: /root/.bashrc
+    owner: root
+    group: wheel
+    mode: "0644"
+
+# Jail infrastructure
+- name: Discover jail directories
+  find:
+    paths: "{{ playbook_dir }}/roles/jails"
+    patterns: "main.yml"
+    recurse: true
+  delegate_to: localhost
+  register: _jail_specs
+
+- name: Load jail definitions
+  set_fact:
+    jail_defs: "{{ jail_defs | default([]) + [_content | combine({'num': _num, 'name': _name})] }}"
+  vars:
+    _content: "{{ lookup('file', item.path) | from_yaml }}"
+    _num: "{{ item.path | regex_replace('.*/jails/([^/]+)/.*', '\\1') | split('_') | first | int }}"
+    _name: "{{ item.path | regex_replace('.*/jails/([^/]+)/.*', '\\1') | regex_replace('^[0-9]+_', '') }}"
+  loop: "{{ _jail_specs.files | sort(attribute='path') }}"
+  loop_control:
+    label: "{{ item.path | regex_replace('.*/jails/([^/]+)/.*', '\\1') }}"
+  when: "'/defaults/' in item.path"
+
+- name: Collect unique userlands
+  set_fact:
+    jail_userlands: "{{ jail_defs | map(attribute='userland') | unique | list }}"
+
+- name: Create base ZFS datasets
+  community.general.zfs:
+    name: "{{ item.name }}"
+    state: present
+    extra_zfs_properties:
+      mountpoint: "{{ item.mountpoint | default(omit) }}"
+  loop:
+    - { name: "zroot/jails", mountpoint: "/usr/local/jails" }
+    - { name: "zroot/jails/media" }
+    - { name: "zroot/jails/templates" }
+    - { name: "zroot/jails/containers" }
+    - { name: "zroot/jails/volumes", mountpoint: "none" }
+    - { name: "zroot/jails/volumes/goaccess_www", mountpoint: "/usr/local/jails/volumes/goaccess_www" }
+    - { name: "zroot/jails/volumes/postgres_data", mountpoint: "/usr/local/jails/containers/postgres/var/db/postgres" }
+    - { name: "zroot/jails/volumes/irc_thelounge_logs", mountpoint: "/usr/local/jails/containers/irc_thelounge/root/.thelounge/logs" }
+    - { name: "zroot/jails/volumes/irc_thelounge_uploads", mountpoint: "/usr/local/jails/containers/irc_thelounge/root/.thelounge/uploads" }
+    - { name: "zroot/jails/volumes/komga_data", mountpoint: "/usr/local/jails/containers/komga/root/.komga" }
+    - { name: "zroot/storage", mountpoint: "/usr/local/jails/volumes/storage" }
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Create storage group
+  group:
+    name: storage
+    gid: 1001
+
+- name: Create storage user
+  user:
+    name: storage
+    uid: 1001
+    group: storage
+    home: /nonexistent
+    shell: /usr/sbin/nologin
+    create_home: false
+
+- name: Set storage volume permissions
+  file:
+    path: /usr/local/jails/volumes/storage
+    state: directory
+    owner: "1001"
+    group: "1001"
+    mode: "0777"
+
+- name: Create storage directories
+  file:
+    path: "/usr/local/jails/volumes/storage/{{ item.name }}"
+    state: directory
+    owner: "1001"
+    group: "1001"
+    mode: "{{ item.mode }}"
+  loop:
+    - { name: media, mode: "0777" }
+    - { name: docs, mode: "0775" }
+    - { name: downloads, mode: "0777" }
+    - { name: projects-ableton, mode: "0755" }
+    - { name: vault, mode: "0755" }
+    - { name: jan-systems-2025-content, mode: "0755" }
+
+- name: Set up userland templates
+  include_tasks: userland.yml
+  loop: "{{ jail_userlands }}"
+  loop_control:
+    loop_var: userland
+
+- name: Deploy /etc/jail.conf
+  template:
+    src: jail.conf.j2
+    dest: /etc/jail.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+
+- name: Deploy devfs.rules
+  template:
+    src: devfs.rules.j2
+    dest: /etc/devfs.rules
+    owner: root
+    group: wheel
+    mode: "0644"

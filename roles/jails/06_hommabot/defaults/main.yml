@@ -1,0 +1,14 @@
+userland: "14.3-RELEASE"
+
+pkg:
+  - npm
+
+files:
+  - src: root_hommabot_env.j2
+    dest: /root/hommabot/.env
+    mode: "0600"
+  - src: root_hommabot_deps.sh
+    dest: /root/hommabot/deps.sh
+    mode: "0755"
+  - src: etc_crontab.j2
+    dest: /etc/crontab

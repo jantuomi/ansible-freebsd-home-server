@@ -1,0 +1,2 @@
+- name: Apply rc.conf
+  shell: service kld start; service netif restart && service routing restart

@@ -1,0 +1,92 @@
+userland: "15.0-RELEASE"
+devfs_ruleset: 6
+no_default_route: true
+
+ingress_routes:
+  - { host: jan.systems, jail: homepage }
+  - { host: jantuomi.fi, redirect: jan.systems }
+  - { host: aggro.jan.systems, jail: aggro }
+  - { host: diddle.jan.systems, jail: diddle }
+  - { host: spliit.jan.systems, jail: spliit }
+  - { host: freshrss.jan.systems, jail: freshrss }
+  - { host: irc.jan.systems, jail: irc_thelounge, presets: [websocket] }
+  - { host: paste.jan.systems, jail: paste }
+  - { host: leolalla.fi, jail: leolalla_fi }
+  - { host: immich.jan.systems, ip: 192.168.3.3, port: 2283 }
+  - { host: plex.jan.systems, jail: plex, port: 32400, presets: [streaming] }
+  - { host: komga.jan.systems, jail: komga, port: 25600 }
+
+cert_domains:
+  - "jan.systems"
+  - "*.jan.systems"
+  - "jantuomi.fi"
+  - "*.jantuomi.fi"
+  - "leolalla.fi"
+  - "*.leolalla.fi"
+
+cert_name: "{{ cert_domains[0] }}"
+contact_email: jan@jantuomi.fi
+
+jail_conf_options:
+  - "allow.raw_sockets"
+
+nullfs:
+  - src: /usr/local/jails/volumes/goaccess_www
+    dst: /mnt/www_goaccess
+
+pkg:
+  - nginx
+  - py311-certbot
+  - py311-certbot-nginx
+  - goaccess
+
+files:
+  - src: etc_pf.conf.j2
+    dest: /etc/pf.conf
+  - src: usr_local_etc_nginx_nginx.conf.j2
+    dest: /usr/local/etc/nginx/nginx.conf
+  - src: acme-dns-auth.py
+    dest: /usr/local/bin/acme-dns-auth.py
+    mode: "0755"
+  - src: usr_local_bin_hetzner_ddns.sh.j2
+    dest: /usr/local/bin/hetzner_ddns.sh
+    mode: "0755"
+  - src: usr_local_etc_hetzner_auth.j2
+    dest: /usr/local/etc/hetzner_auth
+    mode: "0600"
+  - src: usr_local_bin_gen_goaccess.sh.j2
+    dest: /usr/local/bin/gen_goaccess.sh
+    mode: "0755"
+  - src: etc_crontab.j2
+    dest: /etc/crontab
+
+services:
+  - nginx
+  - pf
+
+sysctl:
+  - name: net.inet.ip.forwarding
+    value: "1"
+
+sysrc:
+  - name: gateway_enable
+    value: "YES"
+
+nginx_presets:
+  websocket:
+    - "proxy_http_version 1.1"
+    - 'proxy_set_header Connection "Upgrade"'
+    - "proxy_set_header Upgrade $http_upgrade"
+    - "proxy_read_timeout 1d"
+    - "proxy_send_timeout 1d"
+    - "proxy_buffering off"
+    - "proxy_request_buffering off"
+    - "client_max_body_size 100M"
+  streaming:
+    - "proxy_http_version 1.1"
+    - 'proxy_set_header Connection "Upgrade"'
+    - "proxy_set_header Upgrade $http_upgrade"
+    - "proxy_redirect off"
+    - "proxy_buffering off"
+    - "proxy_read_timeout 3600s"
+    - "proxy_send_timeout 3600s"

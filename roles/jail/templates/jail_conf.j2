@@ -1,0 +1,56 @@
+{{ jail.name }} {
+  vnet;
+  persist;
+  exec.clean;
+  allow.raw_sockets;
+  mount.devfs;
+{% for opt in jail.options %}
+  {{ opt }};
+{% endfor %}
+
+  devfs_ruleset = {{ jail.devfs_ruleset }};
+  host.hostname = "{{ jail.name }}";
+  path = "/usr/local/jails/containers/${name}";
+
+  exec.start = "/bin/sh /etc/rc";
+  exec.stop  = "/bin/sh /etc/rc.shutdown";
+
+  # LAN epair
+  exec.prestart  += "ifconfig epl{{ jail.num }}a destroy 2>/dev/null || true";
+  exec.prestart  += "ifconfig epair{{ jail.num }}000 create";
+  exec.prestart  += "ifconfig epair{{ jail.num }}000a name epl{{ jail.num }}a";
+  exec.prestart  += "ifconfig epair{{ jail.num }}000b name epl{{ jail.num }}b";
+  exec.prestart  += "ifconfig epl{{ jail.num }}b ether random";
+  exec.prestart  += "ifconfig brlan0 addm epl{{ jail.num }}a";
+  exec.poststart += "ifconfig epl{{ jail.num }}b vnet ${name}";
+  exec.poststart += "ifconfig epl{{ jail.num }}a up";
+  exec.poststart += "jexec ${name} ifconfig epl{{ jail.num }}b up";
+  exec.poststart += "jexec ${name} ifconfig epl{{ jail.num }}b {{ jail.ip }}";
+  exec.poststart += "jexec ${name} route delete default || true";
+{% if jail.default_route %}
+  exec.poststart += "jexec ${name} route add default {{ ingress_ip }} || true";
+{% endif %}
+  exec.poststop  += "ifconfig epl{{ jail.num }}a destroy 2>/dev/null || true";
+{% for cmd in jail.exec_prestart %}
+  exec.prestart  += "{{ cmd }}";
+{% endfor %}
+{% for cmd in jail.exec_start %}
+  exec.start     += "{{ cmd }}";
+{% endfor %}
+{% for cmd in jail.exec_poststart %}
+  exec.poststart += "{{ cmd }}";
+{% endfor %}
+{% for cmd in jail.exec_prestop %}
+  exec.prestop   += "{{ cmd }}";
+{% endfor %}
+{% for cmd in jail.exec_stop %}
+  exec.stop      += "{{ cmd }}";
+{% endfor %}
+{% for cmd in jail.exec_poststop %}
+  exec.poststop  += "{{ cmd }}";
+{% endfor %}
+{% for mount in jail.mounts %}
+  exec.prestart += "mount -t nullfs {{ mount.src }} /usr/local/jails/containers/{{ jail.name }}{{ mount.dst }} || true";
+  exec.poststop += "umount /usr/local/jails/containers/{{ jail.name }}{{ mount.dst }} || true";
+{% endfor %}
+}

@@ -1,0 +1,11 @@
+userland: "15.0-RELEASE"
+
+nullfs:
+  - src: /usr/local/jails/volumes/storage/docs
+    dst: /mnt/docs
+  - src: /usr/local/jails/volumes/storage/vault
+    dst: /mnt/vault
+  - src: /usr/local/jails/volumes/storage/jan-systems-2025-content
+    dst: /mnt/jan-systems-2025-content
+  - src: /usr/local/jails/volumes/storage/projects-ableton
+    dst: /mnt/projects-ableton
