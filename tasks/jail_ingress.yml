@@ -1,3 +1,20 @@
+- name: Ensure ingress goaccess mount points exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+  loop:
+    - /usr/local/jails/containers/goaccess/var/www/goaccess
+    - /usr/local/jails/containers/ingress/mnt/www_goaccess
+
+- name: Start ingress jail
+  shell: service jail start ingress
+  register: ingress_jail_start
+  failed_when: false
+  changed_when: "'already running' not in ingress_jail_start.stderr"
+
 - name: Install packages inside jail
   loop:
     - { jail: ingress, package: nginx }

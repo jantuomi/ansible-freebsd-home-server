@@ -1,0 +1,7 @@
+nic_lan: igc0
+nic_wan: igc1
+arch: amd64/amd64
+is_test_vm: false
+jail_lan_prefix: "192.168.2"
+jail_lan_prefixlen: "16"
+jail_ip_offset: 0

@@ -10,9 +10,16 @@
     - bash
     - python
     - py311-pip
-    - vm-bhyve
     - fastfetch
+
+- name: Install amd64-specific packages
+  package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - vm-bhyve
     - drm-kmod
+  when: not is_test_vm
 
 - name: Set up periodic.conf
   template:
@@ -39,10 +46,11 @@
     group: wheel
     mode: "0644"
   register: fstab
+  when: not is_test_vm
 
 - name: Run mount -a
   shell: mount -a
-  when: fstab.changed
+  when: not is_test_vm and fstab.changed
 
 - name: Start auditd
   service:
@@ -105,6 +113,7 @@
     owner: root
     group: wheel
     mode: "0600"
+  when: not is_test_vm
 
 - name: Copy backup SSH public key
   copy:
@@ -113,6 +122,7 @@
     owner: root
     group: wheel
     mode: "0644"
+  when: not is_test_vm
 
 - name: Copy SSH config
   template:
@@ -121,6 +131,7 @@
     owner: root
     group: wheel
     mode: "0644"
+  when: not is_test_vm
 
 - name: Copy backup script
   template:
@@ -129,15 +140,17 @@
     owner: root
     group: wheel
     mode: "0755"
+  when: not is_test_vm
 
 - name: Check if zroot/vm exists
   shell: zfs list zroot/vm
   register: zroot_vm_check
   failed_when: false
   changed_when: false
+  when: not is_test_vm
 
 - name: Add vm dataset for bhyve and init
-  when: zroot_vm_check.rc != 0
+  when: not is_test_vm and zroot_vm_check.rc != 0
   block:
     - name: Create vm dataset
       shell: zfs create zroot/vm

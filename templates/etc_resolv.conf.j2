@@ -1,2 +1,2 @@
 search {{ lan_search_domain }}
-nameserver {{ lan_ipv4_gateway }}
+nameserver {{ dns_nameserver | default(lan_ipv4_gateway) }}

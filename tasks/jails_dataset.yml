@@ -25,7 +25,7 @@
   block:
     - name: Download userland
       get_url:
-        url: https://download.freebsd.org/ftp/releases/amd64/amd64/{{ dataset.userland }}/base.txz
+        url: https://download.freebsd.org/ftp/releases/{{ arch }}/{{ dataset.userland }}/base.txz
         dest: /usr/local/jails/media/{{ dataset.userland }}-base.txz
         owner: root
         group: wheel
@@ -41,9 +41,12 @@
         dest: /usr/local/jails/templates/{{ dataset.userland }}/etc/localtime
 
     - name: Copy resolv.conf to jail userland
-      shell: |
-        cat /etc/resolv.conf > /usr/local/jails/templates/{{ dataset.userland }}/etc/resolv.conf
-        chmod 644 /usr/local/jails/templates/{{ dataset.userland }}/etc/resolv.conf
+      template:
+        src: etc_resolv.conf.j2
+        dest: /usr/local/jails/templates/{{ dataset.userland }}/etc/resolv.conf
+        owner: root
+        group: wheel
+        mode: "0644"
 
     - name: Disable resolvconf in the template
       shell: echo 'resolvconf=NO' >> /usr/local/jails/templates/{{ dataset.userland }}/etc/resolvconf.conf

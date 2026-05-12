@@ -5,16 +5,15 @@
     owner: root
     group: wheel
     mode: "0644"
-  register: resolv_conf
-
-- name: Make resolv.conf immutable
-  shell: chflags schg /etc/resolv.conf
-  when: resolv_conf.changed
 
 # TODO: this doesn't work without rc_conf having been run
 #- name: Restart networking if interface configuration changed
 #  shell: service netif restart && service routing restart
 #  when: rc_conf.changed or resolv_conf.changed
+
+- name: Apply network configuration
+  shell: service netif restart && service routing restart
+  when: rc_conf.changed
 
 - name: Set up sshd
   template:

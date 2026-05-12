@@ -1,6 +1,6 @@
 ---
 - name: Configure my FreeBSD home server
-  hosts: pursotin
+  hosts: hosts
 
   pre_tasks:
     - name: Fail if secrets.yml wasn't loaded and smtp_user is missing
@@ -41,7 +41,7 @@
       - { userland: "{{ jail_userland_15_0 }}", num: 17, name: syncthing }
       - { userland: "{{ jail_userland_15_0 }}", num: 18, name: komga }
       - { userland: "{{ jail_userland_15_0 }}", num: 19, name: leolalla_fi }
-    ingress_ip: 192.168.2.1
+    ingress_ip: "{{ jail_lan_prefix }}.{{ 1 + jail_ip_offset }}"
     ingress_routes:
       - { host: jan.systems, jail: homepage }
       - { host: jantuomi.fi, redirect: jan.systems }
@@ -77,10 +77,12 @@
     - name: Run email tasks
       tags: [email]
       import_tasks: tasks/email.yml
+      when: not is_test_vm
 
     - name: Run ZFS tasks
       tags: [zfs]
       import_tasks: tasks/zfs.yml
+      when: not is_test_vm
 
     - name: Run common jails tasks
       tags: [jails]

@@ -8,10 +8,11 @@ exec.prestart    += "ifconfig brlan0 addm epl{{ jail.num }}a";
 exec.poststart   += "ifconfig epl{{ jail.num }}b vnet ${name}";
 exec.poststart   += "jexec ${name} ifconfig epl{{ jail.num }}b up";
 exec.poststart   += "ifconfig epl{{ jail.num }}a up";
-exec.poststart   += "jexec ${name} ifconfig epl{{ jail.num }}b 192.168.2.{{ jail.num }}/16";
+exec.poststart   += "jexec ${name} ifconfig epl{{ jail.num }}b {{ jail_lan_prefix }}.{{ jail.num + jail_ip_offset }}/{{ jail_lan_prefixlen }}";
 exec.poststart   += "jexec ${name} route delete default || echo 'No default route to delete'";
 
+{% if not is_test_vm %}
 exec.poststart   += "jexec ${name} route add 10.6.210.0/24 {{ lan_ipv4_gateway }} || echo 'Failed to add Wireguard return route'";
-
+{% endif %}
 exec.poststop    += "ifconfig epl{{ jail.num }}a destroy";
 ## _epl_network end

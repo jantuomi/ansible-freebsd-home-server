@@ -1,0 +1,12 @@
+ansible_host: 10.0.20.2
+ansible_user: root
+ansible_ssh_private_key_file: vm/id_ed25519
+ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+nic_lan: vtnet0
+nic_wan: vtnet1
+arch: arm64/aarch64
+is_test_vm: true
+dns_nameserver: "10.0.20.1"
+jail_lan_prefix: "10.0.20"
+jail_lan_prefixlen: "24"
+jail_ip_offset: 100
