@@ -175,8 +175,8 @@
   file:
     path: /usr/local/jails/volumes/storage
     state: directory
-    owner: "1001"
-    group: "1001"
+    owner: storage
+    group: storage
     mode: "0777"
 
 - name: Create storage directories

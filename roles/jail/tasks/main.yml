@@ -62,9 +62,6 @@
   file:
     path: "{{ item.src }}"
     state: directory
-    owner: root
-    group: wheel
-    mode: "0755"
   loop: "{{ nullfs | default([]) }}"
   loop_control:
     label: "{{ item.src }}"
