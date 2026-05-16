@@ -1,1 +1,7 @@
 userland: "15.0-RELEASE"
+
+pkg:
+  - valkey
+
+services:
+  - valkey

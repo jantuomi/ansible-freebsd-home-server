@@ -1,5 +1,6 @@
 - import_role:
     name: jail
+    tasks_from: jail_setup
 
 - name: Check if database is initialized
   stat:
@@ -9,11 +10,6 @@
 - name: Initialize database
   shell: /usr/local/etc/rc.d/postgresql initdb
   when: not _pg_data.stat.exists
-
-- name: Enable postgresql
-  community.general.sysrc:
-    name: postgresql_enable
-    value: "YES"
 
 - name: Allow LAN connections in pg_hba.conf
   lineinfile:
@@ -29,14 +25,16 @@
     regexp: "^listen_addresses"
   notify: Restart postgresql
 
-- name: Flush handlers
-  meta: flush_handlers
+- import_role:
+    name: jail
+    tasks_from: jail_launch
 
 - name: Create database users
-  shell: "su -l postgres -c \"psql -tc \\\"SELECT 1 FROM pg_roles WHERE rolname='{{ item }}'\\\"\" | grep -q 1 || su -l postgres -c \"createuser {{ item }}\""
+  shell: "su -l postgres -c \"psql -tc \\\"SELECT 1 FROM pg_roles WHERE rolname='{{ item }}'\\\"\" | grep -q 1 || su -l postgres -c \"psql -c \\\"CREATE ROLE {{ item }} LOGIN PASSWORD '{{ pg_user_passwords[item] }}'\\\"\""
   loop: "{{ pg_users }}"
   register: _pg_user
   changed_when: "'CREATE ROLE' in _pg_user.stdout"
+  no_log: true
 
 - name: Create databases
   shell: "su -l postgres -c \"psql -tc \\\"SELECT 1 FROM pg_database WHERE datname='{{ item.name }}'\\\"\" | grep -q 1 || su -l postgres -c \"createdb -O {{ item.owner }} {{ item.name }}\""

@@ -8,7 +8,8 @@ jail_conf_options:
 pkg:
   - postgresql18-server
 
-services: []
+services:
+  - postgresql
 
 pg_users:
   - spliit

@@ -36,6 +36,7 @@
 
 - import_role:
     name: jail
+    tasks_from: jail_setup
 
 - name: Check if TLS certs exist
   stat:
@@ -47,3 +48,7 @@
   pause:
     prompt: "Run certbot manually in the ingress jail to obtain certs, then press Enter."
   when: is_prod and not (_certbot_certs.stat.exists | default(true))
+
+- import_role:
+    name: jail
+    tasks_from: jail_launch

@@ -1,0 +1,8 @@
+- name: Flush handlers
+  meta: flush_handlers
+
+- name: Start services
+  service:
+    name: "{{ item }}"
+    state: started
+  loop: "{{ services | default([]) }}"
