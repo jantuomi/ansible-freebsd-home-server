@@ -1,2 +1,45 @@
 - import_role:
     name: jail
+
+- name: Check if database is initialized
+  stat:
+    path: /var/db/postgres/data18/PG_VERSION
+  register: _pg_data
+
+- name: Initialize database
+  shell: /usr/local/etc/rc.d/postgresql initdb
+  when: not _pg_data.stat.exists
+
+- name: Enable postgresql
+  community.general.sysrc:
+    name: postgresql_enable
+    value: "YES"
+
+- name: Allow LAN connections in pg_hba.conf
+  lineinfile:
+    path: /var/db/postgres/data18/pg_hba.conf
+    line: "host    all             all             {{ jail_lan_cidr }}          scram-sha-256"
+    regexp: "^host.*all.*all.*scram-sha-256"
+  notify: Restart postgresql
+
+- name: Listen on all interfaces
+  lineinfile:
+    path: /var/db/postgres/data18/postgresql.conf
+    line: "listen_addresses = '*'"
+    regexp: "^listen_addresses"
+  notify: Restart postgresql
+
+- name: Flush handlers
+  meta: flush_handlers
+
+- name: Create database users
+  shell: "su -l postgres -c \"psql -tc \\\"SELECT 1 FROM pg_roles WHERE rolname='{{ item }}'\\\"\" | grep -q 1 || su -l postgres -c \"createuser {{ item }}\""
+  loop: "{{ pg_users }}"
+  register: _pg_user
+  changed_when: "'CREATE ROLE' in _pg_user.stdout"
+
+- name: Create databases
+  shell: "su -l postgres -c \"psql -tc \\\"SELECT 1 FROM pg_database WHERE datname='{{ item.name }}'\\\"\" | grep -q 1 || su -l postgres -c \"createdb -O {{ item.owner }} {{ item.name }}\""
+  loop: "{{ pg_databases }}"
+  register: _pg_db
+  changed_when: "'CREATE DATABASE' in _pg_db.stdout"

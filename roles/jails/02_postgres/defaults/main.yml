@@ -7,3 +7,13 @@ jail_conf_options:
 
 pkg:
   - postgresql18-server
+
+services: []
+
+pg_users:
+  - spliit
+  - immich
+
+pg_databases:
+  - { name: spliit, owner: spliit }
+  - { name: immich, owner: immich }
