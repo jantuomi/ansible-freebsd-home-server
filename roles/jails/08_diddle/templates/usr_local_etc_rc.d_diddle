@@ -1,43 +1,43 @@
 #!/bin/sh
-#
+
 # PROVIDE: diddle
 # REQUIRE: NETWORKING
 # KEYWORD: shutdown
-#
-# Enable in /etc/rc.conf:
-#   diddle_enable="YES"
-#
+
 . /etc/rc.subr
 
 name="diddle"
-rcvar=diddle_enable
-
-load_rc_config $name
-
-: ${diddle_command:=/usr/local/bin/diddle}
-: ${diddle_log:=/var/log/${name}.log}
+rcvar="diddle_enable"
+pidfile="/var/run/${name}.pid"
 
 start_cmd="${name}_start"
 stop_cmd="${name}_stop"
 status_cmd="${name}_status"
 
-extra_commands="status"
-
-diddle_start() {
-    /usr/local/bin/logto ${diddle_log} ${diddle_command} &
+diddle_start()
+{
+    echo "Starting ${name}..."
+    daemon -p ${pidfile} -o /var/log/diddle.log /usr/local/bin/diddle
 }
 
-diddle_status() {
-    if ps aux | grep diddle | grep -v grep | grep -v rc.d/diddle; then
-        echo "diddle is running"
-    else
-        echo "diddle is not running"
-        exit 1
+diddle_stop()
+{
+    if [ -f ${pidfile} ]; then
+        echo "Stopping ${name}..."
+        kill $(cat ${pidfile}) 2>/dev/null
+        rm -f ${pidfile}
     fi
 }
 
-diddle_stop() {
-    ps aux | grep diddle | grep -v grep | grep -v rc.d/diddle | awk '{print $2}' | xargs kill -TERM
+diddle_status()
+{
+    if [ -f ${pidfile} ] && kill -0 $(cat ${pidfile}) 2>/dev/null; then
+        echo "${name} is running as pid $(cat ${pidfile})"
+    else
+        echo "${name} is not running"
+        return 1
+    fi
 }
 
+load_rc_config $name
 run_rc_command "$1"
