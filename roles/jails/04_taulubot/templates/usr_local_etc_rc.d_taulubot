@@ -1,28 +1,27 @@
 #!/bin/sh
 
-# PROVIDE: thelounge
+# PROVIDE: taulubot
 # REQUIRE: NETWORKING
 # KEYWORD: shutdown
 
 . /etc/rc.subr
 
-name="thelounge"
-rcvar="thelounge_enable"
-
-thelounge_env="THELOUNGE_HOME=/var/db/thelounge PATH=$PATH:/usr/local/bin"
+name="taulubot"
+rcvar="taulubot_enable"
 pidfile="/var/run/${name}.pid"
 
 start_cmd="${name}_start"
 stop_cmd="${name}_stop"
 status_cmd="${name}_status"
 
-thelounge_start()
+taulubot_start()
 {
     echo "Starting ${name}..."
-    env ${thelounge_env} daemon -p ${pidfile} -o /var/log/thelounge.log /usr/local/bin/thelounge start
+    cd /usr/local/taulubot
+    daemon -p ${pidfile} -o /var/log/taulubot.log env BOT_TOKEN="{{ taulubot_token }}" /usr/local/bin/python3.11 taulubot.py
 }
 
-thelounge_stop()
+taulubot_stop()
 {
     if [ -f ${pidfile} ]; then
         echo "Stopping ${name}..."
@@ -31,7 +30,7 @@ thelounge_stop()
     fi
 }
 
-thelounge_status()
+taulubot_status()
 {
     if [ -f ${pidfile} ] && kill -0 $(cat ${pidfile}) 2>/dev/null; then
         echo "${name} is running as pid $(cat ${pidfile})"

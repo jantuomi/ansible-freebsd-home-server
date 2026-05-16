@@ -1,1 +1,10 @@
 userland: "14.3-RELEASE"
+
+pkg:
+  - python311
+  - py311-pip
+  - git
+  - jpeg-turbo
+
+services:
+  - taulubot

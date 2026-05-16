@@ -1,0 +1,4 @@
+- name: Restart taulubot
+  service:
+    name: taulubot
+    state: restarted

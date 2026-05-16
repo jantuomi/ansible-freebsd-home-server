@@ -1,2 +1,53 @@
 - import_role:
     name: jail
+    tasks_from: jail_setup
+
+- name: Create .ssh directory
+  file:
+    path: /root/.ssh
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0700"
+
+- name: Deploy SSH key for git
+  copy:
+    content: "{{ taulubot_deploy_key.private }}"
+    dest: /root/.ssh/deploy_key
+    owner: root
+    group: wheel
+    mode: "0600"
+  no_log: true
+
+- name: Clone taulubot
+  shell: |
+    GIT_SSH_COMMAND="ssh -i /root/.ssh/deploy_key -o StrictHostKeyChecking=no" git clone git@github.com:jantuomi/taulubot.git /tmp/taulubot
+    cp -a /tmp/taulubot/* /tmp/taulubot/.git /tmp/taulubot/.gitignore /usr/local/taulubot/ 2>/dev/null || true
+    rm -rf /tmp/taulubot
+  args:
+    creates: /usr/local/taulubot/.git
+
+- name: Install Python dependencies
+  shell: pip install -r /usr/local/taulubot/requirements.txt
+  args:
+    creates: /usr/local/taulubot/.deps_installed
+  register: _pip_install
+
+- name: Mark dependencies installed
+  file:
+    path: /usr/local/taulubot/.deps_installed
+    state: touch
+  when: _pip_install is changed
+
+- name: Deploy rc.d script
+  template:
+    src: "{{ jail_role_dir }}/templates/usr_local_etc_rc.d_taulubot"
+    dest: /usr/local/etc/rc.d/taulubot
+    owner: root
+    group: wheel
+    mode: "0755"
+  notify: Restart taulubot
+
+- import_role:
+    name: jail
+    tasks_from: jail_launch
