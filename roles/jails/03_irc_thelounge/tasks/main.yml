@@ -1,2 +1,60 @@
 - import_role:
     name: jail
+    tasks_from: jail_setup
+
+- name: Check if old thelounge data exists
+  stat:
+    path: /root/.thelounge/config.js
+  register: _old_thelounge
+
+- name: "*** MIGRATION REQUIRED: thelounge data ***"
+  pause:
+    prompt: |
+
+      ════════════════════════════════════════════════════════════════
+        THELOUNGE DATA MIGRATION
+      ════════════════════════════════════════════════════════════════
+        /root/.thelounge still exists. Migrate manually:
+
+        1. jexec irc_thelounge service thelounge stop
+        2. On host: zfs set mountpoint=/usr/local/jails/containers/irc_thelounge/var/db/thelounge zroot/jails/volumes/irc_thelounge
+        3. jexec irc_thelounge cp -a /root/.thelounge/* /var/db/thelounge/
+        4. jexec irc_thelounge service thelounge start
+        5. Destroy old volumes when confirmed working:
+           zfs destroy zroot/jails/volumes/irc_thelounge_logs
+           zfs destroy zroot/jails/volumes/irc_thelounge_uploads
+        6. jexec irc_thelounge rm -rf /root/.thelounge
+      ════════════════════════════════════════════════════════════════
+
+      Press Enter after migration is complete or Ctrl+C to abort
+  when: _old_thelounge.stat.exists
+
+- name: Clone thelounge
+  shell: |
+    git clone --depth 1 --branch v4.4.3 https://github.com/thelounge/thelounge.git /usr/local/share/thelounge
+  args:
+    creates: /usr/local/share/thelounge
+
+- name: Install thelounge dependencies and build
+  shell: cd /usr/local/share/thelounge && yarn install && NODE_ENV=production yarn build
+  args:
+    creates: /usr/local/share/thelounge/dist
+
+- name: Link thelounge binary
+  file:
+    src: /usr/local/share/thelounge/index.js
+    dest: /usr/local/bin/thelounge
+    state: link
+
+- name: Deploy thelounge config
+  copy:
+    src: "{{ jail_role_dir }}/files/config.js"
+    dest: /var/db/thelounge/config.js
+    owner: root
+    group: wheel
+    mode: "0644"
+  notify: Restart thelounge
+
+- import_role:
+    name: jail
+    tasks_from: jail_launch

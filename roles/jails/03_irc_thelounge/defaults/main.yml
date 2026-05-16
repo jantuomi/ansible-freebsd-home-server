@@ -1,1 +1,15 @@
 userland: "14.3-RELEASE"
+
+pkg:
+  - npm
+  - git
+  - yarn-node22
+  - git
+
+files:
+  - src: usr_local_etc_rc.d_thelounge
+    dest: /usr/local/etc/rc.d/thelounge
+    mode: "0755"
+
+services:
+  - thelounge

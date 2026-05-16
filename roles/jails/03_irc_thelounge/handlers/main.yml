@@ -1,0 +1,4 @@
+- name: Restart thelounge
+  service:
+    name: thelounge
+    state: restarted

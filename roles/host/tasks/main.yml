@@ -150,8 +150,7 @@
     - { name: "zroot/jails/volumes", mountpoint: "none" }
     - { name: "zroot/jails/volumes/goaccess_www", mountpoint: "/usr/local/jails/volumes/goaccess_www" }
     - { name: "zroot/jails/volumes/postgres_data", mountpoint: "/usr/local/jails/containers/postgres/var/db/postgres" }
-    - { name: "zroot/jails/volumes/irc_thelounge_logs", mountpoint: "/usr/local/jails/containers/irc_thelounge/root/.thelounge/logs" }
-    - { name: "zroot/jails/volumes/irc_thelounge_uploads", mountpoint: "/usr/local/jails/containers/irc_thelounge/root/.thelounge/uploads" }
+    - { name: "zroot/jails/volumes/irc_thelounge", mountpoint: "/usr/local/jails/containers/irc_thelounge/var/db/thelounge" }
     - { name: "zroot/jails/volumes/komga_data", mountpoint: "/usr/local/jails/containers/komga/root/.komga" }
     - { name: "zroot/storage", mountpoint: "/usr/local/jails/volumes/storage" }
   loop_control:
