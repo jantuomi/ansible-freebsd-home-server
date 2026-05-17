@@ -1,0 +1,22 @@
+userland: "15.0-RELEASE"
+
+pkg:
+  - nginx
+
+nullfs:
+  - src: /usr/local/my-ports
+    dst: /usr/local/my-ports
+  - src: /usr/ports
+    dst: /usr/ports
+
+files:
+  - src: usr_local_etc_nginx_nginx.conf
+    dest: /usr/local/etc/nginx/nginx.conf
+  - src: usr_local_bin_build_packages.sh
+    dest: /usr/local/bin/build-packages
+    mode: "0755"
+  - src: etc_crontab
+    dest: /etc/crontab
+
+services:
+  - nginx

@@ -1,0 +1,2 @@
+Lightweight cron-friendly log monitoring utility with regex rules
+and per-rule shell actions.

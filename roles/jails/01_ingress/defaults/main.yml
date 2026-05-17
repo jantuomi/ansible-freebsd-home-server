@@ -15,6 +15,7 @@ ingress_routes:
   - { host: immich.jan.systems, ip: 192.168.3.3, port: 2283 }
   - { host: plex.jan.systems, jail: plex, port: 32400, presets: [streaming] }
   - { host: komga.jan.systems, jail: komga, port: 25600 }
+  - { host: ports.jan.systems, jail: packager }
 
 cert_domains:
   - "jan.systems"

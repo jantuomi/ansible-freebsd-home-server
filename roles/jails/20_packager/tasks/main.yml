@@ -1,0 +1,15 @@
+- import_role:
+    name: jail
+    tasks_from: jail_setup
+
+- name: Create packages output directory
+  file:
+    path: /usr/local/packages
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- import_role:
+    name: jail
+    tasks_from: jail_launch

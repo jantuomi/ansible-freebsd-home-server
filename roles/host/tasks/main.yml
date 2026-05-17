@@ -16,7 +16,7 @@
 
 - name: Install packages
   package:
-    name: "{{ item }}"
+    name: "{{ pkg_name }}"
     state: present
   loop:
     - rsync
@@ -24,9 +24,13 @@
     - jq
     - curl
     - bash
+    - git
     - python
     - py311-pip
+    - py311-wheel
     - fastfetch
+  loop_control:
+    loop_var: pkg_name
 
 - name: Set up sshd
   template:
@@ -41,40 +45,6 @@
   service:
     name: sshd
     state: started
-
-- name: Deploy logto script
-  template:
-    src: usr_local_bin_logto.sh.j2
-    dest: /usr/local/bin/logto
-    owner: root
-    group: wheel
-    mode: "0755"
-
-- name: Check if pylogsentinel is installed
-  shell: pip show pylogsentinel
-  register: pylogsentinel_check
-  failed_when: false
-  changed_when: false
-
-- name: Install pylogsentinel
-  shell: pip install pylogsentinel==0.3.0 --force --no-input
-  when: pylogsentinel_check.rc != 0
-
-- name: Deploy pylogsentinel.conf
-  template:
-    src: usr_local_etc_pylogsentinel.conf.j2
-    dest: /usr/local/etc/pylogsentinel.conf
-    owner: root
-    group: wheel
-    mode: "0644"
-
-- name: Deploy pylogsentinel-batch-email.sh
-  template:
-    src: usr_local_bin_pylogsentinel-batch-email.sh.j2
-    dest: /usr/local/bin/pylogsentinel-batch-email.sh
-    owner: root
-    group: wheel
-    mode: "0755"
 
 - name: Start syslogd
   service:
@@ -94,15 +64,6 @@
     group: wheel
     mode: "0644"
 
-- name: Set up crontab
-  template:
-    src: etc_crontab.j2
-    dest: /etc/crontab
-    owner: root
-    group: wheel
-    mode: "0644"
-  notify: Restart cron
-
 - name: Install .bashrc
   copy:
     src: root_bashrc
@@ -112,6 +73,15 @@
     mode: "0644"
 
 # Jail infrastructure
+- name: Fetch ports tree
+  shell: |
+    if [ ! -d /usr/ports/.git ]; then
+      git clone --depth 1 https://git.FreeBSD.org/ports.git /usr/ports
+    else
+      git -C /usr/ports pull --ff-only
+    fi
+  register: _ports_fetch
+  changed_when: "'Already up to date' not in _ports_fetch.stdout"
 - name: Discover jail directories
   find:
     paths: "{{ playbook_dir }}/roles/jails"
@@ -148,14 +118,63 @@
     - { name: "zroot/jails/templates" }
     - { name: "zroot/jails/containers" }
     - { name: "zroot/jails/volumes", mountpoint: "none" }
-    - { name: "zroot/jails/volumes/goaccess_www", mountpoint: "/usr/local/jails/volumes/goaccess_www" }
-    - { name: "zroot/jails/volumes/postgres_data", mountpoint: "/usr/local/jails/containers/postgres/var/db/postgres" }
-    - { name: "zroot/jails/volumes/irc_thelounge", mountpoint: "/usr/local/jails/containers/irc_thelounge/var/db/thelounge" }
-    - { name: "zroot/jails/volumes/taulubot", mountpoint: "/usr/local/jails/containers/taulubot/usr/local/taulubot/photos" }
-    - { name: "zroot/jails/volumes/komga_data", mountpoint: "/usr/local/jails/containers/komga/root/.komga" }
+    - {
+        name: "zroot/jails/volumes/goaccess_www",
+        mountpoint: "/usr/local/jails/volumes/goaccess_www",
+      }
+    - {
+        name: "zroot/jails/volumes/postgres_data",
+        mountpoint: "/usr/local/jails/containers/postgres/var/db/postgres",
+      }
+    - {
+        name: "zroot/jails/volumes/irc_thelounge",
+        mountpoint: "/usr/local/jails/containers/irc_thelounge/var/db/thelounge",
+      }
+    - {
+        name: "zroot/jails/volumes/taulubot",
+        mountpoint: "/usr/local/jails/containers/taulubot/usr/local/taulubot/photos",
+      }
+    - {
+        name: "zroot/jails/volumes/komga_data",
+        mountpoint: "/usr/local/jails/containers/komga/root/.komga",
+      }
     - { name: "zroot/storage", mountpoint: "/usr/local/jails/volumes/storage" }
+    - { name: "zroot/my-ports", mountpoint: "/usr/local/my-ports" }
   loop_control:
     label: "{{ item.name }}"
+
+- name: Sync custom ports tree to host
+  synchronize:
+    src: "{{ playbook_dir }}/ports/"
+    dest: /usr/local/my-ports/
+    delete: true
+    recursive: true
+    rsync_opts:
+      - "--exclude=work-*"
+
+- name: Install custom ports
+  shell: make -C /usr/local/my-ports/{{ item }} install clean BATCH=yes
+  loop:
+    - pylogsentinel
+  register: _port_install
+  failed_when: "_port_install.rc != 0 and 'already installed' not in _port_install.stdout"
+  changed_when: "'already installed' not in _port_install.stdout"
+
+- name: Deploy pylogsentinel.conf
+  template:
+    src: usr_local_etc_pylogsentinel.conf.j2
+    dest: /usr/local/etc/pylogsentinel.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+
+- name: Deploy pylogsentinel-batch-email.sh
+  template:
+    src: usr_local_bin_pylogsentinel-batch-email.sh.j2
+    dest: /usr/local/bin/pylogsentinel-batch-email.sh
+    owner: root
+    group: wheel
+    mode: "0755"
 
 - name: Create storage group
   group:
@@ -215,3 +234,12 @@
     owner: root
     group: wheel
     mode: "0644"
+
+- name: Set up crontab
+  template:
+    src: etc_crontab.j2
+    dest: /etc/crontab
+    owner: root
+    group: wheel
+    mode: "0644"
+  notify: Restart cron

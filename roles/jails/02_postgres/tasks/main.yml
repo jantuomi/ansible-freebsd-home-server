@@ -7,6 +7,15 @@
     path: /var/db/postgres/data18/PG_VERSION
   register: _pg_data
 
+- name: Set postgres data directory ownership
+  file:
+    path: /var/db/postgres
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: "0755"
+  when: not _pg_data.stat.exists
+
 - name: Initialize database
   shell: /usr/local/etc/rc.d/postgresql initdb
   when: not _pg_data.stat.exists
@@ -16,14 +25,22 @@
     path: /var/db/postgres/data18/pg_hba.conf
     line: "host    all             all             {{ jail_lan_cidr }}          scram-sha-256"
     regexp: "^host.*all.*all.*scram-sha-256"
-  notify: Restart postgresql
+  notify: Reload postgresql
 
 - name: Listen on all interfaces
   lineinfile:
     path: /var/db/postgres/data18/postgresql.conf
     line: "listen_addresses = '*'"
     regexp: "^listen_addresses"
-  notify: Restart postgresql
+  notify: Reload postgresql
+
+- name: Start postgres
+  service:
+    name: postgresql
+    state: started
+
+- name: Flush handlers
+  meta: flush_handlers
 
 - import_role:
     name: jail
