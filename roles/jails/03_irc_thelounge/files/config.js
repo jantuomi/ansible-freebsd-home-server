@@ -1,4 +1,3 @@
-# cat ~/.thelounge/config.js
 "use strict";
 module.exports = {
   // ## Server settings

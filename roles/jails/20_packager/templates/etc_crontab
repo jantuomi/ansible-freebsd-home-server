@@ -1,5 +1,0 @@
-SHELL=/bin/sh
-PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-
-# Build packages every hour
-0	*	*	*	*	root	/usr/local/bin/build-packages >> /var/log/build-packages.log 2>&1

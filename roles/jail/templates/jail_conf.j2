@@ -53,4 +53,6 @@
   exec.prestart += "mount -t nullfs {{ mount.src }} /usr/local/jails/containers/{{ jail.name }}{{ mount.dst }} || true";
   exec.poststop += "umount /usr/local/jails/containers/{{ jail.name }}{{ mount.dst }} || true";
 {% endfor %}
+  exec.prestart += "mount -t nullfs -o ro /usr/ports /usr/local/jails/containers/{{ jail.name }}/usr/ports || true";
+  exec.poststop += "umount /usr/local/jails/containers/{{ jail.name }}/usr/ports || true";
 }

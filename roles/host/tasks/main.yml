@@ -25,10 +25,14 @@
     - curl
     - bash
     - git
-    - python
+    - python311
     - py311-pip
+    - py311-setuptools
+    - py311-build
+    - py311-installer
     - py311-wheel
     - fastfetch
+    - vim
   loop_control:
     loop_var: pkg_name
 
@@ -76,7 +80,7 @@
 - name: Fetch ports tree
   shell: |
     if [ ! -d /usr/ports/.git ]; then
-      git clone --depth 1 https://git.FreeBSD.org/ports.git /usr/ports
+      git clone --depth 1 https://github.com/jantuomi/freebsd-ports.git /usr/ports
     else
       git -C /usr/ports pull --ff-only
     fi
@@ -139,26 +143,16 @@
         mountpoint: "/usr/local/jails/containers/komga/root/.komga",
       }
     - { name: "zroot/storage", mountpoint: "/usr/local/jails/volumes/storage" }
-    - { name: "zroot/my-ports", mountpoint: "/usr/local/my-ports" }
   loop_control:
     label: "{{ item.name }}"
 
-- name: Sync custom ports tree to host
-  synchronize:
-    src: "{{ playbook_dir }}/ports/"
-    dest: /usr/local/my-ports/
-    delete: true
-    recursive: true
-    rsync_opts:
-      - "--exclude=work-*"
-
 - name: Install custom ports
-  shell: make -C /usr/local/my-ports/{{ item }} install clean BATCH=yes
+  shell: cd /usr/ports/{{ item }} && make install
   loop:
-    - pylogsentinel
+    - sysutils/pylogsentinel
   register: _port_install
-  failed_when: "_port_install.rc != 0 and 'already installed' not in _port_install.stdout"
-  changed_when: "'already installed' not in _port_install.stdout"
+  failed_when: "_port_install.rc != 0 and 'is already installed' not in _port_install.stdout"
+  changed_when: "'is already installed' not in _port_install.stdout"
 
 - name: Deploy pylogsentinel.conf
   template:
