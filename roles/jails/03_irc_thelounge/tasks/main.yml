@@ -46,6 +46,14 @@
     dest: /usr/local/bin/thelounge
     state: link
 
+- name: Create thelounge data directory
+  file:
+    path: /var/db/thelounge
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+
 - name: Deploy thelounge config
   copy:
     src: "{{ jail_role_dir }}/files/config.js"
