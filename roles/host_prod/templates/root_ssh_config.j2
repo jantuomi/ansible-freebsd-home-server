@@ -1,4 +1,5 @@
 Host backup
-    HostName {{ backup_ssh_host }}
-    User {{ backup_ssh_user }}
+    HostName {{ backup.ssh_host }}
+    User {{ backup.ssh_user }}
     IdentityFile /root/.ssh/backup
+    Port {{ backup.ssh_port }}

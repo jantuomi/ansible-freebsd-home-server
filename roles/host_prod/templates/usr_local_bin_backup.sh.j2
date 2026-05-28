@@ -3,13 +3,13 @@ set -euo pipefail
 
 # ===== CONFIG (filled by Ansible) =====
 KEEP_LOCAL=30
-KEEP_REMOTE=10
+KEEP_REMOTE=4
 KEYFILE="/root/.ssh/backup"
 HOST_DIR="backup"
-DATASET="{% endraw %}{{ backup_zfs_dataset }}{% raw %}"
+DATASET="{% endraw %}{{ backup.zfs_dataset }}{% raw %}"
 BACKUP_EXCLUDE_PROP="{% endraw %}{{ backup_zfs_exclude_property | default('com.pursotin:backup') }}{% raw %}"
-USER="{% endraw %}{{ backup_ssh_user }}{% raw %}"
-HOST="{% endraw %}{{ backup_ssh_host }}{% raw %}"
+USER="{% endraw %}{{ backup.ssh_user }}{% raw %}"
+HOST="{% endraw %}{{ backup.ssh_host }}{% raw %}"
 EMAIL_TO=root
 # =====================================
 

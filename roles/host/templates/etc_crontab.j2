@@ -23,8 +23,8 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
 # Take snapshots every day at 3:05 AM
 5       3       *       *       *       root    /usr/local/bin/backup snapshot prune-local >>/var/log/backup 2>&1
-# Send backup snapshots to remote every third day at 4:05 AM
-5       4       */3     *       *       root    /usr/local/bin/backup send-to-remote prune-remote notify >>/var/log/backup 2>&1
+# Send backup snapshots to remote every Monday at 4:05 AM
+5       4       *       *       1       root    /usr/local/bin/backup send-to-remote prune-remote notify >>/var/log/backup 2>&1
 
 # Run pylogsentinel
 */10    *       *       *       *       root    python -m pylogsentinel

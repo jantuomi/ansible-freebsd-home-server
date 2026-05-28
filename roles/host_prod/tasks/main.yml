@@ -47,7 +47,7 @@
 
 - name: Copy backup SSH private key
   copy:
-    src: "{{ backup_ssh_privkey_file }}"
+    content: "{{ backup.ssh_key.private }}"
     dest: /root/.ssh/backup
     owner: root
     group: wheel
@@ -55,7 +55,7 @@
 
 - name: Copy backup SSH public key
   copy:
-    src: "{{ backup_ssh_pubkey_file }}"
+    src: "{{ backup.ssh_key.public }}"
     dest: /root/.ssh/backup.pub
     owner: root
     group: wheel

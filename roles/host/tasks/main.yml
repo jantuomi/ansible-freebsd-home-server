@@ -33,6 +33,7 @@
     - py311-wheel
     - fastfetch
     - vim
+    - age
   loop_control:
     loop_var: pkg_name
 
