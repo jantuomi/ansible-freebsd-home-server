@@ -3,14 +3,14 @@
     tasks_from: jail_setup
 
 - name: Install hommabot from port
-  shell: cd /usr/local/my-ports/hommabot && make install
+  shell: cd /usr/ports/net-im/hommabot && make install WRKDIRPREFIX=/tmp/ports DISTDIR=/tmp/distfiles
   register: _hommabot_install
-  failed_when: "_hommabot_install.rc != 0 and 'already installed' not in _hommabot_install.stdout"
-  changed_when: "'already installed' not in _hommabot_install.stdout"
+  failed_when: "_hommabot_install.rc != 0"
+  changed_when: "'Installing hommabot' in _hommabot_install.stdout"
 
 - name: Deploy bot token file
   copy:
-    content: "{{ hommabot_token }}"
+    content: "{{ hommabot_telegram_bot_token }}"
     dest: /usr/local/etc/hommabot.token
     owner: root
     group: wheel

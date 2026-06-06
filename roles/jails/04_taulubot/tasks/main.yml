@@ -19,34 +19,23 @@
     mode: "0600"
   no_log: true
 
-- name: Clone taulubot
+- name: Install taulubot from port
   shell: |
-    GIT_SSH_COMMAND="ssh -i /root/.ssh/deploy_key -o StrictHostKeyChecking=no" git clone git@github.com:jantuomi/taulubot.git /tmp/taulubot
-    cp -a /tmp/taulubot/* /tmp/taulubot/.git /tmp/taulubot/.gitignore /usr/local/taulubot/ 2>/dev/null || true
-    rm -rf /tmp/taulubot
-  args:
-    creates: /usr/local/taulubot/.git
+    export GIT_SSH_COMMAND='ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no'
+    cd /usr/ports/net-im/taulubot
+    make install WRKDIRPREFIX=/tmp/ports DISTDIR=/tmp/distfiles
+  register: _taulubot_install
+  failed_when: "_taulubot_install.rc != 0"
+  changed_when: "'Installing taulubot' in _taulubot_install.stdout"
 
-- name: Install Python dependencies
-  shell: pip install -r /usr/local/taulubot/requirements.txt
-  args:
-    creates: /usr/local/taulubot/.deps_installed
-  register: _pip_install
-
-- name: Mark dependencies installed
-  file:
-    path: /usr/local/taulubot/.deps_installed
-    state: touch
-  when: _pip_install is changed
-
-- name: Deploy rc.d script
-  template:
-    src: "{{ jail_role_dir }}/templates/usr_local_etc_rc.d_taulubot"
-    dest: /usr/local/etc/rc.d/taulubot
+- name: Deploy bot token file
+  copy:
+    content: "{{ taulubot_token }}"
+    dest: /usr/local/etc/taulubot.token
     owner: root
     group: wheel
-    mode: "0755"
-  notify: Restart taulubot
+    mode: "0600"
+  no_log: true
 
 - import_role:
     name: jail

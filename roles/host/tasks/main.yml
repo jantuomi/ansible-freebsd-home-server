@@ -83,7 +83,8 @@
     if [ ! -d /usr/ports/.git ]; then
       git clone --depth 1 https://github.com/jantuomi/freebsd-ports.git /usr/ports
     else
-      git -C /usr/ports pull --ff-only
+      git -C /usr/ports fetch origin
+      git -C /usr/ports reset --hard origin/main
     fi
   register: _ports_fetch
   changed_when: "'Already up to date' not in _ports_fetch.stdout"
@@ -148,7 +149,7 @@
     label: "{{ item.name }}"
 
 - name: Install custom ports
-  shell: cd /usr/ports/{{ item }} && make install
+  shell: cd /usr/ports/{{ item }} && make install WRKDIRPREFIX=/tmp/ports DISTDIR=/tmp/distfiles
   loop:
     - sysutils/pylogsentinel
   register: _port_install
