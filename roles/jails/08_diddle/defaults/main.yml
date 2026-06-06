@@ -2,22 +2,13 @@ userland: "15.0-RELEASE"
 
 pkg:
   - python311
+  - py311-pip
+  - py311-setuptools
+  - py311-build
+  - py311-installer
+  - py311-wheel
   - py311-sqlite3
   - git
-
-files:
-  - src: root_clone.sh
-    dest: /root/clone.sh
-    mode: "0755"
-  - src: root_diddle_env.j2
-    dest: /root/diddle/.env
-    mode: "0600"
-  - src: usr_local_bin_diddle
-    dest: /usr/local/bin/diddle
-    mode: "0755"
-  - src: usr_local_etc_rc.d_diddle
-    dest: /usr/local/etc/rc.d/diddle
-    mode: "0755"
 
 services:
   - diddle

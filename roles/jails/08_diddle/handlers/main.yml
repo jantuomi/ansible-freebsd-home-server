@@ -1,0 +1,4 @@
+- name: Restart diddle
+  service:
+    name: diddle
+    state: restarted
