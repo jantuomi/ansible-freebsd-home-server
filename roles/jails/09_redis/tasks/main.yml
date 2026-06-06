@@ -2,25 +2,13 @@
     name: jail
     tasks_from: jail_setup
 
-- name: Configure bind address
-  lineinfile:
-    path: /usr/local/etc/valkey.conf
-    line: "bind * -::*"
-    regexp: "^bind "
-  notify: Restart valkey
-
-- name: Configure protected-mode
-  lineinfile:
-    path: /usr/local/etc/valkey.conf
-    line: "protected-mode yes"
-    regexp: "^protected-mode"
-  notify: Restart valkey
-
-- name: Configure requirepass
-  lineinfile:
-    path: /usr/local/etc/valkey.conf
-    line: "requirepass {{ valkey_password }}"
-    regexp: "^requirepass"
+- name: Deploy valkey.conf
+  template:
+    src: "{{ jail_role_dir }}/templates/valkey.conf.j2"
+    dest: /usr/local/etc/valkey.conf
+    owner: root
+    group: wheel
+    mode: "0640"
   notify: Restart valkey
 
 - import_role:
