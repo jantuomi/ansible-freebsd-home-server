@@ -17,6 +17,11 @@
     mode: "0600"
   notify: Restart diddle
 
+- name: Bind diddle to port 80
+  community.general.sysrc:
+    name: diddle_bind
+    value: "0.0.0.0:80"
+
 - import_role:
     name: jail
     tasks_from: jail_launch
