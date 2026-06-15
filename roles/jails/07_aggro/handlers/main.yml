@@ -1,0 +1,4 @@
+- name: Restart aggro
+  service:
+    name: aggro
+    state: restarted

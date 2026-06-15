@@ -144,6 +144,10 @@
         name: "zroot/jails/volumes/komga_data",
         mountpoint: "/usr/local/jails/containers/komga/root/.komga",
       }
+    - {
+        name: "zroot/jails/volumes/aggro_data",
+        mountpoint: "/usr/local/jails/containers/aggro/var/db/aggro",
+      }
     - { name: "zroot/storage", mountpoint: "/usr/local/jails/volumes/storage" }
   loop_control:
     label: "{{ item.name }}"

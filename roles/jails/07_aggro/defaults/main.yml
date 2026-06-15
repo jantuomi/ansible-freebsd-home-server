@@ -1,1 +1,14 @@
 userland: "15.0-RELEASE"
+
+pkg:
+  - python311
+  - py311-pip
+  - py311-setuptools
+  - py311-build
+  - py311-installer
+  - py311-wheel
+  - libxml2
+  - libxslt
+
+services:
+  - aggro

@@ -1,0 +1,315 @@
+{
+	"db_path": "/var/db/aggro/db.json",
+	"server": {
+		"host": "0.0.0.0",
+		"port": 80
+	},
+	"plugins": {
+		"aaniwalli_scraper": {
+			"plugin": "ScraperSourcePlugin",
+			"schedule_expr": "schedule.every(6).hours",
+			"url": "https://www.ääniwalli.fi/",
+			"selector_post": "page.select('.event-wrapper')",
+			"selector_title": "post.select('.event-title')",
+			"selector_date": "post.select('.pill')",
+			"selector_link": "post.select('a.event')",
+			"selector_description": "detail_page.select('.right-pane')",
+			"selector_image": "post.select('img')"
+		},
+		"aaniwalli_feed": {
+			"plugin": "FeedSinkPlugin",
+			"feed_id": "aaniwalli",
+			"feed_title": "Ääniwalli",
+			"feed_description": "Ääniwalli events",
+			"feed_link": "https://www.ääniwalli.fi/"
+		},
+		"tavastia_scraper": {
+			"plugin": "ScraperSourcePlugin",
+			"schedule_expr": "schedule.every(6).hours",
+			"url": "https://tavastiaklubi.fi/#days",
+			"selector_post": "page.select('table.event-table tbody tr')",
+			"selector_title": "post.select('.title')",
+			"selector_date": "post.select('.date')",
+			"selector_link": "post.select('a.item')",
+			"selector_description": "detail_page.select('.event')",
+			"selector_image": "detail_page.select('img.img')",
+			"show_image_in_description": false
+		},
+		"tavastia_feed": {
+			"plugin": "FeedSinkPlugin",
+			"feed_id": "tavastia",
+			"feed_title": "Tavastia",
+			"feed_description": "Tavastia events",
+			"feed_link": "https://tavastiaklubi.fi/"
+		},
+		"semifinal_scraper": {
+			"plugin": "ScraperSourcePlugin",
+			"schedule_expr": "schedule.every(6).hours",
+			"url": "https://tavastiaklubi.fi/semifinal/#days",
+			"selector_post": "page.select('.table.event-table tbody tr')",
+			"selector_title": "post.select('.title')",
+			"selector_date": "post.select('.date')",
+			"selector_link": "post.select('a.item')",
+			"selector_description": "detail_page.select('.event')",
+			"selector_image": "detail_page.select('img.img')",
+			"show_image_in_description": false
+		},
+		"semifinal_feed": {
+			"plugin": "FeedSinkPlugin",
+			"feed_id": "semifinal",
+			"feed_title": "Semifinal",
+			"feed_description": "Semifinal events",
+			"feed_link": "https://tavastiaklubi.fi/semifinal"
+		},
+		"kaiku_scraper": {
+			"plugin": "ScraperSourcePlugin",
+			"schedule_expr": "schedule.every(6).hours",
+			"url": "https://clubkaiku.fi/",
+			"selector_post": "page.select('.events article')",
+			"selector_title": "post.select('.title')",
+			"selector_date": "post.select('.date')",
+			"selector_link": "post.select('p .icon-ticket + a')",
+			"selector_description": "post.select('.card')",
+			"crawl_detail_page": false
+		},
+		"kaiku_feed": {
+			"plugin": "FeedSinkPlugin",
+			"feed_id": "kaiku",
+			"feed_title": "Kaiku",
+			"feed_description": "Club Kaiku events",
+			"feed_link": "https://clubkaiku.fi"
+		},
+		"postbar_scraper": {
+			"plugin": "ScraperSourcePlugin",
+			"schedule_expr": "schedule.every(6).hours",
+			"url": "https://postbar.fi",
+			"selector_post": "page.select('.simcal-event-details')",
+			"selector_title": "post.select('.simcal-event-title')",
+			"selector_date": "post.select('.simcal-event-start')",
+			"selector_description": "[post]"
+		},
+		"postbar_feed": {
+			"plugin": "FeedSinkPlugin",
+			"feed_id": "postbar",
+			"feed_title": "Post Bar",
+			"feed_description": "Post Bar events",
+			"feed_link": "https://postbar.fi"
+		},
+		"barloose_scraper": {
+			"plugin": "JsonApiSourcePlugin",
+			"schedule_expr": "schedule.every(6).hours",
+			"url": "https://barloose.com/wp-json/tribe/events/v1/events",
+			"selector_post": "data['events']",
+			"selector_title": "post['title']",
+			"selector_link": "post['url']",
+			"selector_date": "post['start_date']",
+			"selector_description": "post['description']",
+			"selector_image": "post['image']['url']",
+			"show_image_in_description": true
+		},
+		"barloose_feed": {
+			"plugin": "FeedSinkPlugin",
+			"feed_id": "barloose",
+			"feed_title": "Bar Loose",
+			"feed_description": "Bar Loose events",
+			"feed_link": "https://barloose.com"
+		},
+		"lepakkomies_scraper": {
+			"plugin": "ScraperSourcePlugin",
+			"schedule_expr": "schedule.every(6).hours",
+			"url": "https://lepis.fi/tapahtumat",
+			"selector_post": "page.select('.tapahtuma-inner')",
+			"selector_title": "post.select('h1')",
+			"selector_link": "post.select('h1 a')",
+			"selector_image": "post.select('a.img-link img')",
+			"selector_date": "post.select('.date-info')",
+			"selector_description": "detail_page.select('.entry-content')",
+			"show_image_in_description": true
+		},
+		"lepakkomies_feed": {
+			"plugin": "FeedSinkPlugin",
+			"feed_id": "lepakkomies",
+			"feed_title": "Lepakkomies",
+			"feed_description": "Lepakkomies events",
+			"feed_link": "https://lepis.fi"
+		},
+		"glivelab_scraper": {
+			"plugin": "ScraperSourcePlugin",
+			"schedule_expr": "schedule.every(6).hours",
+			"url": "https://glivelab.fi/?show_all=1#events",
+			"selector_post": "page.select('.listing .item > a')",
+			"selector_title": "post.select('h2')",
+			"selector_link": "[post]",
+			"selector_image": "post.select('.img')",
+			"selector_date": "post.select('.date')",
+			"selector_description": "detail_page.select('.info')",
+			"show_image_in_description": true
+		},
+		"glivelab_feed": {
+			"plugin": "FeedSinkPlugin",
+			"feed_id": "glivelab",
+			"feed_title": "G Livelab",
+			"feed_description": "G Livelab events",
+			"feed_link": "https://glivelab.fi"
+		},
+		"korjaamo_scraper": {
+			"plugin": "ScraperSourcePlugin",
+			"schedule_expr": "schedule.every(6).hours",
+			"url": "https://korjaamo.fi/tapahtumat/",
+			"selector_post": "page.select('.gt-event-style-1')",
+			"selector_title": "post.select('.gt-title')",
+			"selector_link": "post.select('a')",
+			"selector_image": "detail_page.select('meta[property=\"og:image\"]')",
+			"selector_date": "post.select('.gt-date span')",
+			"selector_description": "detail_page.select('.gt-page-content > .gt-content')",
+			"show_image_in_description": true
+		},
+		"korjaamo_feed": {
+			"plugin": "FeedSinkPlugin",
+			"feed_id": "korjaamo",
+			"feed_title": "Korjaamo",
+			"feed_description": "Korjaamo events",
+			"feed_link": "https://korjaamo.fi/tapahtumat/"
+		},
+		"kulttuuritalo_scraper": {
+			"plugin": "ScraperSourcePlugin",
+			"schedule_expr": "schedule.every(6).hours",
+			"url": "https://kulttuuritalo.fi/tapahtumat/",
+			"selector_post": "page.select('.pp-content-post')",
+			"selector_title": "post.select('.pp-content-grid-post-title')",
+			"selector_link": "post.select('a')",
+			"selector_image": "detail_page.select('.fl-photo-content noscript img')",
+			"selector_date": "detail_page.select('.fl-col-content .date')",
+			"selector_description": "detail_page.select('.fl-module-fl-post-content')",
+			"show_image_in_description": true
+		},
+		"kulttuuritalo_feed": {
+			"plugin": "FeedSinkPlugin",
+			"feed_id": "kulttuuritalo",
+			"feed_title": "Kulttuuritalo",
+			"feed_description": "Kulttuuritalo events",
+			"feed_link": "https://kulttuuritalo.fi/tapahtumat/"
+		},
+		"ontherocks_scraper": {
+			"plugin": "ScraperSourcePlugin",
+			"schedule_expr": "schedule.every(6).hours",
+			"url": "https://www.rocks.fi/tapahtumat/",
+			"selector_post": "page.select('article.tapahtuma')",
+			"selector_title": "post.select('h1 a')",
+			"selector_link": "post.select('h1 a')",
+			"selector_image": "detail_page.select('.img-link img')",
+			"selector_date": "detail_page.select('.date-info')",
+			"selector_description": "detail_page.select('.entry-content')",
+			"show_image_in_description": true
+		},
+		"ontherocks_feed": {
+			"plugin": "FeedSinkPlugin",
+			"feed_id": "ontherocks",
+			"feed_title": "On The Rocks",
+			"feed_description": "On The Rocks events",
+			"feed_link": "https://www.rocks.fi/tapahtumat/"
+		},
+		"metallikeikat_scraper": {
+			"plugin": "ScraperSourcePlugin",
+			"schedule_expr": "schedule.every(6).hours",
+			"url": "https://metallikeikat.fi/",
+			"selector_post": "page.select('#results > a')",
+			"selector_title": "post.select('h2')",
+			"selector_link": "[post]",
+			"selector_date": "post.select('.arkisto-grid-date')",
+			"selector_description": "[post]"
+		},
+		"metallikeikat_feed": {
+			"plugin": "FeedSinkPlugin",
+			"feed_id": "metallikeikat.fi",
+			"feed_title": "Metallikeikat.fi",
+			"feed_description": "Metallikeikat.fi events",
+			"feed_link": "https://metallikeikat.fi/"
+		},
+		"skenesali_scraper": {
+			"plugin": "ScraperSourcePlugin",
+			"schedule_expr": "schedule.every(24).hours",
+			"url": "https://allevents.in/org/skenesali-myyr%C3%A4ncolo/22853164#",
+			"selector_post": "page.select('#upcoming_event_php li')",
+			"selector_title": "post.select('h3')",
+			"selector_link": "post.select('a')",
+			"selector_date": "post.select('.date')",
+			"selector_description": "detail_page.select('.event-description-html')",
+			"show_image_in_description": true
+		},
+		"skenesali_feed": {
+			"plugin": "FeedSinkPlugin",
+			"feed_id": "skenesali",
+			"feed_title": "Skenesali",
+			"feed_description": "Skenesali (Vantaa) events",
+			"feed_link": "https://allevents.in/org/skenesali-myyr%C3%A4ncolo/22853164#"
+		},
+		"caisa_scraper": {
+			"plugin": "JsonApiSourcePlugin",
+			"schedule_expr": "schedule.every(6).hours",
+			"url": "https://www.caisa.fi/services/Resurssivaraus/EventCalendarService.svc/GetEvents",
+			"method": "post",
+			"body": { "Language": "fi" },
+			"headers": { "Content-Type": "application/json; charset=utf-8" },
+			"selector_post": "json.loads(data['EventData'])",
+			"selector_title": "post['title']",
+			"selector_link": "post['ticketLink']",
+			"selector_date": "post['timeSpanToShow']",
+			"selector_description": "post['description']",
+			"selector_image": "f\"https://www.caisa.fi/instancedata/prime_product_resurssivaraus/kulke/Embeds/EventPic_{post['masterID']}.jpg\"",
+			"show_image_in_description": true
+		},
+		"caisa_feed": {
+			"plugin": "FeedSinkPlugin",
+			"feed_id": "caisa",
+			"feed_title": "Caisa",
+			"feed_description": "Caisa events",
+			"feed_link": "https://www.caisa.fi/fi/tapahtumat/"
+		}
+	},
+	"graph": {
+		"aaniwalli_scraper": [
+			"aaniwalli_feed"
+		],
+		"tavastia_scraper": [
+			"tavastia_feed"
+		],
+		"semifinal_scraper": [
+			"semifinal_feed"
+		],
+		"kaiku_scraper": [
+			"kaiku_feed"
+		],
+		"postbar_scraper": [
+			"postbar_feed"
+		],
+		"barloose_scraper": [
+			"barloose_feed"
+		],
+		"lepakkomies_scraper": [
+			"lepakkomies_feed"
+		],
+		"glivelab_scraper": [
+			"glivelab_feed"
+		],
+		"korjaamo_scraper": [
+			"korjaamo_feed"
+		],
+		"kulttuuritalo_scraper": [
+			"kulttuuritalo_feed"
+		],
+		"ontherocks_scraper": [
+			"ontherocks_feed"
+		],
+		"metallikeikat_scraper": [
+			"metallikeikat_feed"
+		],
+		"skenesali_scraper": [
+			"skenesali_feed"
+		],
+		"caisa_scraper": [
+			"caisa_feed"
+		]
+	}
+}
+
