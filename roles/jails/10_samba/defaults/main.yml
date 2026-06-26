@@ -1,5 +1,11 @@
 userland: "15.0-RELEASE"
 
+pkg:
+  - samba419
+
 nullfs:
   - src: /usr/local/jails/volumes/storage
     dst: /mnt/storage
+
+services:
+  - samba_server

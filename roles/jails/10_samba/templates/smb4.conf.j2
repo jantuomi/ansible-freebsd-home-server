@@ -1,0 +1,23 @@
+[global]
+   workgroup = WORKGROUP
+   server string = pursotin samba
+   security = user
+   map to guest = never
+
+   vfs objects = acl_xattr catia fruit streams_xattr
+   map acl inherit = yes
+   store dos attributes = yes
+
+   log file = /var/log/samba4/log.%m
+   max log size = 1000
+
+   server min protocol = SMB3
+   server max protocol = SMB3
+
+   ntlm auth = no
+
+[smb]
+   path = /mnt/storage
+   browseable = yes
+   read only = no
+   valid users = {{ samba.username }}

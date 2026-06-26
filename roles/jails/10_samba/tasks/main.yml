@@ -1,2 +1,41 @@
 - import_role:
     name: jail
+    tasks_from: jail_setup
+
+- name: Deploy smb4.conf
+  template:
+    src: "{{ jail_role_dir }}/templates/smb4.conf.j2"
+    dest: /usr/local/etc/smb4.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+  notify: Restart samba
+
+- name: Create samba group
+  shell: "pw groupshow {{ samba.username }} || pw groupadd {{ samba.username }} -g 1001"
+  register: _smbgroup
+  changed_when: _smbgroup.rc != 0
+
+- name: Create samba user
+  shell: "id {{ samba.username }} || pw useradd {{ samba.username }} -u 1001 -g 1001 -m -s /bin/sh"
+  register: _smbuser
+  changed_when: _smbuser.rc != 0
+
+- name: Set unix password
+  shell: "echo '{{ samba.password }}' | pw usermod {{ samba.username }} -h 0"
+  no_log: true
+  changed_when: false
+
+- name: Set samba password
+  shell: "printf '{{ samba.password }}\n{{ samba.password }}\n' | smbpasswd -a -s {{ samba.username }}"
+  args:
+    creates: /usr/local/etc/samba4/private/passdb.tdb
+  no_log: true
+
+- name: Enable samba user
+  shell: "smbpasswd -e {{ samba.username }}"
+  changed_when: false
+
+- import_role:
+    name: jail
+    tasks_from: jail_launch
