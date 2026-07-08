@@ -1,0 +1,4 @@
+- name: Restart expense_tracker
+  service:
+    name: expense_tracker
+    state: restarted

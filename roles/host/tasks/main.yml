@@ -148,6 +148,10 @@
         name: "zroot/jails/volumes/aggro_data",
         mountpoint: "/usr/local/jails/containers/aggro/var/db/aggro",
       }
+    - {
+        name: "zroot/jails/volumes/spliit_data",
+        mountpoint: "/usr/local/jails/containers/spliit/var/db/expense-tracker",
+      }
     - { name: "zroot/storage", mountpoint: "/usr/local/jails/volumes/storage" }
   loop_control:
     label: "{{ item.name }}"
