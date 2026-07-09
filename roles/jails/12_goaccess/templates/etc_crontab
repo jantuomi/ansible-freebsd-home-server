@@ -1,0 +1,5 @@
+SHELL=/bin/sh
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+
+# Update goaccess report HTML every hour
+0	*	*	*	*	root	/usr/local/bin/gen_goaccess.sh

@@ -1,5 +1,9 @@
 userland: "15.0-RELEASE"
 
+zfs:
+  - name: zroot/jails/volumes/irc_thelounge
+    mountpoint: /var/db/thelounge
+
 pkg:
   - npm
   - git

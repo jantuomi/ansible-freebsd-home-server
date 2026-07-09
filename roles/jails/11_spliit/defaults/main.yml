@@ -1,5 +1,9 @@
 userland: "15.0-RELEASE"
 
+zfs:
+  - name: zroot/jails/volumes/spliit_data
+    mountpoint: /var/db/expense-tracker
+
 pkg:
   - py311-sqlite3
 

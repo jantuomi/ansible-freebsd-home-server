@@ -15,6 +15,7 @@ ingress_routes:
   - { host: immich.jan.systems, ip: 192.168.3.3, port: 2283 }
   - { host: plex.jan.systems, jail: plex, port: 32400, presets: [streaming] }
   - { host: komga.jan.systems, jail: komga, port: 25600 }
+  - { host: goaccess.jan.systems, jail: goaccess }
 
 cert_domains:
   - "jan.systems"
@@ -30,15 +31,12 @@ contact_email: jan@jantuomi.fi
 jail_conf_options:
   - "allow.raw_sockets"
 
-nullfs:
-  - src: /usr/local/jails/volumes/goaccess_www
-    dst: /mnt/www_goaccess
+nullfs: []
 
 pkg:
   - nginx
   - py311-certbot
   - py311-certbot-nginx
-  - goaccess
 
 files:
   - src: etc_pf.conf.j2
@@ -54,9 +52,6 @@ files:
   - src: usr_local_etc_hetzner_auth.j2
     dest: /usr/local/etc/hetzner_auth
     mode: "0600"
-  - src: usr_local_bin_gen_goaccess.sh.j2
-    dest: /usr/local/bin/gen_goaccess.sh
-    mode: "0755"
   - src: etc_crontab.j2
     dest: /etc/crontab
 

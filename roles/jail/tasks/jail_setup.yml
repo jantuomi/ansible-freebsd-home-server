@@ -1,3 +1,34 @@
+- name: "Create ZFS volumes for {{ jail_name }}"
+  community.general.zfs:
+    name: "{{ item.name }}"
+    state: present
+    extra_zfs_properties:
+      mountpoint: "/usr/local/jails/containers/{{ jail_name }}{{ item.mountpoint }}"
+  loop: "{{ zfs | default([]) }}"
+  loop_control:
+    label: "{{ item.name }}"
+  delegate_to: "{{ jail_delegate_host }}"
+
+- name: "Create mount points for ZFS volumes in {{ jail_name }}"
+  file:
+    path: "/usr/local/jails/containers/{{ jail_name }}{{ item.mountpoint }}"
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+  loop: "{{ zfs | default([]) }}"
+  loop_control:
+    label: "{{ item.mountpoint }}"
+  delegate_to: "{{ jail_delegate_host }}"
+
+- name: "Mount ZFS volumes for {{ jail_name }}"
+  shell: "zfs mount {{ item.name }} || true"
+  loop: "{{ zfs | default([]) }}"
+  loop_control:
+    label: "{{ item.name }}"
+  changed_when: false
+  delegate_to: "{{ jail_delegate_host }}"
+
 # Host-side setup (runs on the jail host via SSH)
 - name: "Check if {{ jail_name }} container exists"
   shell: "zfs list -o name | grep -Fxq 'zroot/jails/containers/{{ jail_name }}'"

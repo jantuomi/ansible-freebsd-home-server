@@ -13,6 +13,3 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 {% for elem in hetzner_zone_record_ids %}
 *       *       *       *       *       root    /usr/local/bin/hetzner_ddns.sh --zone '{{ elem.zone }}' --rr-id '{{ elem.rr_id }}' --iface-cmd 'ifconfig epw1b' >>/var/log/hetzner_ddns.log 2>&1
 {% endfor %}
-
-# Update goaccess report HTML
-0       *       *       *       *       root    /usr/local/bin/gen_goaccess.sh

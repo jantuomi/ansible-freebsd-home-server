@@ -1,5 +1,9 @@
 userland: "15.0-RELEASE"
 
+zfs:
+  - name: zroot/jails/volumes/aggro_data
+    mountpoint: /var/db/aggro
+
 pkg:
   - python311
   - py311-pip

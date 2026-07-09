@@ -1,6 +1,10 @@
 userland: "15.0-RELEASE"
 devfs_ruleset: 5
 
+zfs:
+  - name: zroot/jails/volumes/postgres_data
+    mountpoint: /var/db/postgres
+
 jail_conf_options:
   - "allow.raw_sockets"
   - "allow.sysvipc"

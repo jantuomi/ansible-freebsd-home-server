@@ -1,5 +1,25 @@
 userland: "15.0-RELEASE"
 
+zfs:
+  - name: zroot/jails/volumes/goaccess_data
+    mountpoint: /var/db/goaccess
+
 nullfs:
-  - src: /usr/local/jails/volumes/goaccess_www
-    dst: /var/www/goaccess
+  - src: /usr/local/jails/containers/ingress/var/log/nginx
+    dst: /mnt/nginx_logs
+
+pkg:
+  - goaccess
+  - nginx
+
+services:
+  - nginx
+
+files:
+  - src: usr_local_etc_nginx_nginx.conf
+    dest: /usr/local/etc/nginx/nginx.conf
+  - src: usr_local_bin_gen_goaccess.sh
+    dest: /usr/local/bin/gen_goaccess.sh
+    mode: "0755"
+  - src: etc_crontab
+    dest: /etc/crontab

@@ -1,5 +1,9 @@
 userland: "15.0-RELEASE"
 
+zfs:
+  - name: zroot/jails/volumes/taulubot
+    mountpoint: /usr/local/taulubot/photos
+
 pkg:
   - python311
   - py311-pip
