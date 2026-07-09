@@ -1,2 +1,40 @@
 - import_role:
     name: jail
+    tasks_from: jail_setup
+
+- name: Download FreshRSS
+  shell: |
+    if [ ! -f /usr/local/FreshRSS/constants.php ]; then
+      fetch -qo /tmp/freshrss.tar.gz https://github.com/FreshRSS/FreshRSS/archive/refs/heads/edge.tar.gz
+      tar -xf /tmp/freshrss.tar.gz --strip-components=1 -C /usr/local/FreshRSS
+      rm -f /tmp/freshrss.tar.gz
+    fi
+  register: _freshrss_download
+  changed_when: "'constants.php' not in _freshrss_download.cmd"
+
+- name: Set FreshRSS data ownership
+  file:
+    path: /usr/local/FreshRSS/data
+    state: directory
+    owner: www
+    group: www
+    recurse: true
+
+- name: Create php-fpm socket directory
+  file:
+    path: /var/run/php
+    state: directory
+    owner: www
+    group: www
+    mode: "0755"
+
+- name: Symlink FreshRSS public to webroot
+  file:
+    src: /usr/local/FreshRSS/p
+    dest: /var/www
+    state: link
+    force: true
+
+- import_role:
+    name: jail
+    tasks_from: jail_launch
