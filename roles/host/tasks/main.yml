@@ -152,6 +152,10 @@
         name: "zroot/jails/volumes/spliit_data",
         mountpoint: "/usr/local/jails/containers/spliit/var/db/expense-tracker",
       }
+    - {
+        name: "zroot/jails/volumes/plex_data",
+        mountpoint: "/usr/local/jails/containers/plex/usr/local/plexdata",
+      }
     - { name: "zroot/storage", mountpoint: "/usr/local/jails/volumes/storage" }
   loop_control:
     label: "{{ item.name }}"
