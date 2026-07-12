@@ -1,0 +1,6 @@
+#!/bin/sh
+set -e
+. /usr/local/etc/gdrive-photo-gallery.env
+export GDRIVE_FOLDER GAPI_KEY AUTHOR IG_LINK BASE_URL
+cd /usr/local/gdrive-photo-gallery
+exec /usr/local/bin/uv run gunicorn --bind 0.0.0.0:80 app:app -w 1

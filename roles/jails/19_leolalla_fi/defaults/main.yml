@@ -1,1 +1,14 @@
 userland: "15.0-RELEASE"
+
+zfs:
+  - name: zroot/jails/volumes/leolalla_fi_data
+    mountpoint: /var/db/gdrive-photo-gallery
+
+pkg:
+  - py312-sqlite3
+  - py312-uv
+  - py312-pillow
+  - python
+
+services:
+  - gdrive_photo_gallery
