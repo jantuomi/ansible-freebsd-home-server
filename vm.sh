@@ -45,7 +45,7 @@ SSH_KEY="${VM_DIR}/id_ed25519"
 SSH_PORT_LAN=22
 VM_RAM=4096
 VM_CPUS=2
-DISK_SIZE=20G
+DISK_SIZE=40G
 
 cmd_dl() {
     mkdir -p "$VM_DIR"
