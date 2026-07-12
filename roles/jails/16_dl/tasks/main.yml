@@ -1,2 +1,107 @@
 - import_role:
     name: jail
+    tasks_from: jail_setup
+
+- name: Configure transmission download directory
+  community.general.sysrc:
+    name: transmission_download_dir
+    value: /mnt/storage/downloads/complete
+
+- name: Deploy initial transmission settings
+  template:
+    src: "{{ jail_role_dir }}/templates/transmission_settings.json.j2"
+    dest: /usr/local/etc/transmission/home/settings.json
+    owner: root
+    group: wheel
+    mode: "0644"
+    #force: false
+
+- name: Deploy initial nzbget config
+  template:
+    src: "{{ jail_role_dir }}/templates/nzbget.conf.j2"
+    dest: /usr/local/share/nzbget/nzbget.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+    force: false
+
+- name: Deploy initial prowlarr config
+  template:
+    src: "{{ jail_role_dir }}/templates/prowlarr_config.xml.j2"
+    dest: /usr/local/prowlarr/config.xml
+    owner: root
+    group: wheel
+    mode: "0644"
+    force: false
+
+- name: Deploy initial sonarr config
+  template:
+    src: "{{ jail_role_dir }}/templates/sonarr_config.xml.j2"
+    dest: /usr/local/sonarr/config.xml
+    owner: root
+    group: wheel
+    mode: "0644"
+    force: false
+
+- name: Deploy initial radarr config
+  template:
+    src: "{{ jail_role_dir }}/templates/radarr_config.xml.j2"
+    dest: /usr/local/radarr/config.xml
+    owner: root
+    group: wheel
+    mode: "0644"
+    force: false
+
+- name: Deploy initial lidarr config
+  template:
+    src: "{{ jail_role_dir }}/templates/lidarr_config.xml.j2"
+    dest: /usr/local/lidarr/config.xml
+    owner: root
+    group: wheel
+    mode: "0644"
+    force: false
+
+- name: Create wireguard config directory
+  file:
+    path: /usr/local/etc/wireguard
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0700"
+
+- name: Deploy wireguard configs
+  unarchive:
+    src: "{{ jail_role_dir }}/files/mullvad_wireguard_linux_all_all.zip"
+    dest: /usr/local/etc/wireguard
+    owner: root
+    group: wheel
+    mode: "0600"
+    creates: /usr/local/etc/wireguard/mullvad-fi1.conf
+
+- name: Deploy wg_random_tunnel script
+  template:
+    src: "{{ jail_role_dir }}/templates/wg_random_tunnel.j2"
+    dest: /usr/local/bin/wg_random_tunnel
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Deploy wg_random_tunnel rc.d script
+  template:
+    src: "{{ jail_role_dir }}/templates/usr_local_etc_rc.d_wg_random_tunnel"
+    dest: /usr/local/etc/rc.d/wg_random_tunnel
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Deploy crontab
+  template:
+    src: "{{ jail_role_dir }}/templates/etc_crontab.j2"
+    dest: /etc/crontab
+    owner: root
+    group: wheel
+    mode: "0644"
+
+- import_role:
+    name: jail
+    tasks_from: jail_launch

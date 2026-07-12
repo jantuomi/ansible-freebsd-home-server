@@ -1,0 +1,2 @@
+- name: Restart wireguard
+  shell: /usr/local/bin/wg_random_tunnel

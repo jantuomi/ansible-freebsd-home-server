@@ -1,6 +1,5 @@
 userland: "15.0-RELEASE"
 devfs_ruleset: 4
-no_default_route: true
 
 jail_conf_options:
   - "allow.raw_sockets"
@@ -9,3 +8,42 @@ jail_conf_options:
 nullfs:
   - src: /usr/local/jails/volumes/storage
     dst: /mnt/storage
+
+zfs:
+  - name: zroot/jails/volumes/dl_sonarr
+    mountpoint: /usr/local/sonarr
+  - name: zroot/jails/volumes/dl_radarr
+    mountpoint: /usr/local/radarr
+  - name: zroot/jails/volumes/dl_lidarr
+    mountpoint: /usr/local/lidarr
+  - name: zroot/jails/volumes/dl_prowlarr
+    mountpoint: /usr/local/prowlarr
+
+pkg:
+  - transmission-daemon
+  - transmission-web
+  - transmission-cli
+  - nzbget
+  - yt-dlp
+  - sonarr
+  - radarr
+  - lidarr
+  - prowlarr
+  - ffmpeg
+  - unrar
+  - wireguard-tools
+  - git
+  - bash
+  - shntool
+  - cuetools
+  - vorbisgain
+  - flac
+
+services:
+  - wg_random_tunnel
+  - transmission
+  - nzbget
+  - prowlarr
+  - sonarr
+  - radarr
+  - lidarr

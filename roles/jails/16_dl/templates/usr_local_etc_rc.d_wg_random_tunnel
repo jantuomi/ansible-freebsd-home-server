@@ -1,0 +1,37 @@
+#!/bin/sh
+
+# PROVIDE: wg_random_tunnel
+# REQUIRE: NETWORKING
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name="wg_random_tunnel"
+rcvar="wg_random_tunnel_enable"
+command="/usr/local/bin/wg_random_tunnel"
+
+start_cmd="${name}_start"
+stop_cmd="${name}_stop"
+status_cmd="${name}_status"
+
+wg_random_tunnel_start()
+{
+    export PATH=$PATH:/usr/local/bin/
+    echo "Starting wg_random_tunnel..."
+    ${command}
+}
+
+wg_random_tunnel_stop()
+{
+    echo "wg_random_tunnel is a one off script"
+    exit 1
+}
+
+wg_random_tunnel_status()
+{
+    echo "wg_random_tunnel is a one off script"
+    exit 1
+}
+
+load_rc_config $name
+run_rc_command "$1"

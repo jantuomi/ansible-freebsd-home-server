@@ -2,3 +2,4 @@
 secrets.yml
 vm/
 __pycache__/
+mullvad_wireguard_*.zip

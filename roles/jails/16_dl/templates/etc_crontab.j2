@@ -1,0 +1,5 @@
+SHELL=/bin/sh
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+
+# Change tunnel every hour
+0	*	*	*	*	root	/usr/local/bin/wg_random_tunnel >> /var/log/random_tunnel.log 2>&1

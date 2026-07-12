@@ -1,0 +1,17 @@
+#!/bin/sh
+
+set -eux
+
+CONF=$(ls /usr/local/etc/wireguard/ | sort -R | head -n1)
+GATEWAY={{ ingress_ip }}
+
+# Shut down current tunnel
+wg-quick down $(wg show interfaces) || true
+
+wg-quick up "/usr/local/etc/wireguard/${CONF}"
+
+TUNNEL_IF=$(wg show interfaces)
+TUNNEL_IP=$(wg show $TUNNEL_IF endpoints | awk '{print $2}' | tr ':' ' ' | awk '{print $1}')
+
+route delete $TUNNEL_IP
+route add $TUNNEL_IP $GATEWAY
