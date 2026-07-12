@@ -12,14 +12,6 @@
   register: _freshrss_download
   changed_when: "'constants.php' not in _freshrss_download.cmd"
 
-- name: Set FreshRSS data ownership
-  file:
-    path: /usr/local/FreshRSS/data
-    state: directory
-    owner: www
-    group: www
-    recurse: true
-
 - name: Create php-fpm socket directory
   file:
     path: /var/run/php

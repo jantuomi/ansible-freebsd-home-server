@@ -4,6 +4,9 @@ devfs_ruleset: 5
 zfs:
   - name: zroot/jails/volumes/postgres_data
     mountpoint: /var/db/postgres
+    owner: "770"
+    group: "770"
+    mode: "0755"
 
 jail_conf_options:
   - "allow.raw_sockets"

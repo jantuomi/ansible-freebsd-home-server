@@ -11,6 +11,8 @@ nullfs:
 zfs:
   - name: zroot/jails/volumes/syncthing_config
     mountpoint: /usr/local/etc/syncthing
+    owner: "1001"
+    group: "1001"
 
 pkg:
   - syncthing

@@ -3,6 +3,8 @@ userland: "15.0-RELEASE"
 zfs:
   - name: zroot/jails/volumes/freshrss_data
     mountpoint: /usr/local/FreshRSS/data
+    owner: "80"
+    group: "80"
 
 pkg:
   - nginx

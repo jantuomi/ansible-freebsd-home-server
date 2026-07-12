@@ -7,15 +7,6 @@
     path: /var/db/postgres/data18/PG_VERSION
   register: _pg_data
 
-- name: Set postgres data directory ownership
-  file:
-    path: /var/db/postgres
-    state: directory
-    owner: postgres
-    group: postgres
-    mode: "0755"
-  when: not _pg_data.stat.exists
-
 - name: Initialize database
   shell: /usr/local/etc/rc.d/postgresql initdb
   when: not _pg_data.stat.exists

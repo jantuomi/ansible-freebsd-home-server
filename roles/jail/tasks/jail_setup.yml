@@ -1,3 +1,54 @@
+- name: "Check for existing data before ZFS volume creation for {{ jail_name }}"
+  shell: |
+    zfs list {{ item.name }} >/dev/null 2>&1 && echo "exists" || \
+    ([ -d "/usr/local/jails/containers/{{ jail_name }}{{ item.mountpoint }}" ] && \
+     [ "$(ls -A /usr/local/jails/containers/{{ jail_name }}{{ item.mountpoint }})" ] && \
+     echo "migrate" || echo "empty")
+  loop: "{{ zfs | default([]) }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: _zfs_volume_state
+  changed_when: false
+  delegate_to: "{{ jail_delegate_host }}"
+
+- name: "*** VOLUME MIGRATION REQUIRED: {{ jail_name }} ***"
+  pause:
+    prompt: |
+
+      ════════════════════════════════════════════════════════════════
+        VOLUME MIGRATION: {{ jail_name }}
+      ════════════════════════════════════════════════════════════════
+        The following paths contain data that will be migrated
+        to new ZFS volumes:
+      {% for result in _zfs_volume_state.results | default([]) if result.stdout == 'migrate' %}
+          - {{ result.item.mountpoint }} → {{ result.item.name }}
+      {% endfor %}
+
+        This will:
+          1. Stop the jail
+          2. Move existing data to {{ result.item.mountpoint }}.migrate
+          3. Create ZFS volumes
+          4. Copy data into the volumes
+      ════════════════════════════════════════════════════════════════
+
+      Press Enter to continue or Ctrl+C to abort
+  when: (_zfs_volume_state.results | default([]) | selectattr('stdout', 'equalto', 'migrate') | list | length) > 0
+
+- name: "Stop {{ jail_name }} jail for volume migration"
+  shell: "service jail stop {{ jail_name }} || true"
+  when: (_zfs_volume_state.results | default([]) | selectattr('stdout', 'equalto', 'migrate') | list | length) > 0
+  delegate_to: "{{ jail_delegate_host }}"
+
+- name: "Move existing data aside for {{ jail_name }}"
+  shell: |
+    mv "/usr/local/jails/containers/{{ jail_name }}{{ item.item.mountpoint }}" \
+       "/usr/local/jails/containers/{{ jail_name }}{{ item.item.mountpoint }}.migrate"
+  loop: "{{ _zfs_volume_state.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+  when: item.stdout == "migrate"
+  delegate_to: "{{ jail_delegate_host }}"
+
 - name: "Create ZFS volumes for {{ jail_name }}"
   community.general.zfs:
     name: "{{ item.name }}"
@@ -13,9 +64,9 @@
   file:
     path: "/usr/local/jails/containers/{{ jail_name }}{{ item.mountpoint }}"
     state: directory
-    owner: root
-    group: wheel
-    mode: "0755"
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('wheel') }}"
+    mode: "{{ item.mode | default('0755') }}"
   loop: "{{ zfs | default([]) }}"
   loop_control:
     label: "{{ item.mountpoint }}"
@@ -28,6 +79,24 @@
     label: "{{ item.name }}"
   changed_when: false
   delegate_to: "{{ jail_delegate_host }}"
+
+- name: "Restore migrated data into ZFS volumes for {{ jail_name }}"
+  shell: |
+    cp -a "/usr/local/jails/containers/{{ jail_name }}{{ item.item.mountpoint }}.migrate/." \
+          "/usr/local/jails/containers/{{ jail_name }}{{ item.item.mountpoint }}/"
+  loop: "{{ _zfs_volume_state.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+  when: item.stdout == "migrate"
+  delegate_to: "{{ jail_delegate_host }}"
+
+- name: "Note: .migrate directories left as backup for {{ jail_name }}"
+  debug:
+    msg: "Data migrated from {{ item.item.mountpoint }}.migrate — verify and remove manually"
+  loop: "{{ _zfs_volume_state.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+  when: item.stdout == "migrate"
 
 # Host-side setup (runs on the jail host via SSH)
 - name: "Check if {{ jail_name }} container exists"
