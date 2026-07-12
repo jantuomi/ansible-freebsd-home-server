@@ -1,1 +1,12 @@
 userland: "15.0-RELEASE"
+
+zfs:
+  - name: zroot/jails/volumes/paste_data
+    mountpoint: /var/db/pastebin
+
+pkg:
+  - rust
+  - cargo-c
+
+services:
+  - pastebin
