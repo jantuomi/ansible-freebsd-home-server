@@ -7,5 +7,13 @@ nullfs:
     dst: /mnt/vault
   - src: /usr/local/jails/volumes/storage/jan-systems-2025-content
     dst: /mnt/jan-systems-2025-content
-  - src: /usr/local/jails/volumes/storage/projects-ableton
-    dst: /mnt/projects-ableton
+
+zfs:
+  - name: zroot/jails/volumes/syncthing_config
+    mountpoint: /usr/local/etc/syncthing
+
+pkg:
+  - syncthing
+
+services:
+  - syncthing

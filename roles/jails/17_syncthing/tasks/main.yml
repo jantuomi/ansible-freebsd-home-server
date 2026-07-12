@@ -1,2 +1,23 @@
 - import_role:
     name: jail
+    tasks_from: jail_setup
+
+- name: Set syncthing user UID to 1001
+  shell: pw usermod syncthing -u 1001 -g 1001 || true
+  changed_when: false
+
+- name: Set syncthing group GID to 1001
+  shell: pw groupmod syncthing -g 1001 || true
+  changed_when: false
+
+- name: Fix syncthing config ownership
+  file:
+    path: /usr/local/etc/syncthing
+    state: directory
+    owner: syncthing
+    group: syncthing
+    recurse: true
+
+- import_role:
+    name: jail
+    tasks_from: jail_launch
