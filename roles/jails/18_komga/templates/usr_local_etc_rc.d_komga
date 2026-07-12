@@ -1,0 +1,47 @@
+#!/bin/sh
+
+# PROVIDE: komga
+# REQUIRE: NETWORKING
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name="komga"
+rcvar="komga_enable"
+pidfile="/var/run/${name}.pid"
+
+load_rc_config "$name"
+
+: ${komga_enable:="NO"}
+
+start_cmd="${name}_start"
+stop_cmd="${name}_stop"
+status_cmd="${name}_status"
+
+komga_start()
+{
+	echo "Starting ${name}..."
+	daemon -p "${pidfile}" -o /var/log/komga.log \
+		/usr/local/bin/komga
+}
+
+komga_stop()
+{
+	if [ -f "${pidfile}" ]; then
+		echo "Stopping ${name}..."
+		kill "$(cat "${pidfile}")" 2>/dev/null
+		rm -f "${pidfile}"
+	fi
+}
+
+komga_status()
+{
+	if [ -f "${pidfile}" ] && kill -0 "$(cat "${pidfile}")" 2>/dev/null; then
+		echo "${name} is running as pid $(cat "${pidfile}")"
+	else
+		echo "${name} is not running"
+		return 1
+	fi
+}
+
+run_rc_command "$1"

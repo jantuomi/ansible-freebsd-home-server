@@ -1,0 +1,43 @@
+#!/bin/sh
+set -euo pipefail
+
+DPI="${DPI:-250}"          # override: DPI=200 ./convert-pdfs
+JPEG_QUALITY="${Q:-85}"    # override: Q=80   ./convert-pdfs
+
+for f in *.pdf; do
+  [ -f "$f" ] || continue
+
+  name="${f%.pdf}"
+  tmpdir="$(mktemp -d "${name}.XXXXXX")"
+
+  echo "Converting $f (DPI=$DPI, Q=$JPEG_QUALITY)..."
+
+  cleanup() { rm -rf "$tmpdir"; }
+  trap cleanup EXIT INT TERM
+
+  pdftoppm -jpeg -r "$DPI" -jpegopt "quality=$JPEG_QUALITY" "$f" "$tmpdir/page"
+
+  if ! ls "$tmpdir"/page-*.jpg >/dev/null 2>&1; then
+    echo "ERROR: pdftoppm produced no JPEG pages for $f"
+    exit 1
+  fi
+
+  tmpcbz="${name}.cbz.tmp"
+  (cd "$tmpdir" && zip -q -r "../$tmpcbz" .)
+
+  if [ ! -s "$tmpcbz" ]; then
+    echo "ERROR: Failed to create CBZ for $f"
+    exit 1
+  fi
+
+  if [ -e "${name}.cbz" ]; then
+    echo "ERROR: ${name}.cbz already exists"
+    exit 1
+  fi
+
+  mv "$tmpcbz" "${name}.cbz"
+
+  trap - EXIT
+  cleanup
+  echo "✔ Converted $f → ${name}.cbz"
+done

@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /usr/local/bin/java -jar /usr/local/komga/komga.jar --server.port=80 --komga.config-dir=/var/db/komga
