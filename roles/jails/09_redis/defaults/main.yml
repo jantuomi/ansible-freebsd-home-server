@@ -1,5 +1,12 @@
 userland: "15.0-RELEASE"
 
+zfs:
+  - name: zroot/jails/volumes/valkey_data
+    mountpoint: /var/db/valkey
+    owner: "537"
+    group: "537"
+    mode: "0755"
+
 pkg:
   - valkey
 
