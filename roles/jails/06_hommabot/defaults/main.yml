@@ -1,5 +1,9 @@
 userland: "15.0-RELEASE"
 
+zfs:
+  - name: zroot/jails/volumes/hommabot_data
+    mountpoint: /var/db/hommabot
+
 pkg:
   - node
   - npm
