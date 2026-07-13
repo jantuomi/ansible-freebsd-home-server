@@ -5,7 +5,8 @@ zfs:
     mountpoint: /var/db/expense-tracker
 
 pkg:
-  - py311-sqlite3
+  - py312-sqlite3
+  - python
 
 services:
   - expense_tracker

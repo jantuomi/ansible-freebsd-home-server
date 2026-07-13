@@ -5,12 +5,13 @@ zfs:
     mountpoint: /var/db/aggro
 
 pkg:
-  - python311
-  - py311-pip
-  - py311-setuptools
-  - py311-build
-  - py311-installer
-  - py311-wheel
+  - python312
+  - py312-pip
+  - py312-setuptools
+  - py312-build
+  - py312-installer
+  - py312-wheel
+  - python
   - libxml2
   - libxslt
 
