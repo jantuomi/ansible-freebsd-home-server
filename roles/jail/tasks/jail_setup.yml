@@ -1,9 +1,29 @@
-- name: "Check for existing data before ZFS volume creation for {{ jail_name }}"
+# Host-side setup (runs on the jail host via SSH)
+- name: "Check if {{ jail_name }} container exists"
+  shell: "zfs list -o name | grep -Fxq 'zroot/jails/containers/{{ jail_name }}'"
+  failed_when: false
+  changed_when: false
+  register: jail_exists
+  delegate_to: "{{ jail_delegate_host }}"
+
+- name: "Check {{ jail_name }} userland version"
+  shell: "zfs get -H -o value origin zroot/jails/containers/{{ jail_name }}"
+  register: jail_origin
+  changed_when: false
+  when: jail_exists.rc == 0
+  delegate_to: "{{ jail_delegate_host }}"
+
+# ZFS volume migration
+- name: "Check ZFS volume state for {{ jail_name }}"
   shell: |
-    zfs list {{ item.name }} >/dev/null 2>&1 && echo "exists" || \
-    ([ -d "/usr/local/jails/containers/{{ jail_name }}{{ item.mountpoint }}" ] && \
-     [ "$(ls -A /usr/local/jails/containers/{{ jail_name }}{{ item.mountpoint }})" ] && \
-     echo "migrate" || echo "empty")
+    if zfs list {{ item.name }} >/dev/null 2>&1; then
+      echo "exists"
+    elif [ -d "/usr/local/jails/containers/{{ jail_name }}{{ item.mountpoint }}" ] && \
+         [ "$(ls -A /usr/local/jails/containers/{{ jail_name }}{{ item.mountpoint }})" ]; then
+      echo "migrate"
+    else
+      echo "empty"
+    fi
   loop: "{{ zfs | default([]) }}"
   loop_control:
     label: "{{ item.name }}"
@@ -25,31 +45,117 @@
       {% endfor %}
 
         This will:
-          1. Stop the jail
-          2. Move existing data to .migrate
-          3. Create ZFS volumes
-          4. Copy data into the volumes
+          1. Create ZFS volumes (staged)
+          2. Stop the jail
+          3. Copy existing data into the volumes
       ════════════════════════════════════════════════════════════════
 
       Press Enter to continue or Ctrl+C to abort
   when: (_zfs_volume_state.results | default([]) | selectattr('stdout', 'equalto', 'migrate') | list | length) > 0
 
-- name: "Stop {{ jail_name }} jail for volume migration"
-  shell: "service jail stop {{ jail_name }} || true"
-  when: (_zfs_volume_state.results | default([]) | selectattr('stdout', 'equalto', 'migrate') | list | length) > 0
-  delegate_to: "{{ jail_delegate_host }}"
-
-- name: "Move existing data aside for {{ jail_name }}"
-  shell: |
-    mv "/usr/local/jails/containers/{{ jail_name }}{{ item.item.mountpoint }}" \
-       "/usr/local/jails/containers/{{ jail_name }}{{ item.item.mountpoint }}.migrate"
+- name: "Create new ZFS volumes (staged) for {{ jail_name }}"
+  community.general.zfs:
+    name: "{{ item.item.name }}"
+    state: present
+    extra_zfs_properties:
+      mountpoint: "/usr/local/jails/volumes/.staging/{{ jail_name }}{{ item.item.mountpoint }}"
   loop: "{{ _zfs_volume_state.results | default([]) }}"
   loop_control:
     label: "{{ item.item.name }}"
   when: item.stdout == "migrate"
   delegate_to: "{{ jail_delegate_host }}"
 
-- name: "Create ZFS volumes for {{ jail_name }}"
+- name: "Create staging mount points for {{ jail_name }}"
+  file:
+    path: "/usr/local/jails/volumes/.staging/{{ jail_name }}{{ item.item.mountpoint }}"
+    state: directory
+  loop: "{{ _zfs_volume_state.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+  when: item.stdout == "migrate"
+  delegate_to: "{{ jail_delegate_host }}"
+
+- name: "Mount staged volumes for {{ jail_name }}"
+  shell: "zfs mount {{ item.item.name }} || true"
+  loop: "{{ _zfs_volume_state.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+  when: item.stdout == "migrate"
+  changed_when: false
+  delegate_to: "{{ jail_delegate_host }}"
+
+- name: "Stop {{ jail_name }} jail for volume migration"
+  shell: "service jail stop {{ jail_name }} || true"
+  when: (_zfs_volume_state.results | default([]) | selectattr('stdout', 'equalto', 'migrate') | list | length) > 0
+  delegate_to: "{{ jail_delegate_host }}"
+
+- name: "Copy data into staged volumes for {{ jail_name }}"
+  shell: |
+    cp -a "/usr/local/jails/containers/{{ jail_name }}{{ item.item.mountpoint }}/." \
+          "/usr/local/jails/volumes/.staging/{{ jail_name }}{{ item.item.mountpoint }}/"
+  loop: "{{ _zfs_volume_state.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+  when: item.stdout == "migrate"
+  delegate_to: "{{ jail_delegate_host }}"
+
+- name: "Set final mountpoint on migrated volumes for {{ jail_name }}"
+  shell: |
+    zfs unmount {{ item.item.name }} || true
+    zfs set mountpoint="/usr/local/jails/containers/{{ jail_name }}{{ item.item.mountpoint }}" {{ item.item.name }}
+  loop: "{{ _zfs_volume_state.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+  when: item.stdout == "migrate"
+  delegate_to: "{{ jail_delegate_host }}"
+
+# Userland migration
+- name: "*** USERLAND MIGRATION REQUIRED: {{ jail_name }} ***"
+  pause:
+    prompt: |
+
+      ════════════════════════════════════════════════════════════════
+        JAIL USERLAND MIGRATION: {{ jail_name }}
+      ════════════════════════════════════════════════════════════════
+        Current: {{ jail_origin.stdout | trim }}
+        Target:  zroot/jails/templates/{{ userland }}@base
+
+        This will:
+          1. Stop the jail
+          2. Rename existing dataset to *.old.<timestamp>
+          3. Clone fresh from {{ userland }}
+      ════════════════════════════════════════════════════════════════
+
+      Press Enter to continue or Ctrl+C to abort
+  when:
+    - jail_exists.rc == 0
+    - jail_origin.stdout is defined
+    - "userland + '@base' not in jail_origin.stdout"
+
+- name: "Stop {{ jail_name }} jail for userland migration"
+  shell: "service jail stop {{ jail_name }} || true"
+  when:
+    - jail_exists.rc == 0
+    - jail_origin.stdout is defined
+    - "userland + '@base' not in jail_origin.stdout"
+  delegate_to: "{{ jail_delegate_host }}"
+
+- name: "Migrate {{ jail_name }} to {{ userland }}"
+  shell: |
+    zfs rename zroot/jails/containers/{{ jail_name }} zroot/jails/containers/{{ jail_name }}.old.$(date +%s)
+  when:
+    - jail_exists.rc == 0
+    - jail_origin.stdout is defined
+    - "userland + '@base' not in jail_origin.stdout"
+  delegate_to: "{{ jail_delegate_host }}"
+
+- name: "Clone {{ jail_name }} from template"
+  shell: "zfs clone zroot/jails/templates/{{ userland }}@base zroot/jails/containers/{{ jail_name }}"
+  when: jail_exists.rc != 0 or (jail_origin.stdout is defined and userland + '@base' not in jail_origin.stdout)
+  delegate_to: "{{ jail_delegate_host }}"
+
+# ZFS volume setup (for all volumes — existing, migrated, and new)
+- name: "Ensure ZFS volumes exist for {{ jail_name }}"
   community.general.zfs:
     name: "{{ item.name }}"
     state: present
@@ -80,74 +186,7 @@
   changed_when: false
   delegate_to: "{{ jail_delegate_host }}"
 
-- name: "Restore migrated data into ZFS volumes for {{ jail_name }}"
-  shell: |
-    cp -a "/usr/local/jails/containers/{{ jail_name }}{{ item.item.mountpoint }}.migrate/." \
-          "/usr/local/jails/containers/{{ jail_name }}{{ item.item.mountpoint }}/"
-  loop: "{{ _zfs_volume_state.results | default([]) }}"
-  loop_control:
-    label: "{{ item.item.name }}"
-  when: item.stdout == "migrate"
-  delegate_to: "{{ jail_delegate_host }}"
-
-- name: "Note: .migrate directories left as backup for {{ jail_name }}"
-  debug:
-    msg: "Data migrated from {{ item.item.mountpoint }}.migrate — verify and remove manually"
-  loop: "{{ _zfs_volume_state.results | default([]) }}"
-  loop_control:
-    label: "{{ item.item.name }}"
-  when: item.stdout == "migrate"
-
-# Host-side setup (runs on the jail host via SSH)
-- name: "Check if {{ jail_name }} container exists"
-  shell: "zfs list -o name | grep -Fxq 'zroot/jails/containers/{{ jail_name }}'"
-  failed_when: false
-  changed_when: false
-  register: jail_exists
-  delegate_to: "{{ jail_delegate_host }}"
-
-- name: "Check {{ jail_name }} userland version"
-  shell: "zfs get -H -o value origin zroot/jails/containers/{{ jail_name }}"
-  register: jail_origin
-  changed_when: false
-  when: jail_exists.rc == 0
-  delegate_to: "{{ jail_delegate_host }}"
-
-- name: "*** MIGRATION REQUIRED: {{ jail_name }} ***"
-  pause:
-    prompt: |
-
-      ════════════════════════════════════════════════════════════════
-        JAIL USERLAND MIGRATION: {{ jail_name }}
-      ════════════════════════════════════════════════════════════════
-        Current: {{ jail_origin.stdout | trim }}
-        Target:  zroot/jails/templates/{{ userland }}@base
-
-        This will:
-          1. Stop the jail
-          2. Rename existing dataset to *.old.<timestamp>
-          3. Clone fresh from {{ userland }}
-      ════════════════════════════════════════════════════════════════
-
-      Press Enter to continue or Ctrl+C to abort
-  when:
-    - jail_exists.rc == 0
-    - "userland + '@base' not in jail_origin.stdout"
-
-- name: "Migrate {{ jail_name }} to {{ userland }}"
-  shell: |
-    service jail stop {{ jail_name }} || true
-    zfs rename zroot/jails/containers/{{ jail_name }} zroot/jails/containers/{{ jail_name }}.old.$(date +%s)
-  when:
-    - jail_exists.rc == 0
-    - "userland + '@base' not in jail_origin.stdout"
-  delegate_to: "{{ jail_delegate_host }}"
-
-- name: "Clone {{ jail_name }} from template"
-  shell: "zfs clone zroot/jails/templates/{{ userland }}@base zroot/jails/containers/{{ jail_name }}"
-  when: jail_exists.rc != 0 or (jail_origin.stdout is defined and userland + '@base' not in jail_origin.stdout)
-  delegate_to: "{{ jail_delegate_host }}"
-
+# Container setup
 - name: "Create directories for {{ jail_name }}"
   file:
     path: "/usr/local/jails/containers/{{ jail_name }}{{ item }}"

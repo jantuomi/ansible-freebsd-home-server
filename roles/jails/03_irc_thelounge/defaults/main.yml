@@ -5,9 +5,9 @@ zfs:
     mountpoint: /var/db/thelounge
 
 pkg:
-  - npm
-  - git
-  - yarn-node22
+  - pcre2
+  - npm-node24
+  - yarn-node24
   - git
 
 files:
