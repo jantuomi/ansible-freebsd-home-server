@@ -28,7 +28,7 @@
       - "ifconfig epw{{ jail_num }}b vnet {{ jail_name }}"
       - "ifconfig epw{{ jail_num }}a up"
       - "jexec {{ jail_name }} ifconfig epw{{ jail_num }}b up"
-      - "jexec {{ jail_name }} service dhclient restart epw{{ jail_num }}b"
+      - "jexec {{ jail_name }} dhclient epw{{ jail_num }}b"
       - "jexec {{ jail_name }} route add 10.6.210.0/24 {{ lan_ipv4_gateway }} || true"
     exec_poststop:
       - "ifconfig epw{{ jail_num }}a destroy 2>/dev/null || true"

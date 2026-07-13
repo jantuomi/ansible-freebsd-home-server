@@ -2,6 +2,10 @@ userland: "15.0-RELEASE"
 devfs_ruleset: 6
 no_default_route: true
 
+zfs:
+  - name: zroot/jails/volumes/ingress_letsencrypt
+    mountpoint: /usr/local/etc/letsencrypt
+
 ingress_routes:
   - { host: jan.systems, jail: homepage }
   - { host: jantuomi.fi, redirect: jan.systems }
@@ -34,9 +38,10 @@ jail_conf_options:
 nullfs: []
 
 pkg:
+  - pcre2
   - nginx
-  - py311-certbot
-  - py311-certbot-nginx
+  - py312-certbot
+  - py312-certbot-nginx
 
 files:
   - src: etc_pf.conf.j2

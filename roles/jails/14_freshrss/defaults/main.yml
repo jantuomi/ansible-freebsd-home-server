@@ -7,6 +7,7 @@ zfs:
     group: "80"
 
 pkg:
+  - pcre2
   - nginx
   - php82
   - php82-ctype

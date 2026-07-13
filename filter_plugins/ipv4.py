@@ -19,9 +19,9 @@ def ipv4_network(cidr):
 
 
 def ipv4_nth(cidr, n):
-    """Return the nth host address in a network. '10.0.20.0/24' | ipv4_nth(101) -> '10.0.20.101'"""
-    network = ipv4_network(cidr)
-    return _int_to_ip(_ip_to_int(network) + int(n))
+    """Return the nth host address relative to the given IP. '192.168.2.0/16' | ipv4_nth(101) -> '192.168.2.101'"""
+    ip, _ = cidr.split("/")
+    return _int_to_ip(_ip_to_int(ip) + int(n))
 
 
 def ipv4_nth_cidr(cidr, n):
