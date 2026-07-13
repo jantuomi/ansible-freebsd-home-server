@@ -55,7 +55,7 @@
 
 - name: Copy backup SSH public key
   copy:
-    src: "{{ backup.ssh_key.public }}"
+    content: "{{ backup.ssh_key.public }}"
     dest: /root/.ssh/backup.pub
     owner: root
     group: wheel
