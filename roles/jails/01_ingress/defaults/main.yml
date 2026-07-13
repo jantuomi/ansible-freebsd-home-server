@@ -5,6 +5,8 @@ no_default_route: true
 zfs:
   - name: zroot/jails/volumes/ingress_letsencrypt
     mountpoint: /usr/local/etc/letsencrypt
+  - name: zroot/jails/volumes/ingress_logs
+    mountpoint: /var/log/nginx
 
 ingress_routes:
   - { host: jan.systems, jail: homepage }
