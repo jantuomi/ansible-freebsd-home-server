@@ -12,12 +12,20 @@ nullfs:
 zfs:
   - name: zroot/jails/volumes/dl_sonarr
     mountpoint: /usr/local/sonarr
+    owner: 351
+    group: 351
   - name: zroot/jails/volumes/dl_radarr
     mountpoint: /usr/local/radarr
+    owner: 352
+    group: 352
   - name: zroot/jails/volumes/dl_lidarr
     mountpoint: /usr/local/lidarr
+    owner: 356
+    group: 356
   - name: zroot/jails/volumes/dl_prowlarr
     mountpoint: /usr/local/prowlarr
+    owner: 359
+    group: 359
 
 pkg:
   - transmission-daemon
