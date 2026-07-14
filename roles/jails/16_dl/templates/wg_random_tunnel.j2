@@ -1,17 +1,38 @@
 #!/bin/sh
 
-set -eux
+set -eu
 
-CONF=$(ls /usr/local/etc/wireguard/ | sort -R | head -n1)
 GATEWAY={{ ingress_ip }}
+MAX_ATTEMPTS=5
+attempt=0
 
 # Shut down current tunnel
-wg-quick down $(wg show interfaces) || true
+wg-quick down $(wg show interfaces) 2>/dev/null || true
 
-wg-quick up "/usr/local/etc/wireguard/${CONF}"
+while [ $attempt -lt $MAX_ATTEMPTS ]; do
+    attempt=$((attempt + 1))
+    CONF=$(ls /usr/local/etc/wireguard/ | sort -R | head -n1)
 
-TUNNEL_IF=$(wg show interfaces)
-TUNNEL_IP=$(wg show $TUNNEL_IF endpoints | awk '{print $2}' | tr ':' ' ' | awk '{print $1}')
+    echo "Attempt ${attempt}/${MAX_ATTEMPTS}: trying ${CONF}"
 
-route delete $TUNNEL_IP
-route add $TUNNEL_IP $GATEWAY
+    wg-quick up "/usr/local/etc/wireguard/${CONF}"
+
+    TUNNEL_IF=$(wg show interfaces)
+    TUNNEL_IP=$(wg show $TUNNEL_IF endpoints | awk '{print $2}' | tr ':' ' ' | awk '{print $1}')
+
+    route delete $TUNNEL_IP 2>/dev/null || true
+    route add $TUNNEL_IP $GATEWAY
+
+    # Check connectivity
+    if ping -c 2 -W 5 8.8.8.8 >/dev/null 2>&1; then
+        echo "Tunnel ${CONF} is working."
+        exit 0
+    fi
+
+    echo "No connectivity via ${CONF}, tearing down."
+    wg-quick down $TUNNEL_IF || true
+
+done
+
+echo "ERROR: Failed to establish connectivity after ${MAX_ATTEMPTS} attempts."
+exit 1
