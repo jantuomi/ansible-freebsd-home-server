@@ -49,3 +49,10 @@
   loop: "{{ pg_databases }}"
   register: _pg_db
   changed_when: "'CREATE DATABASE' in _pg_db.stdout"
+
+- name: Run database init SQL
+  shell: "su -l postgres -c \"psql -d {{ item.item.name }} -c \\\"{{ item.item.init }}\\\"\""
+  loop: "{{ _pg_db.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+  when: item.changed and item.item.init is defined

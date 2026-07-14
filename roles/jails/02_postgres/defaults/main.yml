@@ -14,14 +14,15 @@ jail_conf_options:
 
 pkg:
   - postgresql18-server
+  - postgresql18-pgvector
 
 services:
   - postgresql
 
 pg_users:
-  - spliit
   - immich
 
 pg_databases:
-  - { name: spliit, owner: spliit }
-  - { name: immich, owner: immich }
+  - name: immich
+    owner: immich
+    init: "CREATE EXTENSION IF NOT EXISTS vector; ALTER EXTENSION vector UPDATE;"
