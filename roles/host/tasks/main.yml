@@ -35,6 +35,7 @@
     - fastfetch
     - vim
     - age
+    - netdata
   loop_control:
     loop_var: pkg_name
 
@@ -126,6 +127,7 @@
     - { name: "zroot/jails/containers" }
     - { name: "zroot/jails/volumes", mountpoint: "none" }
     - { name: "zroot/storage", mountpoint: "/usr/local/jails/volumes/storage" }
+    - { name: "zroot/netdata_db", mountpoint: "/var/db/netdata" }
   loop_control:
     label: "{{ item.name }}"
 
