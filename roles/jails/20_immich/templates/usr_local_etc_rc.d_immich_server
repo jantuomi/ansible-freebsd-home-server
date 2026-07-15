@@ -1,0 +1,54 @@
+#!/bin/sh
+
+# PROVIDE: immich_server
+# REQUIRE: NETWORKING
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name="immich_server"
+rcvar="${name}_enable"
+pidfile="/var/run/${name}.pid"
+logfile="/var/log/${name}.log"
+
+load_rc_config $name
+: ${immich_server_enable:="NO"}
+: ${immich_server_envfile:="/usr/local/etc/immich_server.env"}
+: ${immich_server_root:="/image/immich-server"}
+
+start_cmd="${name}_start"
+stop_cmd="${name}_stop"
+status_cmd="${name}_status"
+
+immich_server_start() {
+    echo "Starting ${name}."
+    set -a
+    . ${immich_server_envfile}
+    set +a
+    export PATH=/usr/local/bin:/usr/bin:/bin
+    export NODE_ENV=production
+    /usr/sbin/daemon -P ${pidfile} -o ${logfile} \
+        /usr/sbin/chroot ${immich_server_root} \
+        /usr/local/bin/node /usr/src/app/server/dist/main.js
+}
+
+immich_server_stop() {
+    if [ -f ${pidfile} ]; then
+        echo "Stopping ${name}."
+        kill $(cat ${pidfile}) 2>/dev/null
+        rm -f ${pidfile}
+    else
+        echo "${name} is not running."
+    fi
+}
+
+immich_server_status() {
+    if [ -f ${pidfile} ] && kill -0 $(cat ${pidfile}) 2>/dev/null; then
+        echo "${name} is running as pid $(cat ${pidfile})."
+    else
+        echo "${name} is not running."
+        return 1
+    fi
+}
+
+run_rc_command "$1"

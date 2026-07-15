@@ -1,0 +1,4 @@
+- name: Restart immich services
+  shell: |
+    service immich_server status && service immich_server restart || true
+    service immich_ml status && service immich_ml restart || true

@@ -1,0 +1,48 @@
+immich {
+  vnet;
+  persist;
+  exec.clean;
+  allow.raw_sockets;
+  mount.devfs;
+  allow.mount;
+  allow.mount.devfs;
+  allow.mount.linprocfs;
+  allow.mount.linsysfs;
+  allow.mount.tmpfs;
+  allow.mount.nullfs;
+  enforce_statfs = 1;
+
+  devfs_ruleset = 4;
+  host.hostname = "immich";
+  path = "/usr/local/jails/containers/immich";
+
+  exec.start = "/bin/sh /etc/rc";
+  exec.stop  = "/bin/sh /etc/rc.shutdown";
+
+  # LAN epair
+  exec.prestart  += "ifconfig epl{{ jail_num }}a destroy 2>/dev/null || true";
+  exec.prestart  += "ifconfig epair{{ jail_num }}000 create";
+  exec.prestart  += "ifconfig epair{{ jail_num }}000a name epl{{ jail_num }}a";
+  exec.prestart  += "ifconfig epair{{ jail_num }}000b name epl{{ jail_num }}b";
+  exec.prestart  += "ifconfig epl{{ jail_num }}b ether random";
+  exec.prestart  += "ifconfig brlan0 addm epl{{ jail_num }}a";
+  exec.poststart += "ifconfig epl{{ jail_num }}b vnet immich";
+  exec.poststart += "ifconfig epl{{ jail_num }}a up";
+  exec.poststart += "jexec immich ifconfig epl{{ jail_num }}b up";
+  exec.poststart += "jexec immich ifconfig epl{{ jail_num }}b {{ jail_lan_cidr | ipv4_nth_cidr(jail_num | int + jail_lan_offset | int) }}";
+  exec.poststart += "jexec immich route delete default || true";
+  exec.poststart += "jexec immich route add default {{ ingress_ip }} || true";
+  exec.poststop  += "ifconfig epl{{ jail_num }}a destroy 2>/dev/null || true";
+{% for img in oci_images %}
+
+  # Mounts for {{ img.name }} rootfs
+  mount += "linprocfs $path/image/{{ img.name }}/proc  linprocfs rw 0 0";
+  mount += "linsysfs  $path/image/{{ img.name }}/sys   linsysfs  rw 0 0";
+  mount += "devfs     $path/image/{{ img.name }}/dev   devfs     rw 0 0";
+  mount += "tmpfs     $path/image/{{ img.name }}/tmp   tmpfs     rw 0 0";
+  mount += "tmpfs     $path/image/{{ img.name }}/run   tmpfs     rw 0 0";
+{% for mnt in img.mounts | default([]) %}
+  mount += "$path/{{ mnt.src }}  $path/image/{{ img.name }}{{ mnt.dst }}  nullfs rw 0 0";
+{% endfor %}
+{% endfor %}
+}

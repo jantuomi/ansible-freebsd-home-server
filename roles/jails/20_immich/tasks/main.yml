@@ -1,0 +1,131 @@
+- import_role:
+    name: jail
+    tasks_from: jail_setup
+
+# Override jail.conf with immich-specific version
+- name: Deploy jail.conf.d/immich.conf
+  template:
+    src: "{{ jail_role_dir }}/templates/jail.conf.j2"
+    dest: /etc/jail.conf.d/immich.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+  delegate_to: "{{ jail_delegate_host }}"
+
+# Deploy extraction script
+- name: Deploy extract-image script
+  template:
+    src: "{{ jail_role_dir }}/templates/usr_local_bin_extract_image.sh"
+    dest: /usr/local/bin/extract-image.sh
+    owner: root
+    group: wheel
+    mode: "0755"
+
+# Create image directory
+- name: Create /image directory
+  file:
+    path: /image
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+
+# Extract OCI images
+- name: Check if images are extracted
+  stat:
+    path: "/image/{{ item.name }}{{ item.check_path }}"
+  loop: "{{ oci_images }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: _images_extracted
+
+- name: Extract OCI images
+  shell: "/usr/local/bin/extract-image.sh {{ item.item.image }} {{ item.item.name }}"
+  loop: "{{ _images_extracted.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+  when: not item.stat.exists
+
+# Create mount points in each rootfs
+- name: Create base mount points in image rootfs
+  file:
+    path: "/image/{{ item[0].name }}/{{ item[1] }}"
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+  loop: "{{ oci_images | product(['proc', 'sys', 'dev', 'tmp', 'run']) | list }}"
+  loop_control:
+    label: "{{ item[0].name }}/{{ item[1] }}"
+
+- name: Create nullfs mount points in image rootfs
+  file:
+    path: "/image/{{ item.0.name }}{{ item.1.dst }}"
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+  loop: "{{ oci_images | subelements('mounts', skip_missing=True) }}"
+  loop_control:
+    label: "{{ item.0.name }}:{{ item.1.dst }}"
+
+# Deploy resolv.conf into each rootfs
+- name: Deploy resolv.conf into image rootfs
+  copy:
+    content: "nameserver {{ lan_ipv4_gateway }}\n"
+    dest: "/image/{{ item.name }}/etc/resolv.conf"
+    owner: root
+    group: wheel
+    mode: "0644"
+  loop: "{{ oci_images }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+# Deploy rc.d scripts
+- name: Deploy immich_server rc.d script
+  template:
+    src: "{{ jail_role_dir }}/templates/usr_local_etc_rc.d_immich_server"
+    dest: /usr/local/etc/rc.d/immich_server
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Deploy immich_ml rc.d script
+  template:
+    src: "{{ jail_role_dir }}/templates/usr_local_etc_rc.d_immich_ml"
+    dest: /usr/local/etc/rc.d/immich_ml
+    owner: root
+    group: wheel
+    mode: "0755"
+
+# Deploy env files
+- name: Deploy immich_server.env
+  template:
+    src: "{{ jail_role_dir }}/templates/usr_local_etc_immich_server.env.j2"
+    dest: /usr/local/etc/immich_server.env
+    owner: root
+    group: wheel
+    mode: "0600"
+  notify: Restart immich services
+
+- name: Deploy immich_ml.env
+  template:
+    src: "{{ jail_role_dir }}/templates/usr_local_etc_immich_ml.env.j2"
+    dest: /usr/local/etc/immich_ml.env
+    owner: root
+    group: wheel
+    mode: "0600"
+  notify: Restart immich services
+
+# Enable services
+- name: Enable immich services
+  community.general.sysrc:
+    name: "{{ item }}_enable"
+    value: "YES"
+  loop:
+    - immich_server
+    - immich_ml
+
+- import_role:
+    name: jail
+    tasks_from: jail_launch
