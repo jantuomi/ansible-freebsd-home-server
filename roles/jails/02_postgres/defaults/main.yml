@@ -15,6 +15,7 @@ jail_conf_options:
 pkg:
   - postgresql18-server
   - postgresql18-pgvector
+  - postgresql18-contrib
 
 services:
   - postgresql

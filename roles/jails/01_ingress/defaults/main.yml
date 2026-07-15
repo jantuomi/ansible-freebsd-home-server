@@ -18,7 +18,7 @@ ingress_routes:
   - { host: irc.jan.systems, jail: irc_thelounge, presets: [websocket] }
   - { host: paste.jan.systems, jail: paste }
   - { host: leolalla.fi, jail: leolalla_fi }
-  - { host: immich.jan.systems, ip: 192.168.3.3, port: 2283 }
+  - { host: immich.jan.systems, jail: immich, presets: [large_body_size] }
   - { host: plex.jan.systems, jail: plex, port: 32400, presets: [streaming] }
   - { host: komga.jan.systems, jail: komga }
   - { host: goaccess.jan.systems, jail: goaccess }
@@ -92,3 +92,12 @@ nginx_presets:
     - "proxy_buffering off"
     - "proxy_read_timeout 3600s"
     - "proxy_send_timeout 3600s"
+  large_body_size:
+    - "proxy_http_version 1.1"
+    - 'proxy_set_header Connection "Upgrade"'
+    - "proxy_set_header Upgrade $http_upgrade"
+    - "proxy_read_timeout 1d"
+    - "proxy_send_timeout 1d"
+    - "proxy_buffering off"
+    - "proxy_request_buffering off"
+    - "client_max_body_size 10G"
