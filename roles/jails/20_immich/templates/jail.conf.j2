@@ -42,7 +42,7 @@ immich {
   mount += "tmpfs     $path/image/{{ img.name }}/tmp   tmpfs     rw 0 0";
   mount += "tmpfs     $path/image/{{ img.name }}/run   tmpfs     rw 0 0";
 {% for mnt in img.mounts | default([]) %}
-  mount += "$path/{{ mnt.src }}  $path/image/{{ img.name }}{{ mnt.dst }}  nullfs rw 0 0";
+  mount += "$path{{ mnt.src }}  $path/image/{{ img.name }}{{ mnt.dst }}  nullfs rw 0 0";
 {% endfor %}
 {% endfor %}
 }
