@@ -1,2 +1,38 @@
-- name: Restart wireguard
+- name: Get random wireguard tunnel
   shell: /usr/local/bin/wg_random_tunnel
+
+- name: Restart transmission
+  shell: |
+    service transmission stop || true
+    sleep 2
+    service transmission start
+
+- name: Restart nzbget
+  shell: |
+    service nzbget stop || true
+    sleep 2
+    service nzbget start
+
+- name: Restart prowlarr
+  shell: |
+    service prowlarr stop || true
+    sleep 2
+    service prowlarr start
+
+- name: Restart sonarr
+  shell: |
+    service sonarr stop || true
+    sleep 2
+    service sonarr start
+
+- name: Restart radarr
+  shell: |
+    service radarr stop || true
+    sleep 2
+    service radarr start
+
+- name: Restart lidarr
+  shell: |
+    service lidarr stop || true
+    sleep 2
+    service lidarr start

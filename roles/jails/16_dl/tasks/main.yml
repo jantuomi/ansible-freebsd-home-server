@@ -2,6 +2,33 @@
     name: jail
     tasks_from: jail_setup
 
+- name: Create storage group
+  shell: "pw groupshow storage || pw groupadd storage -g 1001"
+  register: _storage_group
+  changed_when: "'storage' not in _storage_group.stdout"
+
+- name: Create storage user
+  shell: "id storage || pw useradd storage -u 1001 -g 1001 -d / -s /bin/sh"
+  register: _storage_user
+  changed_when: _storage_user.rc != 0
+
+- name: Add service users to storage group
+  shell: "pw groupmod storage -m sonarr,radarr,lidarr,transmission"
+  changed_when: false
+
+- name: Configure transmission to run as storage user
+  community.general.sysrc:
+    name: transmission_user
+    value: storage
+
+- name: Fix transmission config directory ownership
+  file:
+    path: /usr/local/etc/transmission/home
+    state: directory
+    owner: storage
+    group: storage
+    recurse: true
+
 - name: Configure transmission download directory
   community.general.sysrc:
     name: transmission_download_dir
@@ -14,52 +41,86 @@
     owner: root
     group: wheel
     mode: "0644"
-    #force: false
+  notify: Restart transmission
 
-- name: Deploy initial nzbget config
+- name: Deploy nzbget config
   template:
-    src: "{{ jail_role_dir }}/templates/nzbget.conf.j2"
-    dest: /usr/local/share/nzbget/nzbget.conf
+    src: "{{ jail_role_dir }}/templates/usr_local_share_nzbget_nzbget.conf.j2"
+    dest: /usr/local/etc/nzbget.conf
     owner: root
     group: wheel
-    mode: "0644"
-    force: false
+    mode: "0444"
+  notify: Restart nzbget
+
+- name: Create nzbget data directory
+  file:
+    path: /var/db/nzbget
+    state: directory
+    owner: storage
+    group: storage
+    mode: "0755"
+
+- name: Configure nzbget config path
+  community.general.sysrc:
+    name: nzbget_conf
+    value: /usr/local/etc/nzbget.conf
+  notify: Restart nzbget
+
+- name: Configure nzbget user
+  community.general.sysrc:
+    name: nzbget_user
+    value: storage
+  notify: Restart nzbget
 
 - name: Deploy initial prowlarr config
   template:
     src: "{{ jail_role_dir }}/templates/prowlarr_config.xml.j2"
     dest: /usr/local/prowlarr/config.xml
-    owner: root
-    group: wheel
+    owner: prowlarr
+    group: prowlarr
     mode: "0644"
-    force: false
+  notify: Restart prowlarr
 
 - name: Deploy initial sonarr config
   template:
     src: "{{ jail_role_dir }}/templates/sonarr_config.xml.j2"
     dest: /usr/local/sonarr/config.xml
-    owner: root
-    group: wheel
+    owner: sonarr
+    group: sonarr
     mode: "0644"
-    force: false
+  notify: Restart sonarr
 
 - name: Deploy initial radarr config
   template:
     src: "{{ jail_role_dir }}/templates/radarr_config.xml.j2"
     dest: /usr/local/radarr/config.xml
-    owner: root
-    group: wheel
+    owner: radarr
+    group: radarr
     mode: "0644"
-    force: false
+  notify: Restart radarr
 
 - name: Deploy initial lidarr config
   template:
     src: "{{ jail_role_dir }}/templates/lidarr_config.xml.j2"
     dest: /usr/local/lidarr/config.xml
-    owner: root
-    group: wheel
+    owner: lidarr
+    group: lidarr
     mode: "0644"
-    force: false
+  notify: Restart lidarr
+
+# Replace bundled ffprobe with system version (bundled version lacks VVC/xHE-AAC support)
+- name: Replace bundled ffprobe with system ffprobe
+  file:
+    src: /usr/local/bin/ffprobe
+    dest: "/usr/local/share/{{ item }}/bin/ffprobe"
+    state: link
+    force: true
+  loop:
+    - sonarr
+    - radarr
+  notify:
+    - Restart sonarr
+    - Restart radarr
 
 - name: Create wireguard config directory
   file:
@@ -85,6 +146,7 @@
     owner: root
     group: wheel
     mode: "0755"
+  notify: Get random wireguard tunnel
 
 - name: Deploy wg_random_tunnel rc.d script
   template:
@@ -93,6 +155,7 @@
     owner: root
     group: wheel
     mode: "0755"
+  notify: Get random wireguard tunnel
 
 - name: Deploy crontab
   template:
