@@ -36,6 +36,7 @@
     - vim
     - age
     - netdata
+    - fd-find
   loop_control:
     loop_var: pkg_name
 
