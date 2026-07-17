@@ -3,7 +3,7 @@ state_dir = /var/run/pylogsentinel
 max_block_size = 10M
 
 [logs.standard]
-cmd = /usr/local/bin/fd -t f -E 'access.log' '^[a-zA-Z-_]+(\.log|\.txt)$' /var/log /usr/local/jails/containers/*/var/log /usr/local/jails/containers/dl/usr/local/*/logs
+cmd = /usr/local/bin/fd -t f -E 'access.log' -E 'syncthing.log' '^[a-zA-Z-_]+(\.log|\.txt)$' /var/log /usr/local/jails/containers/*/var/log /usr/local/jails/containers/dl/usr/local/*/logs
 
 [logs.access]
 paths = /usr/local/jails/containers/ingress/var/log/nginx/access.log
