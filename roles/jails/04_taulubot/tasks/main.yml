@@ -2,26 +2,8 @@
     name: jail
     tasks_from: jail_setup
 
-- name: Create .ssh directory
-  file:
-    path: /root/.ssh
-    state: directory
-    owner: root
-    group: wheel
-    mode: "0700"
-
-- name: Deploy SSH key for git
-  copy:
-    content: "{{ taulubot_deploy_key.private }}"
-    dest: /root/.ssh/deploy_key
-    owner: root
-    group: wheel
-    mode: "0600"
-  no_log: true
-
 - name: Install taulubot from port
   shell: |
-    export GIT_SSH_COMMAND='ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no'
     cd /usr/ports/net-im/taulubot
     make install WRKDIRPREFIX=/tmp/ports DISTDIR=/tmp/distfiles
   register: _taulubot_install
