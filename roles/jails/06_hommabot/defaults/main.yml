@@ -8,5 +8,8 @@ pkg:
   - node
   - npm
 
+pkg_custom:
+  - hommabot
+
 services:
   - hommabot

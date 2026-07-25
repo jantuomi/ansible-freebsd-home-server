@@ -10,5 +10,8 @@ pkg:
   - py312-pillow
   - python
 
+pkg_custom:
+  - gdrive-photo-gallery
+
 services:
   - gdrive_photo_gallery

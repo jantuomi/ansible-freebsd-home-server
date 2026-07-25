@@ -2,11 +2,6 @@
     name: jail
     tasks_from: jail_setup
 
-- name: Install taulubot
-  shell: pkg install -y -r poudriere taulubot
-  register: _taulubot_install
-  changed_when: "'Installing' in _taulubot_install.stdout"
-
 - name: Deploy bot token file
   copy:
     content: "{{ taulubot_token }}"

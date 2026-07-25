@@ -15,5 +15,8 @@ pkg:
   - libxml2
   - libxslt
 
+pkg_custom:
+  - aggro
+
 services:
   - aggro

@@ -8,5 +8,8 @@ pkg:
   - rust
   - cargo-c
 
+pkg_custom:
+  - pastebin
+
 services:
   - pastebin

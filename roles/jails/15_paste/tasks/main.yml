@@ -1,12 +1,2 @@
 - import_role:
     name: jail
-    tasks_from: jail_setup
-
-- name: Install pastebin
-  shell: pkg install -y -r poudriere pastebin
-  register: _paste_install
-  changed_when: "'Installing' in _paste_install.stdout"
-
-- import_role:
-    name: jail
-    tasks_from: jail_launch

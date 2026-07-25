@@ -16,5 +16,8 @@ pkg:
   - git
   - jpeg-turbo
 
+pkg_custom:
+  - taulubot
+
 services:
   - taulubot

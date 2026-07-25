@@ -8,5 +8,8 @@ pkg:
   - py312-sqlite3
   - python
 
+pkg_custom:
+  - expense-tracker
+
 services:
   - expense_tracker

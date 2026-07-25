@@ -287,6 +287,12 @@
   register: pkg_result
   changed_when: "'Number of packages to be installed' in pkg_result.stdout"
 
+- name: Install packages from poudriere
+  shell: "pkg install -y -r poudriere {{ pkg_custom | join(' ') }}"
+  when: pkg_custom is defined and pkg_custom | length > 0
+  register: pkg_custom_result
+  changed_when: "'Installing' in pkg_custom_result.stdout"
+
 - name: Create parent directories for files
   file:
     path: "{{ item.dest | dirname }}"

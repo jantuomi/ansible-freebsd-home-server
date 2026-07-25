@@ -14,5 +14,8 @@ pkg:
   - py312-sqlite3
   - git
 
+pkg_custom:
+  - diddle
+
 services:
   - diddle

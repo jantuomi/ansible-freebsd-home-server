@@ -2,11 +2,6 @@
     name: jail
     tasks_from: jail_setup
 
-- name: Install expense-tracker
-  shell: pkg install -y -r poudriere expense-tracker
-  register: _spliit_install
-  changed_when: "'Installing' in _spliit_install.stdout"
-
 - name: Configure expense_tracker
   community.general.sysrc:
     name: "{{ item.name }}"

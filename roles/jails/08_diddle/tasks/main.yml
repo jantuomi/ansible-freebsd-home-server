@@ -2,11 +2,6 @@
     name: jail
     tasks_from: jail_setup
 
-- name: Install diddle
-  shell: pkg install -y -r poudriere diddle
-  register: _diddle_install
-  changed_when: "'Installing' in _diddle_install.stdout"
-
 - name: Deploy diddle env file
   template:
     src: "{{ jail_role_dir }}/templates/diddle.env.j2"
