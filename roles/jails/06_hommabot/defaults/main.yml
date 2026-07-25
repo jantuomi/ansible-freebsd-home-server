@@ -4,10 +4,6 @@ zfs:
   - name: zroot/jails/volumes/hommabot_data
     mountpoint: /var/db/hommabot
 
-pkg:
-  - node
-  - npm
-
 pkg_custom:
   - hommabot
 

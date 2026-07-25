@@ -4,10 +4,6 @@ zfs:
   - name: zroot/jails/volumes/spliit_data
     mountpoint: /var/db/expense-tracker
 
-pkg:
-  - py312-sqlite3
-  - python
-
 pkg_custom:
   - expense-tracker
 

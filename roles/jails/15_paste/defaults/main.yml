@@ -4,10 +4,6 @@ zfs:
   - name: zroot/jails/volumes/paste_data
     mountpoint: /var/db/pastebin
 
-pkg:
-  - rust
-  - cargo-c
-
 pkg_custom:
   - pastebin
 
