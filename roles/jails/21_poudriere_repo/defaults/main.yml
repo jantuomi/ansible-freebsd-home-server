@@ -1,0 +1,19 @@
+userland: "15.0-RELEASE"
+
+nullfs:
+  - src: /usr/local/share/poudriere/html
+    dst: /mnt/poudriere-html
+  - src: /usr/local/poudriere/data/logs
+    dst: /mnt/poudriere-logs
+  - src: /usr/local/poudriere/data/packages
+    dst: /mnt/poudriere-packages
+
+pkg:
+  - nginx
+
+files:
+  - src: usr_local_etc_nginx_nginx.conf
+    dest: /usr/local/etc/nginx/nginx.conf
+
+services:
+  - nginx

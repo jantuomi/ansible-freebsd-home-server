@@ -1,3 +1,21 @@
+- name: Detect system architecture
+  shell: "echo $(uname -m)/$(uname -p)"
+  register: _arch_result
+  changed_when: false
+
+- name: Set arch fact
+  set_fact:
+    arch: "{{ _arch_result.stdout }}"
+
+- name: Detect FreeBSD version
+  shell: "uname -r"
+  register: _freebsd_version_result
+  changed_when: false
+
+- name: Set FreeBSD version fact
+  set_fact:
+    poudriere_freebsd_version: "{{ _freebsd_version_result.stdout }}"
+
 - name: Disable resolvconf
   copy:
     content: "resolvconf=NO\n"
@@ -37,6 +55,7 @@
     - age
     - netdata
     - fd-find
+    - poudriere
   loop_control:
     loop_var: pkg_name
 
@@ -81,16 +100,148 @@
     mode: "0644"
 
 # Jail infrastructure
-- name: Fetch ports tree
-  shell: |
-    if [ ! -d /usr/ports/.git ]; then
-      git clone --depth 1 https://github.com/jantuomi/freebsd-ports.git /usr/ports
-    else
-      git -C /usr/ports fetch origin
-      git -C /usr/ports reset --hard origin/main
-    fi
-  register: _ports_fetch
-  changed_when: "'Already up to date' not in _ports_fetch.stdout"
+
+# Ports tree management
+- name: Deploy update-ports script
+  template:
+    src: usr_local_bin_update_ports.sh.j2
+    dest: /usr/local/bin/update-ports
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Deploy poudriere-start-build script
+  template:
+    src: usr_local_bin_poudriere_start_build.sh.j2
+    dest: /usr/local/bin/poudriere-start-build
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Check if quarterly ports tree exists
+  stat:
+    path: /usr/ports/quarterly/Mk
+  register: _quarterly_exists
+
+- name: Download quarterly ports tree
+  shell: /usr/local/bin/update-ports quarterly
+  when: not _quarterly_exists.stat.exists
+
+- name: Check if custom ports overlay exists
+  shell: "ls /usr/ports/custom/ 2>/dev/null | head -1"
+  register: _custom_exists
+  changed_when: false
+
+- name: Download custom ports overlay
+  shell: /usr/local/bin/update-ports custom
+  when: _custom_exists.stdout == ""
+
+# Poudriere setup
+- name: Deploy poudriere.conf
+  template:
+    src: usr_local_etc_poudriere.conf.j2
+    dest: /usr/local/etc/poudriere.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+  vars:
+    pkg_abi: "FreeBSD:{{ poudriere_freebsd_version.split('.')[0] }}:{{ arch.split('/')[1] }}"
+
+- name: Create distfiles directory
+  file:
+    path: /usr/local/poudriere/distfiles
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Check if poudriere jail exists
+  shell: poudriere jail -l -n | grep -q "^poudriere_build$"
+  failed_when: false
+  changed_when: false
+  register: _poudriere_jail_exists
+
+- name: Create poudriere jail
+  shell: poudriere jail -c -j poudriere_build -v {{ poudriere_freebsd_version }} -m tar=/usr/local/jails/media/{{ poudriere_freebsd_version }}-base.txz
+  when: _poudriere_jail_exists.rc != 0
+
+- name: Check if poudriere quarterly ports tree is registered
+  shell: poudriere ports -l -n | grep -q "^quarterly$"
+  failed_when: false
+  changed_when: false
+  register: _poudriere_quarterly_exists
+
+- name: Register quarterly ports tree with poudriere
+  shell: poudriere ports -c -p quarterly -m null -M /usr/ports/quarterly
+  when: _poudriere_quarterly_exists.rc != 0
+
+- name: Check if poudriere custom overlay is registered
+  shell: poudriere ports -l -n | grep -q "^custom$"
+  failed_when: false
+  changed_when: false
+  register: _poudriere_custom_exists
+
+- name: Register custom overlay with poudriere
+  shell: poudriere ports -c -p custom -m null -M /usr/ports/custom
+  when: _poudriere_custom_exists.rc != 0
+
+- name: Deploy poudriere package list
+  template:
+    src: usr_local_etc_poudriere_pkglist.j2
+    dest: /usr/local/etc/poudriere-pkglist
+    owner: root
+    group: wheel
+    mode: "0644"
+
+- name: Deploy poudriere build make.conf
+  template:
+    src: poudriere_build_make.conf.j2
+    dest: /usr/local/etc/poudriere.d/poudriere_build-make.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+
+# Repo validation gate
+- name: Check if poudriere repo has packages
+  stat:
+    path: "/usr/local/poudriere/data/packages/poudriere_build-quarterly/meta.pkg"
+  register: _poudriere_repo
+
+- name: "*** POUDRIERE REPO NOT READY ***"
+  fail:
+    msg: |
+      ════════════════════════════════════════════════════════════════
+        POUDRIERE REPOSITORY NOT READY
+      ════════════════════════════════════════════════════════════════
+        The local package repository has not been built yet.
+        Run the following command on the host to build packages:
+
+          poudriere bulk -j poudriere_build -p quarterly -O custom -f /usr/local/etc/poudriere-pkglist
+
+        Then re-run this playbook.
+      ════════════════════════════════════════════════════════════════
+  when: not _poudriere_repo.stat.exists
+
+# Configure local repo
+- name: Create pkg repos directory
+  file:
+    path: /usr/local/etc/pkg/repos
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Deploy local poudriere repo config
+  copy:
+    content: |
+      poudriere: {
+        url: "http://{{ jail_lan_cidr | ipv4_nth(21 + jail_lan_offset | int) }}/packages",
+        enabled: no
+      }
+    dest: /usr/local/etc/pkg/repos/poudriere.conf
+    owner: root
+    group: wheel
+    mode: "0644"
 - name: Discover jail directories
   find:
     paths: "{{ playbook_dir }}/roles/jails"
@@ -129,16 +280,14 @@
     - { name: "zroot/jails/volumes", mountpoint: "none" }
     - { name: "zroot/storage", mountpoint: "/usr/local/jails/volumes/storage" }
     - { name: "zroot/netdata_db", mountpoint: "/var/db/netdata" }
+    - { name: "zroot/ports", mountpoint: "/usr/ports" }
   loop_control:
     label: "{{ item.name }}"
 
-- name: Install custom ports
-  shell: cd /usr/ports/{{ item }} && make install WRKDIRPREFIX=/tmp/ports DISTDIR=/tmp/distfiles
-  loop:
-    - sysutils/pylogsentinel
-  register: _port_install
-  failed_when: "_port_install.rc != 0 and 'is already installed' not in _port_install.stdout"
-  changed_when: "'is already installed' not in _port_install.stdout"
+- name: Install custom packages from poudriere
+  shell: "pkg install -y -r poudriere pylogsentinel"
+  register: _custom_pkg
+  changed_when: "'Number of packages to be installed' in _custom_pkg.stdout"
 
 - name: Deploy pylogsentinel.conf
   template:

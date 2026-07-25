@@ -250,6 +250,27 @@
   delegate_to: "{{ jail_delegate_host }}"
 
 # In-jail provisioning
+- name: Create pkg repos directory
+  file:
+    path: /usr/local/etc/pkg/repos
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Configure poudriere repo in jail
+  copy:
+    content: |
+      poudriere: {
+        url: "http://{{ jail_lan_cidr | ipv4_nth(21 + jail_lan_offset | int) }}/packages",
+        enabled: no,
+        priority: 100
+      }
+    dest: /usr/local/etc/pkg/repos/poudriere.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+
 - name: Set default Python version
   copy:
     content: "DEFAULT_VERSIONS+=python=3.12 python3=3.12\n"

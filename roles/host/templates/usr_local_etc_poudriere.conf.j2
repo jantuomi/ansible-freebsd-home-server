@@ -1,0 +1,13 @@
+ZPOOL=zroot
+ZROOTFS=/poudriere
+FREEBSD_HOST=https://download.FreeBSD.org
+RESOLV_CONF=/etc/resolv.conf
+BASEFS=/usr/local/poudriere
+DISTFILES_CACHE=/usr/local/poudriere/distfiles
+USE_PORTLINT=no
+USE_TMPFS=yes
+NOLINUX=yes
+ALLOW_MAKE_JOBS=yes
+MAKE_JOBS_NUMBER={{ ansible_processor_count | default(4) }}
+PACKAGE_FETCH_BRANCH=quarterly
+PACKAGE_FETCH_URL=pkg+https://pkg.FreeBSD.org/{{ pkg_abi }}

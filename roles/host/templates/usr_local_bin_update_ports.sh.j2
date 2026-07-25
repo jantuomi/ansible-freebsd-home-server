@@ -1,0 +1,61 @@
+#!/bin/sh
+set -e
+
+usage() {
+    echo "Usage: update-ports [quarterly|custom]"
+    exit 1
+}
+
+[ $# -eq 1 ] || usage
+
+BASEDIR=/usr/ports
+REMOTE_QUARTERLY="https://github.com/freebsd/freebsd-ports.git"
+REMOTE_CUSTOM="https://github.com/jantuomi/freebsd-ports-custom.git"
+
+case "$1" in
+quarterly)
+    # Find the newest quarterly branch
+    BRANCH=$(git ls-remote --heads "$REMOTE_QUARTERLY" | grep -oE 'refs/heads/[0-9]{4}Q[0-9]' | sort -t/ -k3 -V | tail -1 | sed 's|refs/heads/||')
+    if [ -z "$BRANCH" ]; then
+        echo "Error: Could not determine quarterly branch"
+        exit 1
+    fi
+
+    # Check if already at this version
+    VERSION_FILE="${BASEDIR}/quarterly/.version"
+    if [ -f "$VERSION_FILE" ] && [ "$(cat "$VERSION_FILE")" = "$BRANCH" ]; then
+        echo "Quarterly ports tree already at $BRANCH."
+        exit 0
+    fi
+
+    echo "Downloading quarterly ports tree (branch: $BRANCH)..."
+    TMPDIR="${BASEDIR}/.quarterly.new"
+    rm -rf "$TMPDIR"
+    mkdir -p "$TMPDIR"
+    fetch -qo- "https://github.com/freebsd/freebsd-ports/archive/refs/heads/${BRANCH}.tar.gz" | tar -xf - -C "$TMPDIR" --strip-components=1
+    echo "$BRANCH" > "$TMPDIR/.version"
+
+    if [ -d "${BASEDIR}/quarterly" ]; then
+        mv "${BASEDIR}/quarterly" "${BASEDIR}/.quarterly.old"
+    fi
+    mv "$TMPDIR" "${BASEDIR}/quarterly"
+    rm -rf "${BASEDIR}/.quarterly.old" &
+    echo "Done. Quarterly ports tree updated to $BRANCH."
+    ;;
+custom)
+    # Clone or update
+    if [ -d "${BASEDIR}/custom/.git" ]; then
+        echo "Updating custom ports overlay..."
+        git -C "${BASEDIR}/custom" fetch origin
+        git -C "${BASEDIR}/custom" reset --hard origin/main
+    else
+        echo "Cloning custom ports overlay..."
+        rm -rf "${BASEDIR}/custom"
+        git clone "$REMOTE_CUSTOM" "${BASEDIR}/custom"
+    fi
+    echo "Done. Custom ports overlay updated."
+    ;;
+*)
+    usage
+    ;;
+esac
