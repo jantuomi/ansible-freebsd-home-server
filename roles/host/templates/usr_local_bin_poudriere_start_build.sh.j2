@@ -1,2 +1,5 @@
 #!/bin/sh
-exec poudriere bulk -j poudriere_build -p quarterly -O custom -f /usr/local/etc/poudriere-pkglist "$@"
+exec poudriere bulk -j poudriere_build -p quarterly -O custom \
+    -f /usr/local/etc/poudriere-pkglist.custom \
+    -f /usr/local/etc/poudriere-pkglist.quarterly \
+    "$@"

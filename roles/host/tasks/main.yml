@@ -256,7 +256,7 @@
         The local package repository has not been built yet.
         Run the following command on the host to build packages:
 
-          poudriere bulk -j poudriere_build -p quarterly -O custom -f /usr/local/etc/poudriere-pkglist
+          poudriere-start-build
 
         Then re-run this playbook.
       ════════════════════════════════════════════════════════════════

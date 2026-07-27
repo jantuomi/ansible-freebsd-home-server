@@ -55,6 +55,14 @@
     group: wheel
     mode: "0755"
 
+- name: Deploy quarterly poudriere package list
+  template:
+    src: poudriere_pkglist_quarterly.j2
+    dest: /usr/local/etc/poudriere-pkglist.quarterly
+    owner: root
+    group: wheel
+    mode: "0644"
+
 - name: Deploy poudriere build make.conf
   template:
     src: poudriere_build_make.conf.j2
