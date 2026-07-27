@@ -8,7 +8,7 @@ if [ ! -f "$FILE" ]; then
 fi
 
 echo "Sending email"
-cat "$FILE" | mail -s "pylogsentinel alert batch" root
+cat "$FILE" | head -n 5000 | mail -s "pylogsentinel alert batch" root
 
 echo "Removing batch file"
 rm "$FILE"
