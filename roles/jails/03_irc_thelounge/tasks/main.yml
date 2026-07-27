@@ -2,22 +2,13 @@
     name: jail
     tasks_from: jail_setup
 
-- name: Clone thelounge
-  shell: |
-    git clone --depth 1 --branch v4.4.3 https://github.com/thelounge/thelounge.git /usr/local/share/thelounge
-  args:
-    creates: /usr/local/share/thelounge
-
-- name: Install thelounge dependencies and build
-  shell: cd /usr/local/share/thelounge && yarn install && NODE_ENV=production yarn build
-  args:
-    creates: /usr/local/share/thelounge/dist
-
-- name: Link thelounge binary
-  file:
-    src: /usr/local/share/thelounge/index.js
-    dest: /usr/local/bin/thelounge
-    state: link
+- name: Set thelounge user and group
+  community.general.sysrc:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+  loop:
+    - { name: thelounge_user, value: root }
+    - { name: thelounge_group, value: wheel }
 
 - name: Deploy thelounge config
   copy:

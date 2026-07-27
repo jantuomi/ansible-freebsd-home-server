@@ -47,14 +47,6 @@
   shell: poudriere ports -c -p custom -m null -M /usr/ports/custom
   when: _poudriere_custom_exists.rc != 0
 
-- name: Deploy poudriere package list
-  template:
-    src: usr_local_etc_poudriere_pkglist.j2
-    dest: /usr/local/etc/poudriere-pkglist
-    owner: root
-    group: wheel
-    mode: "0644"
-
 - name: Deploy poudriere-start-build script
   template:
     src: usr_local_bin_poudriere_start_build.sh.j2

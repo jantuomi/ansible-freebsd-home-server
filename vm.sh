@@ -33,7 +33,7 @@ PID_FILE="${VM_DIR}/qemu.pid"
 MONITOR_SOCK="${VM_DIR}/qemu-monitor.sock"
 SERIAL_SOCK="${VM_DIR}/qemu-serial.sock"
 
-FREEBSD_VERSION="${FREEBSD_VERSION:-15.0}"
+FREEBSD_VERSION="${FREEBSD_VERSION:-15.1}"
 IMAGE_NAME="FreeBSD-${FREEBSD_VERSION}-RELEASE-arm64-aarch64-BASIC-CLOUDINIT-zfs.qcow2"
 IMAGE_XZ="${VM_DIR}/${IMAGE_NAME}.xz"
 IMAGE_URL="https://download.freebsd.org/releases/VM-IMAGES/${FREEBSD_VERSION}-RELEASE/aarch64/Latest/${IMAGE_NAME}.xz"

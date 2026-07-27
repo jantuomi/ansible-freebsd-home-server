@@ -1,19 +1,11 @@
-userland: "15.0-RELEASE"
+userland: "15.1-RELEASE"
 
 zfs:
   - name: zroot/jails/volumes/irc_thelounge
     mountpoint: /var/db/thelounge
 
-pkg:
-  - pcre2
-  - npm-node24
-  - yarn-node24
-  - git
-
-files:
-  - src: usr_local_etc_rc.d_thelounge
-    dest: /usr/local/etc/rc.d/thelounge
-    mode: "0755"
+pkg_custom:
+  - thelounge
 
 services:
   - thelounge

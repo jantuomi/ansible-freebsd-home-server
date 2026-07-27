@@ -53,6 +53,13 @@ custom)
         rm -rf "${BASEDIR}/custom"
         git clone "$REMOTE_CUSTOM" "${BASEDIR}/custom"
     fi
+
+    # Regenerate poudriere pkglist from all ports in the overlay
+    echo "Regenerating poudriere pkglist..."
+    find "${BASEDIR}/custom" -name Makefile -mindepth 3 -maxdepth 3 | \
+        sed "s|${BASEDIR}/custom/||; s|/Makefile||" | \
+        sort > /usr/local/etc/poudriere-pkglist
+    echo "Pkglist updated: $(wc -l < /usr/local/etc/poudriere-pkglist) ports."
     echo "Done. Custom ports overlay updated."
     ;;
 *)

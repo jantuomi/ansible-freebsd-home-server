@@ -2,31 +2,6 @@
     name: jail
     tasks_from: jail_setup
 
-- name: Download komga jar
-  shell: |
-    if [ ! -f /usr/local/komga/komga.jar ]; then
-      mkdir -p /usr/local/komga
-      fetch -qo /usr/local/komga/komga.jar https://github.com/gotson/komga/releases/download/1.24.1/komga-1.24.1.jar
-    fi
-  register: _komga_download
-  changed_when: _komga_download.rc == 0 and 'mkdir' in _komga_download.cmd
-
-- name: Deploy komga wrapper script
-  template:
-    src: "{{ jail_role_dir }}/templates/usr_local_bin_komga"
-    dest: /usr/local/bin/komga
-    owner: root
-    group: wheel
-    mode: "0755"
-
-- name: Deploy komga rc.d script
-  template:
-    src: "{{ jail_role_dir }}/templates/usr_local_etc_rc.d_komga"
-    dest: /usr/local/etc/rc.d/komga
-    owner: root
-    group: wheel
-    mode: "0755"
-
 - name: Deploy convert-pdfs script
   template:
     src: "{{ jail_role_dir }}/templates/usr_local_bin_convert_pdfs"

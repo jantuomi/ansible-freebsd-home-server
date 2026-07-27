@@ -2,13 +2,17 @@
     name: jail
     tasks_from: jail_setup
 
-- name: Set syncthing user UID to 1001
-  shell: pw usermod syncthing -u 1001 -g 1001 || true
-  changed_when: false
-
 - name: Set syncthing group GID to 1001
-  shell: pw groupmod syncthing -g 1001 || true
-  changed_when: false
+  shell: pw groupmod syncthing -g 1001
+  register: _syncthing_group
+  failed_when: "_syncthing_group.rc != 0 and 'already' not in _syncthing_group.stderr"
+  changed_when: "_syncthing_group.rc == 0"
+
+- name: Set syncthing user UID to 1001
+  shell: pw usermod syncthing -u 1001 -g 1001
+  register: _syncthing_user
+  failed_when: "_syncthing_user.rc != 0 and 'already' not in _syncthing_user.stderr"
+  changed_when: "_syncthing_user.rc == 0"
 
 - import_role:
     name: jail

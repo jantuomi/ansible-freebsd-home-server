@@ -280,14 +280,6 @@
     group: wheel
     mode: "0644"
 
-- name: Set default Python version
-  copy:
-    content: "DEFAULT_VERSIONS+=python=3.12 python3=3.12\n"
-    dest: /etc/make.conf
-    owner: root
-    group: wheel
-    mode: "0644"
-
 - name: Install packages
   shell: "pkg install -y {{ pkg | join(' ') }}"
   environment:

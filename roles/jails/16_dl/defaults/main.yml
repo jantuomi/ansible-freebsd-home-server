@@ -1,4 +1,4 @@
-userland: "15.0-RELEASE"
+userland: "15.1-RELEASE"
 devfs_ruleset: 4
 
 jail_conf_options:

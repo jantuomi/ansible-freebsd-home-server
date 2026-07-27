@@ -1,4 +1,8 @@
-userland: "15.0-RELEASE"
+userland: "15.1-RELEASE"
+
+zfs:
+  - name: zroot/jails/volumes/homepage_www
+    mountpoint: /var/www
 
 pkg:
   - pcre2
@@ -11,9 +15,6 @@ files:
     dest: /usr/local/etc/nginx/nginx.conf
   - src: etc_crontab.j2
     dest: /etc/crontab
-
-dirs:
-  - /var/www
 
 services:
   - nginx

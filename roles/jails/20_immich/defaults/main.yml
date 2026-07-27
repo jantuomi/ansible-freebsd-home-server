@@ -1,5 +1,8 @@
-userland: "15.0-RELEASE"
-immich_version: "v2.4.1"
+userland: "15.1-RELEASE"
+immich_version: "v3.0.3"
+
+dirs:
+  - /usr/local/etc/rc.d
 
 oci_images:
   - name: immich-server

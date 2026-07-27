@@ -1,4 +1,4 @@
-userland: "15.0-RELEASE"
+userland: "15.1-RELEASE"
 
 zfs:
   - name: zroot/jails/volumes/komga_data
@@ -9,13 +9,11 @@ nullfs:
     dst: /mnt/manga
 
 pkg:
-  - openjdk25-jre-headless
   - poppler-utils
   - zip
 
-dirs:
-  - /usr/local/etc/rc.d # no packages to set this up automatically
-  - /usr/local/komga
+pkg_custom:
+  - komga
 
 services:
   - komga
