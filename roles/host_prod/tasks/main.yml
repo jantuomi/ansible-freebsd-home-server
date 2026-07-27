@@ -18,7 +18,6 @@
     state: present
   loop:
     - vm-bhyve
-    - drm-kmod
 
 - name: Set up fstab
   template:

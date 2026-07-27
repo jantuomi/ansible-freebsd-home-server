@@ -41,7 +41,7 @@ cleanvar_enable="YES"
 auditd_enable="YES"
 devd_enable="YES"
 {% if is_prod %}
-kld_list="pf if_wg i915kms fdescfs linux64"
+kld_list="pf if_wg fdescfs linux64"
 {% else %}
 kld_list="pf if_wg linux64"
 {% endif %}
