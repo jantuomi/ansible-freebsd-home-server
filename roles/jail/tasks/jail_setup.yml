@@ -140,6 +140,15 @@
     - "userland + '@base' not in jail_origin.stdout"
   delegate_to: "{{ jail_delegate_host }}"
 
+- name: "Unmount any remaining mounts inside {{ jail_name }} container"
+  shell: |
+    mount | awk '$3 ~ "^/usr/local/jails/containers/{{ jail_name }}/" {print $3}' | sort -r | xargs -I{} umount -f {} 2>/dev/null || true
+  when:
+    - jail_exists.rc == 0
+    - jail_origin.stdout is defined
+    - "userland + '@base' not in jail_origin.stdout"
+  delegate_to: "{{ jail_delegate_host }}"
+
 - name: "Migrate {{ jail_name }} to {{ userland }}"
   shell: |
     zfs rename zroot/jails/containers/{{ jail_name }} zroot/jails/containers/{{ jail_name }}.old.$(date +%s)
@@ -262,7 +271,7 @@
   copy:
     content: |
       poudriere: {
-        url: "http://{{ jail_lan_cidr | ipv4_nth(21 + jail_lan_offset | int) }}/packages",
+        url: "http://{{ hostvars[jail_delegate_host]['poudriere_repo_ip'] }}/packages",
         enabled: no,
         priority: 100
       }

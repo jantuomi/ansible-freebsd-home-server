@@ -38,6 +38,15 @@
     name: jail
     tasks_from: jail_setup
 
+- name: Deploy nginx config
+  template:
+    src: "{{ jail_role_dir }}/templates/usr_local_etc_nginx_nginx.conf.j2"
+    dest: /usr/local/etc/nginx/nginx.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+  notify: Reload nginx
+
 - name: Check if TLS certs exist
   stat:
     path: "/usr/local/etc/letsencrypt/live/{{ cert_name }}"

@@ -44,7 +44,7 @@
         create: true
 
     - name: Update userland
-      shell: "freebsd-update -b /usr/local/jails/templates/{{ userland }}/ fetch install"
+      shell: "freebsd-update -b /usr/local/jails/templates/{{ userland }}/ --currently-running {{ userland }} fetch install"
 
     - name: Disable syslogd
       lineinfile:

@@ -12,12 +12,12 @@
 - name: Flush handlers
   meta: flush_handlers
 
-- name: Install hardware packages
-  package:
-    name: "{{ item }}"
-    state: present
-  loop:
-    - vm-bhyve
+# - name: Install hardware packages
+#   package:
+#     name: "{{ item }}"
+#     state: present
+#   loop:
+#     - vm-bhyve
 
 - name: Set up fstab
   template:
@@ -28,21 +28,21 @@
     mode: "0644"
   notify: Mount filesystems
 
-- name: Set up bhyve
-  block:
-    - name: Create vm dataset
-      community.general.zfs:
-        name: zroot/vm
-        state: present
+# - name: Set up bhyve
+#   block:
+#     - name: Create vm dataset
+#       community.general.zfs:
+#         name: zroot/vm
+#         state: present
 
-    - name: Check if vm-bhyve is initialized
-      stat:
-        path: /zroot/vm/.config
-      register: vm_init_check
+    # - name: Check if vm-bhyve is initialized
+    #   stat:
+    #     path: /zroot/vm/.config
+    #   register: vm_init_check
 
-    - name: Run vm init
-      shell: vm init
-      when: not vm_init_check.stat.exists
+    # - name: Run vm init
+    #   shell: vm init
+    #   when: not vm_init_check.stat.exists
 
 - name: Copy backup SSH private key
   copy:

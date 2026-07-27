@@ -1,4 +1,4 @@
-userland: "15.0-RELEASE"
+userland: "15.1-RELEASE"
 devfs_ruleset: 6
 no_default_route: true
 
@@ -21,7 +21,6 @@ ingress_routes:
   - { host: immich.jan.systems, jail: immich, presets: [large_body_size] }
   - { host: plex.jan.systems, jail: plex, port: 32400, presets: [streaming] }
   - { host: komga.jan.systems, jail: komga }
-  - { host: goaccess.jan.systems, jail: goaccess }
   - { host: poudriere.jan.systems, jail: poudriere_repo }
 
 cert_domains:
@@ -49,8 +48,6 @@ pkg:
 files:
   - src: etc_pf.conf.j2
     dest: /etc/pf.conf
-  - src: usr_local_etc_nginx_nginx.conf.j2
-    dest: /usr/local/etc/nginx/nginx.conf
   - src: acme-dns-auth.py
     dest: /usr/local/bin/acme-dns-auth.py
     mode: "0755"

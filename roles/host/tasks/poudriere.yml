@@ -1,0 +1,93 @@
+# Poudriere setup
+- name: Deploy poudriere.conf
+  template:
+    src: usr_local_etc_poudriere.conf.j2
+    dest: /usr/local/etc/poudriere.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+  vars:
+    pkg_abi: "FreeBSD:{{ poudriere_freebsd_version.split('.')[0] }}:{{ arch.split('/')[1] }}"
+
+- name: Create distfiles directory
+  file:
+    path: /usr/local/poudriere/distfiles
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Check if poudriere jail exists
+  shell: poudriere jail -l -n | grep -q "^poudriere_build$"
+  failed_when: false
+  changed_when: false
+  register: _poudriere_jail_exists
+
+- name: Create poudriere jail
+  shell: poudriere jail -c -j poudriere_build -v {{ poudriere_freebsd_version }} -m tar=/usr/local/jails/media/{{ poudriere_freebsd_version }}-base.txz
+  when: _poudriere_jail_exists.rc != 0
+
+- name: Check if poudriere quarterly ports tree is registered
+  shell: poudriere ports -l -n | grep -q "^quarterly$"
+  failed_when: false
+  changed_when: false
+  register: _poudriere_quarterly_exists
+
+- name: Register quarterly ports tree with poudriere
+  shell: poudriere ports -c -p quarterly -m null -M /usr/ports/quarterly
+  when: _poudriere_quarterly_exists.rc != 0
+
+- name: Check if poudriere custom overlay is registered
+  shell: poudriere ports -l -n | grep -q "^custom$"
+  failed_when: false
+  changed_when: false
+  register: _poudriere_custom_exists
+
+- name: Register custom overlay with poudriere
+  shell: poudriere ports -c -p custom -m null -M /usr/ports/custom
+  when: _poudriere_custom_exists.rc != 0
+
+- name: Deploy poudriere package list
+  template:
+    src: usr_local_etc_poudriere_pkglist.j2
+    dest: /usr/local/etc/poudriere-pkglist
+    owner: root
+    group: wheel
+    mode: "0644"
+
+- name: Deploy poudriere-start-build script
+  template:
+    src: usr_local_bin_poudriere_start_build.sh.j2
+    dest: /usr/local/bin/poudriere-start-build
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Deploy poudriere build make.conf
+  template:
+    src: poudriere_build_make.conf.j2
+    dest: /usr/local/etc/poudriere.d/poudriere_build-make.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+
+# Configure local repo
+- name: Create pkg repos directory
+  file:
+    path: /usr/local/etc/pkg/repos
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Deploy local poudriere repo config
+  copy:
+    content: |
+      poudriere: {
+        url: "http://{{ poudriere_repo_ip }}/packages",
+        enabled: no
+      }
+    dest: /usr/local/etc/pkg/repos/poudriere.conf
+    owner: root
+    group: wheel
+    mode: "0644"
