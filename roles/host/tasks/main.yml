@@ -110,7 +110,6 @@
     group: wheel
     mode: "0755"
 
-
 - name: Check if quarterly ports tree exists
   stat:
     path: /usr/ports/quarterly/Mk
