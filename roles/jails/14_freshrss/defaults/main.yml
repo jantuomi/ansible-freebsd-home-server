@@ -17,6 +17,8 @@ files:
     dest: /usr/local/etc/nginx/nginx.conf
   - src: usr_local_etc_php_fpm.d_www.conf
     dest: /usr/local/etc/php-fpm.d/www.conf
+  - src: etc_crontab
+    dest: /etc/crontab
 
 services:
   - nginx
