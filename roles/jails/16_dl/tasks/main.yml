@@ -157,6 +157,14 @@
     mode: "0755"
   notify: Get random wireguard tunnel
 
+- name: Deploy fix-library-permissions script
+  copy:
+    src: "{{ jail_role_dir }}/files/fix-library-permissions.sh"
+    dest: /usr/local/bin/fix-library-permissions.sh
+    owner: root
+    group: wheel
+    mode: "0755"
+
 - name: Deploy crontab
   template:
     src: "{{ jail_role_dir }}/templates/etc_crontab.j2"

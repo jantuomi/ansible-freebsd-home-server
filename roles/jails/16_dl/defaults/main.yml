@@ -42,6 +42,7 @@ pkg:
   - wireguard-tools
   - git
   - bash
+  - fd-find
   - shntool
   - cuetools
   - vorbisgain
