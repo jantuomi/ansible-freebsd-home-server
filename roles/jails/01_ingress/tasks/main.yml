@@ -38,6 +38,15 @@
     name: jail
     tasks_from: jail_setup
 
+- name: Deploy pf.conf
+  template:
+    src: "{{ jail_role_dir }}/templates/etc_pf.conf.j2"
+    dest: /etc/pf.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+  notify: Reload pf
+
 - name: Deploy nginx config
   template:
     src: "{{ jail_role_dir }}/templates/usr_local_etc_nginx_nginx.conf.j2"

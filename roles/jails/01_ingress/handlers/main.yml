@@ -2,3 +2,6 @@
   service:
     name: nginx
     state: reloaded
+
+- name: Reload pf
+  shell: pfctl -f /etc/pf.conf

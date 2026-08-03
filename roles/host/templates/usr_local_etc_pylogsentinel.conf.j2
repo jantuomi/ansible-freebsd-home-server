@@ -3,7 +3,10 @@ state_dir = /var/run/pylogsentinel
 max_block_size = 10M
 
 [logs.standard]
-cmd = /usr/local/bin/fd -t f -E 'access.log' -E 'syncthing.log' '^[a-zA-Z-_]+(\.log|\.txt)$' /var/log /usr/local/jails/containers/*/var/log /usr/local/jails/containers/dl/usr/local/*/logs
+cmd = /usr/local/bin/fd -t f -E 'access.log' -E 'syncthing.log' '^[a-zA-Z-_]+(\.log|\.txt)$' /var/log /usr/local/jails/containers/*/var/log
+
+[logs.arr]
+cmd = /usr/local/bin/fd -t f '^[a-zA-Z-_]+(\.log|\.txt)$' /usr/local/jails/containers/dl/usr/local/*/logs
 
 [logs.access]
 paths = /usr/local/jails/containers/ingress/var/log/nginx/access.log
@@ -11,10 +14,15 @@ paths = /usr/local/jails/containers/ingress/var/log/nginx/access.log
 [action.default]
 cmd = echo -e "---------\nMatched $RULE_ID in $FILE at line $LINE, context:\n\n$CONTEXT\n" >> /tmp/pylogsentinel.daily
 
-[rule.error]
+[rule.error_std]
 description = Error-like conditions
 pattern = /(error|fatal|exception|killed)/i
 logs = standard
+
+[rule.error_arr]
+description = Arr software error
+pattern = /(\|error\|)/i
+logs = arr
 
 [rule.access]
 description = HTTP code >=500 in access log

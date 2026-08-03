@@ -4,24 +4,37 @@
 lan = "epl{{ jail.num }}b"
 wan = "epw{{ jail.num }}b"
 lan_net = "{{ lan_ipv4_network }}"
+gemini_host = "{{ jail_lan_cidr | ipv4_nth(5 + jail_lan_offset | int) }}"
 
 table <blocked> persist
 
-# Keep PF out of loopback, drop by default if you add blocks later
+# Keep PF out of loopback
 set skip on lo0
 set block-policy drop
 
 # NAT: translate LAN traffic to the WAN interface address
 nat on $wan from $lan_net to any -> ($wan)
 
-# Block traffic from IPs in the blocked table
+# Gemini: redirect WAN port 1965 to the homepage jail
+rdr on $wan inet proto tcp from any to ($wan) port 1965 -> $gemini_host
+
+# Default deny
+block all
+
+# Always block listed source addresses
 block in quick from <blocked> to any
 
-# Allow all outbound traffic from the jail and LAN via both interfaces
-# NAT will be applied automatically when source is in $lan_net and going out $wan
+# Allow LAN traffic to enter for forwarding/NAT
+pass in on $lan inet from $lan_net to any keep state
+
+# Allow outbound traffic
 pass out on $wan all keep state
 pass out on $lan all keep state
 
-pass in on $wan inet proto {tcp, udp} from any to any port {80, 443} keep state
+# Allow public HTTP and HTTPS
+pass in on $wan inet proto { tcp, udp } from any to ($wan) port { 80, 443 } keep state
+
+# Allow redirected Gemini traffic to the backend
+pass in on $wan inet proto tcp from any to $gemini_host port 1965 keep state
 {% endif %}
 {% endfor %}

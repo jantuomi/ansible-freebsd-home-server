@@ -3,18 +3,51 @@ userland: "15.1-RELEASE"
 zfs:
   - name: zroot/jails/volumes/homepage_www
     mountpoint: /var/www
+  - name: zroot/jails/volumes/homepage_agate_tls
+    mountpoint: /usr/local/etc/agate/tls
+    owner: "80"
+    group: "80"
+  - name: zroot/jails/volumes/homepage_gemini
+    mountpoint: /var/gemini
+
+nullfs:
+  - src: /usr/local/jails/containers/ingress/usr/local/etc/letsencrypt
+    dst: /mnt/letsencrypt
+    mode: ro
 
 pkg:
   - pcre2
   - nginx
   - rsync
   - bash
+  - agate
 
 files:
   - src: usr_local_etc_nginx_nginx.conf.j2
     dest: /usr/local/etc/nginx/nginx.conf
   - src: etc_crontab.j2
     dest: /etc/crontab
+  - src: usr_local_bin_update_agate_certs.sh.j2
+    dest: /usr/local/bin/update-agate-certs
+    mode: "0755"
 
 services:
   - nginx
+  - agate
+
+dirs:
+  - /var/log/agate
+
+sysrc:
+  - name: agate_hostname
+    value: "jan.systems"
+  - name: agate_content
+    value: "/var/gemini"
+  - name: agate_certs
+    value: "/usr/local/etc/agate/tls"
+  - name: agate_logfile
+    value: "/var/log/agate/agate.log"
+  - name: agate_addr
+    value: "0.0.0.0"
+  - name: agate_port
+    value: "1965"

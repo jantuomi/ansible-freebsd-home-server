@@ -46,8 +46,6 @@ pkg:
   - py312-certbot-nginx
 
 files:
-  - src: etc_pf.conf.j2
-    dest: /etc/pf.conf
   - src: acme-dns-auth.py
     dest: /usr/local/bin/acme-dns-auth.py
     mode: "0755"

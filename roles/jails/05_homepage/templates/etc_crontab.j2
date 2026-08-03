@@ -6,4 +6,5 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 #
 #minute hour    mday    month   wday    who     command
 
-# TODO: update linklog
+# Update agate TLS certs if letsencrypt cert has changed
+*/5     *       *       *       *       root    /usr/local/bin/update-agate-certs >> /var/log/update-agate-certs.log 2>&1
