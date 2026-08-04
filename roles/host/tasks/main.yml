@@ -105,6 +105,14 @@
     group: wheel
     mode: "0755"
 
+- name: Deploy jail_net script
+  template:
+    src: "{{ role_path }}/../jail/templates/usr_local_bin_jail_net.j2"
+    dest: /usr/local/bin/jail_net
+    owner: root
+    group: wheel
+    mode: "0755"
+
 - name: Check if quarterly ports tree exists
   stat:
     path: /usr/ports/quarterly/Mk
@@ -157,7 +165,7 @@
     - { name: "zroot/jails/media" }
     - { name: "zroot/jails/templates" }
     - { name: "zroot/jails/containers" }
-    - { name: "zroot/jails/volumes", mountpoint: "none" }
+    - { name: "zroot/jails/volumes", mountpoint: "/usr/local/jails/volumes" }
     - { name: "zroot/storage", mountpoint: "/usr/local/jails/volumes/storage" }
     - { name: "zroot/netdata_db", mountpoint: "/var/db/netdata" }
     - { name: "zroot/ports", mountpoint: "/usr/ports" }

@@ -1,8 +1,11 @@
 userland: "15.1-RELEASE"
 
 zfs:
-  - name: zroot/jails/volumes/paste_data
-    mountpoint: /var/db/pastebin
+  - name: paste_data
+
+nullfs:
+  - src: paste_data
+    dst: /var/db/pastebin
 
 pkg_custom:
   - pastebin

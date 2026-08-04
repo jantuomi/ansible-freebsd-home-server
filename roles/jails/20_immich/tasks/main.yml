@@ -46,6 +46,18 @@
     label: "{{ item.item.name }}"
   when: not item.stat.exists
 
+- name: Create volume mount points in image rootfs
+  file:
+    path: "/image/{{ item[0].name }}{{ item[1].dst }}"
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+  loop: "{{ oci_images | product(nullfs | default([]) | normalize_nullfs) | list }}"
+  loop_control:
+    label: "{{ item[0].name }}:{{ item[1].dst }}"
+  when: "item[1].dst.startswith('/image/' + item[0].name)"
+
 # Create mount points in each rootfs
 - name: Create base mount points in image rootfs
   file:
@@ -57,17 +69,6 @@
   loop: "{{ oci_images | product(['proc', 'sys', 'dev', 'tmp', 'run']) | list }}"
   loop_control:
     label: "{{ item[0].name }}/{{ item[1] }}"
-
-- name: Create nullfs mount points in image rootfs
-  file:
-    path: "/image/{{ item.0.name }}{{ item.1.dst }}"
-    state: directory
-    owner: root
-    group: wheel
-    mode: "0755"
-  loop: "{{ oci_images | subelements('mounts', skip_missing=True) }}"
-  loop_control:
-    label: "{{ item.0.name }}:{{ item.1.dst }}"
 
 # Deploy resolv.conf into each rootfs
 - name: Deploy resolv.conf into image rootfs

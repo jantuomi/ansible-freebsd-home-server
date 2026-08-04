@@ -1,10 +1,15 @@
 userland: "15.1-RELEASE"
 
+jail_conf_options:
+  - "allow.mount"
+  - "allow.mount.fdescfs"
+  - "enforce_statfs = 1"
+
 pkg:
   - samba419
 
 nullfs:
-  - src: /usr/local/jails/volumes/storage
+  - src: storage
     dst: /mnt/storage
 
 services:

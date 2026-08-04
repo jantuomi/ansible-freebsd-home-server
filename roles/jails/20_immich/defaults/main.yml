@@ -8,21 +8,21 @@ oci_images:
   - name: immich-server
     image: "ghcr.io/immich-app/immich-server:{{ immich_version }}"
     check_path: /usr/src/app/server/dist/main.js
-    mounts:
-      - { type: nullfs, src: /immich_data, dst: /data }
   - name: immich-ml
     image: "ghcr.io/immich-app/immich-machine-learning:{{ immich_version }}"
     check_path: /opt/venv/bin/python
-    mounts:
-      - { type: nullfs, src: /model_cache, dst: /cache }
 
 zfs:
-  - name: zroot/jails/volumes/immich_data
-    mountpoint: /immich_data
+  - name: immich_data
     mode: "0755"
-  - name: zroot/jails/volumes/immich_model_cache
-    mountpoint: /model_cache
+  - name: immich_model_cache
     mode: "0755"
+
+nullfs:
+  - src: immich_data
+    dst: /image/immich-server/data
+  - src: immich_model_cache
+    dst: /image/immich-server/cache
 
 pkg:
   - skopeo

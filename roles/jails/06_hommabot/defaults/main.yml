@@ -1,8 +1,11 @@
 userland: "15.1-RELEASE"
 
 zfs:
-  - name: zroot/jails/volumes/hommabot_data
-    mountpoint: /var/db/hommabot
+  - name: hommabot_data
+
+nullfs:
+  - src: hommabot_data
+    dst: /var/db/hommabot
 
 pkg_custom:
   - hommabot

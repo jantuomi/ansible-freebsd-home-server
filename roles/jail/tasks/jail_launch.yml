@@ -1,5 +1,6 @@
 - name: Start services
-  service:
-    name: "{{ item }}"
-    state: started
+  shell: "service {{ item }} start || service {{ item }} status"
   loop: "{{ services | default([]) }}"
+  register: _svc_start
+  changed_when: "'already running' not in _svc_start.stdout and 'is running' not in _svc_start.stdout"
+  failed_when: "_svc_start.rc != 0 and 'already running' not in _svc_start.stdout and 'is running' not in _svc_start.stdout"

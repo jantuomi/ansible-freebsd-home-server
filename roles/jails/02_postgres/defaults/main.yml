@@ -2,11 +2,14 @@ userland: "15.1-RELEASE"
 devfs_ruleset: 5
 
 zfs:
-  - name: zroot/jails/volumes/postgres_data
-    mountpoint: /var/db/postgres
+  - name: postgres_data
     owner: "770"
     group: "770"
     mode: "0755"
+
+nullfs:
+  - src: postgres_data
+    dst: /var/db/postgres
 
 jail_conf_options:
   - "allow.raw_sockets"

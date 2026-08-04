@@ -1,11 +1,12 @@
 userland: "15.1-RELEASE"
 
 zfs:
-  - name: zroot/jails/volumes/komga_data
-    mountpoint: /var/db/komga
+  - name: komga_data
 
 nullfs:
-  - src: /usr/local/jails/volumes/storage/media/manga
+  - src: komga_data
+    dst: /var/db/komga
+  - src: storage/media/manga
     dst: /mnt/manga
 
 pkg:

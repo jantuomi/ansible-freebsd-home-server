@@ -1,11 +1,12 @@
 userland: "15.1-RELEASE"
 
 zfs:
-  - name: zroot/jails/volumes/goaccess_data
-    mountpoint: /var/db/goaccess
+  - name: goaccess_data
 
 nullfs:
-  - src: /usr/local/jails/containers/ingress/var/log/nginx
+  - src: goaccess_data
+    dst: /var/db/goaccess
+  - src: ingress_logs
     dst: /mnt/nginx_logs
 
 pkg:

@@ -1,0 +1,127 @@
+#!/bin/sh
+# jail_net - manage jail LAN networking lifecycle
+# Usage: jail_net <prestart|poststart|prestop|poststop> <jail_num> <jail_name>
+
+set -e
+
+STAGE="$1"
+NUM="$2"
+NAME="$3"
+
+BRIDGE="brlan0"
+LAN_BASE="{{ jail_lan_cidr | ipv4_host }}"
+LAN_PREFIX="{{ jail_lan_cidr | ipv4_prefixlen }}"
+LAN_OFFSET="{{ jail_lan_offset }}"
+DEFAULT_ROUTE="{{ jail_lan_cidr | ipv4_nth(1 + jail_lan_offset | int) }}"
+
+# Compute jail IP from jail_num + offset
+_nth=$(( LAN_OFFSET + NUM ))
+_a=$(echo "$LAN_BASE" | cut -d. -f1)
+_b=$(echo "$LAN_BASE" | cut -d. -f2)
+_c=$(echo "$LAN_BASE" | cut -d. -f3)
+_d=$(echo "$LAN_BASE" | cut -d. -f4)
+_total=$(( (_a << 24) + (_b << 16) + (_c << 8) + _d + _nth ))
+IP="$(( (_total >> 24) & 255 )).$(( (_total >> 16) & 255 )).$(( (_total >> 8) & 255 )).$(( _total & 255 ))/${LAN_PREFIX}"
+
+# --- Cleanup functions ---
+
+_cleanup_lan_prestart() {
+    echo "jail_net: prestart failed for ${NAME}, cleaning up LAN interfaces" >&2
+    ifconfig epair${NUM}000a destroy 2>/dev/null || true
+    ifconfig epl${NUM}a destroy 2>/dev/null || true
+}
+
+_cleanup_wan_prestart() {
+    echo "jail_net: prestart failed for ${NAME}, cleaning up WAN interfaces" >&2
+    ifconfig epair${NUM}001a destroy 2>/dev/null || true
+    ifconfig epw${NUM}a destroy 2>/dev/null || true
+}
+
+_cleanup_poststart() {
+    echo "jail_net: poststart failed for ${NAME}" >&2
+    ifconfig epl${NUM}a destroy 2>/dev/null || true
+    if [ "$NUM" -eq 1 ]; then
+        ifconfig epw${NUM}a destroy 2>/dev/null || true
+    fi
+}
+
+# --- Stage functions ---
+
+_prestart() {
+    trap '_cleanup_lan_prestart' EXIT
+
+    ifconfig epl${NUM}a destroy 2>/dev/null || true
+    ifconfig epair${NUM}000 create
+    ifconfig epair${NUM}000a name epl${NUM}a
+    ifconfig epair${NUM}000b name epl${NUM}b
+    ifconfig epl${NUM}b ether random
+    ifconfig ${BRIDGE} addm epl${NUM}a
+
+    if [ "$NUM" -eq 1 ]; then
+        trap '_cleanup_lan_prestart; _cleanup_wan_prestart' EXIT
+        ifconfig epw${NUM}a destroy 2>/dev/null || true
+        ifconfig epair${NUM}001 create
+        ifconfig epair${NUM}001a name epw${NUM}a
+        ifconfig epair${NUM}001b name epw${NUM}b
+{% if is_prod %}
+        ifconfig brwan0 addm epw${NUM}a
+{% else %}
+        ifconfig brlan0 addm epw${NUM}a
+{% endif %}
+    fi
+
+    trap - EXIT
+}
+
+_poststart() {
+    trap '_cleanup_poststart' EXIT
+
+    ifconfig epl${NUM}b vnet ${NAME}
+    ifconfig epl${NUM}a up
+    jexec ${NAME} ifconfig epl${NUM}b up
+    jexec ${NAME} ifconfig epl${NUM}b ${IP}
+    jexec ${NAME} route delete default || true
+    if [ "$NUM" -ne 1 ]; then
+        jexec ${NAME} route add default ${DEFAULT_ROUTE} || true
+    fi
+
+    if [ "$NUM" -eq 1 ]; then
+        ifconfig epw${NUM}b vnet ${NAME}
+        ifconfig epw${NUM}a up
+        jexec ${NAME} ifconfig epw${NUM}b up
+{% if is_prod %}
+        jexec ${NAME} dhclient epw${NUM}b
+        jexec ${NAME} route add 10.6.210.0/24 {{ lan_ipv4_gateway }} || true
+{% else %}
+        jexec ${NAME} ifconfig epw${NUM}b inet {{ ingress_wan_static }}
+        jexec ${NAME} route add default {{ lan_ipv4_gateway }}
+{% endif %}
+    fi
+
+    trap - EXIT
+}
+
+_prestop() {
+    :
+}
+
+_poststop() {
+    set +e
+    ifconfig epl${NUM}a destroy 2>/dev/null
+    if [ "$NUM" -eq 1 ]; then
+        ifconfig epw${NUM}a destroy 2>/dev/null
+    fi
+}
+
+# --- Dispatch ---
+
+case "$STAGE" in
+    prestart)  _prestart  ;;
+    poststart) _poststart ;;
+    prestop)   _prestop   ;;
+    poststop)  _poststop  ;;
+    *)
+        echo "Usage: jail_net <prestart|poststart|prestop|poststop> <num> <name>" >&2
+        exit 1
+        ;;
+esac

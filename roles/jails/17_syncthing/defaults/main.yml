@@ -1,20 +1,23 @@
 userland: "15.1-RELEASE"
 
 nullfs:
-  - src: /usr/local/jails/volumes/storage/docs
+  - src: storage/docs
     dst: /mnt/docs
-  - src: /usr/local/jails/volumes/storage/vault
+  - src: storage/vault
     dst: /mnt/vault
-  - src: /usr/local/jails/volumes/storage/jan-systems-2025-content
+  - src: storage/jan-systems-2025-content
     dst: /mnt/jan-systems-2025-content
-  - src: /usr/local/jails/volumes/storage/projects-ableton
+  - src: storage/projects-ableton
     dst: /mnt/projects-ableton
 
 zfs:
-  - name: zroot/jails/volumes/syncthing_config
-    mountpoint: /usr/local/etc/syncthing
+  - name: syncthing_config
     owner: "1001"
     group: "1001"
+
+nullfs:
+  - src: syncthing_config
+    dst: /usr/local/etc/syncthing
 
 pkg:
   - syncthing

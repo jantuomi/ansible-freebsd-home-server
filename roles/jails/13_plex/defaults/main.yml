@@ -1,14 +1,15 @@
 userland: "15.1-RELEASE"
 
 zfs:
-  - name: zroot/jails/volumes/plex_data
-    mountpoint: /usr/local/plexdata
+  - name: plex_data
     owner: 972
     group: 972
     mode: 755
 
 nullfs:
-  - src: /usr/local/jails/volumes/storage/media
+  - src: plex_data
+    dst: /usr/local/plexdata
+  - src: storage/media
     dst: /mnt/media
 
 pkg_custom:

@@ -1,8 +1,11 @@
 userland: "15.1-RELEASE"
 
 zfs:
-  - name: zroot/jails/volumes/taulubot
-    mountpoint: /usr/local/taulubot/photos
+  - name: taulubot
+
+nullfs:
+  - src: taulubot
+    dst: /usr/local/taulubot/photos
 
 pkg_custom:
   - taulubot

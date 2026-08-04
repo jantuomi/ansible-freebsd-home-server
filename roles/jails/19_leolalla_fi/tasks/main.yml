@@ -11,14 +11,6 @@
     mode: "0600"
   no_log: true
 
-- name: Deploy wrapper script
-  template:
-    src: "{{ jail_role_dir }}/templates/usr_local_bin_gdrive_photo_gallery"
-    dest: /usr/local/bin/gdrive-photo-gallery
-    owner: root
-    group: wheel
-    mode: "0755"
-
 - import_role:
     name: jail
     tasks_from: jail_launch

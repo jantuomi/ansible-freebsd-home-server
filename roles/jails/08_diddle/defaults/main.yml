@@ -1,8 +1,11 @@
 userland: "15.1-RELEASE"
 
 zfs:
-  - name: zroot/jails/volumes/diddle_data
-    mountpoint: /var/db/diddle
+  - name: diddle_data
+
+nullfs:
+  - src: diddle_data
+    dst: /var/db/diddle
 
 pkg_custom:
   - diddle

@@ -1,8 +1,11 @@
 userland: "15.1-RELEASE"
 
 zfs:
-  - name: zroot/jails/volumes/leolalla_fi_data
-    mountpoint: /var/db/gdrive-photo-gallery
+  - name: leolalla_fi_data
+
+nullfs:
+  - src: leolalla_fi_data
+    dst: /var/db/gdrive-photo-gallery
 
 pkg_custom:
   - gdrive-photo-gallery

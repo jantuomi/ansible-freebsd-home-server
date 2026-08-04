@@ -1,8 +1,11 @@
 userland: "15.1-RELEASE"
 
 zfs:
-  - name: zroot/jails/volumes/irc_thelounge
-    mountpoint: /var/db/thelounge
+  - name: irc_thelounge
+
+nullfs:
+  - src: irc_thelounge
+    dst: /var/db/thelounge
 
 pkg_custom:
   - thelounge

@@ -1,4 +1,11 @@
 # Host-side setup (runs on the jail host via SSH)
+
+# Normalize zfs and nullfs entries: expand short names to full paths
+- name: "Normalize zfs and nullfs entries for {{ jail_name }}"
+  set_fact:
+    _zfs: "{{ zfs | default([]) | normalize_zfs }}"
+    _nullfs: "{{ nullfs | default([]) | normalize_nullfs }}"
+
 - name: "Check if {{ jail_name }} container exists"
   shell: "zfs list -o name | grep -Fxq 'zroot/jails/containers/{{ jail_name }}'"
   failed_when: false
@@ -11,102 +18,6 @@
   register: jail_origin
   changed_when: false
   when: jail_exists.rc == 0
-  delegate_to: "{{ jail_delegate_host }}"
-
-# ZFS volume migration
-- name: "Check ZFS volume state for {{ jail_name }}"
-  shell: |
-    if zfs list {{ item.name }} >/dev/null 2>&1; then
-      echo "exists"
-    elif [ -d "/usr/local/jails/containers/{{ jail_name }}{{ item.mountpoint }}" ] && \
-         [ "$(ls -A /usr/local/jails/containers/{{ jail_name }}{{ item.mountpoint }})" ]; then
-      echo "migrate"
-    else
-      echo "empty"
-    fi
-  loop: "{{ zfs | default([]) }}"
-  loop_control:
-    label: "{{ item.name }}"
-  register: _zfs_volume_state
-  changed_when: false
-  delegate_to: "{{ jail_delegate_host }}"
-
-- name: "*** VOLUME MIGRATION REQUIRED: {{ jail_name }} ***"
-  pause:
-    prompt: |
-
-      ════════════════════════════════════════════════════════════════
-        VOLUME MIGRATION: {{ jail_name }}
-      ════════════════════════════════════════════════════════════════
-        The following paths contain data that will be migrated
-        to new ZFS volumes:
-      {% for result in _zfs_volume_state.results | default([]) if result.stdout == 'migrate' %}
-          - {{ result.item.mountpoint }} → {{ result.item.name }}
-      {% endfor %}
-
-        This will:
-          1. Create ZFS volumes (staged)
-          2. Stop the jail
-          3. Copy existing data into the volumes
-      ════════════════════════════════════════════════════════════════
-
-      Press Enter to continue or Ctrl+C to abort
-  when: (_zfs_volume_state.results | default([]) | selectattr('stdout', 'equalto', 'migrate') | list | length) > 0
-
-- name: "Create new ZFS volumes (staged) for {{ jail_name }}"
-  community.general.zfs:
-    name: "{{ item.item.name }}"
-    state: present
-    extra_zfs_properties:
-      mountpoint: "/usr/local/jails/volumes/.staging/{{ jail_name }}{{ item.item.mountpoint }}"
-  loop: "{{ _zfs_volume_state.results | default([]) }}"
-  loop_control:
-    label: "{{ item.item.name }}"
-  when: item.stdout == "migrate"
-  delegate_to: "{{ jail_delegate_host }}"
-
-- name: "Create staging mount points for {{ jail_name }}"
-  file:
-    path: "/usr/local/jails/volumes/.staging/{{ jail_name }}{{ item.item.mountpoint }}"
-    state: directory
-  loop: "{{ _zfs_volume_state.results | default([]) }}"
-  loop_control:
-    label: "{{ item.item.name }}"
-  when: item.stdout == "migrate"
-  delegate_to: "{{ jail_delegate_host }}"
-
-- name: "Mount staged volumes for {{ jail_name }}"
-  shell: "zfs mount {{ item.item.name }} || true"
-  loop: "{{ _zfs_volume_state.results | default([]) }}"
-  loop_control:
-    label: "{{ item.item.name }}"
-  when: item.stdout == "migrate"
-  changed_when: false
-  delegate_to: "{{ jail_delegate_host }}"
-
-- name: "Stop {{ jail_name }} jail for volume migration"
-  shell: "service jail stop {{ jail_name }} || true"
-  when: (_zfs_volume_state.results | default([]) | selectattr('stdout', 'equalto', 'migrate') | list | length) > 0
-  delegate_to: "{{ jail_delegate_host }}"
-
-- name: "Copy data into staged volumes for {{ jail_name }}"
-  shell: |
-    cp -a "/usr/local/jails/containers/{{ jail_name }}{{ item.item.mountpoint }}/." \
-          "/usr/local/jails/volumes/.staging/{{ jail_name }}{{ item.item.mountpoint }}/"
-  loop: "{{ _zfs_volume_state.results | default([]) }}"
-  loop_control:
-    label: "{{ item.item.name }}"
-  when: item.stdout == "migrate"
-  delegate_to: "{{ jail_delegate_host }}"
-
-- name: "Set final mountpoint on migrated volumes for {{ jail_name }}"
-  shell: |
-    zfs unmount {{ item.item.name }} || true
-    zfs set mountpoint="/usr/local/jails/containers/{{ jail_name }}{{ item.item.mountpoint }}" {{ item.item.name }}
-  loop: "{{ _zfs_volume_state.results | default([]) }}"
-  loop_control:
-    label: "{{ item.item.name }}"
-  when: item.stdout == "migrate"
   delegate_to: "{{ jail_delegate_host }}"
 
 # Userland migration
@@ -168,28 +79,41 @@
   community.general.zfs:
     name: "{{ item.name }}"
     state: present
-    extra_zfs_properties:
-      mountpoint: "/usr/local/jails/containers/{{ jail_name }}{{ item.mountpoint }}"
-  loop: "{{ zfs | default([]) }}"
+  loop: "{{ _zfs }}"
   loop_control:
     label: "{{ item.name }}"
   delegate_to: "{{ jail_delegate_host }}"
 
-- name: "Create mount points for ZFS volumes in {{ jail_name }}"
+- name: "Inherit mountpoint on ZFS volumes for {{ jail_name }}"
+  shell: |
+    source=$(zfs get -H -o source mountpoint {{ item.name }})
+    if [ "$source" != "inherited" ] && [ "$source" != "received" ]; then
+      zfs unmount {{ item.name }} 2>/dev/null
+      zfs inherit mountpoint {{ item.name }}
+      echo "changed"
+    fi
+  loop: "{{ _zfs }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: _zfs_inherit
+  changed_when: "'changed' in _zfs_inherit.stdout"
+  delegate_to: "{{ jail_delegate_host }}"
+
+- name: "Set ownership on ZFS volume host mountpoints for {{ jail_name }}"
   file:
-    path: "/usr/local/jails/containers/{{ jail_name }}{{ item.mountpoint }}"
+    path: "/usr/local/jails/volumes/{{ item.name | basename }}"
     state: directory
     owner: "{{ item.owner | default('root') }}"
     group: "{{ item.group | default('wheel') }}"
     mode: "{{ item.mode | default('0755') }}"
-  loop: "{{ zfs | default([]) }}"
+  loop: "{{ _zfs }}"
   loop_control:
-    label: "{{ item.mountpoint }}"
+    label: "{{ item.name }}"
   delegate_to: "{{ jail_delegate_host }}"
 
 - name: "Mount ZFS volumes for {{ jail_name }}"
   shell: "zfs mount {{ item.name }} || true"
-  loop: "{{ zfs | default([]) }}"
+  loop: "{{ _zfs }}"
   loop_control:
     label: "{{ item.name }}"
   changed_when: false
@@ -210,7 +134,7 @@
   file:
     path: "{{ item.src }}"
     state: directory
-  loop: "{{ nullfs | default([]) }}"
+  loop: "{{ _nullfs }}"
   loop_control:
     label: "{{ item.src }}"
   delegate_to: "{{ jail_delegate_host }}"
@@ -222,7 +146,7 @@
     owner: root
     group: wheel
     mode: "0755"
-  loop: "{{ nullfs | default([]) }}"
+  loop: "{{ _nullfs }}"
   loop_control:
     label: "{{ item.dst }}"
   delegate_to: "{{ jail_delegate_host }}"
@@ -238,17 +162,15 @@
     jail:
       name: "{{ jail_name }}"
       num: "{{ jail_num }}"
-      ip: "{{ jail_lan_cidr | ipv4_nth_cidr(jail_num | int + jail_lan_offset | int) }}"
       devfs_ruleset: "{{ devfs_ruleset | default(4) }}"
       options: "{{ jail_conf_options | default([]) }}"
-      default_route: "{{ not no_default_route | default(false) }}"
       exec_prestart: "{{ exec_prestart | default([]) }}"
       exec_start: "{{ exec_start | default([]) }}"
       exec_poststart: "{{ exec_poststart | default([]) }}"
       exec_prestop: "{{ exec_prestop | default([]) }}"
       exec_stop: "{{ exec_stop | default([]) }}"
       exec_poststop: "{{ exec_poststop | default([]) }}"
-      mounts: "{{ nullfs | default([]) }}"
+      nullfs: "{{ _nullfs }}"
   delegate_to: "{{ jail_delegate_host }}"
 
 - name: "Start {{ jail_name }} jail"
@@ -289,7 +211,7 @@
   changed_when: "'Number of packages to be installed' in pkg_result.stdout"
 
 - name: Install packages from poudriere
-  shell: "pkg install -y -r poudriere {{ pkg_custom | join(' ') }}"
+  shell: "timeout 120 pkg install -y -r poudriere {{ pkg_custom | join(' ') }}"
   when: pkg_custom is defined and pkg_custom | length > 0
   register: pkg_custom_result
   changed_when: "'Installing' in pkg_custom_result.stdout"

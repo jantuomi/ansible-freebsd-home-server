@@ -1,10 +1,13 @@
 userland: "15.1-RELEASE"
 
 zfs:
-  - name: zroot/jails/volumes/freshrss_data
-    mountpoint: /var/db/freshrss
+  - name: freshrss_data
     owner: "80"
     group: "80"
+
+nullfs:
+  - src: freshrss_data
+    dst: /var/db/freshrss
 
 pkg:
   - nginx

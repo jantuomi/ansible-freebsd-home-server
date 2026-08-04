@@ -1,17 +1,20 @@
 userland: "15.1-RELEASE"
 
 zfs:
-  - name: zroot/jails/volumes/homepage_www
-    mountpoint: /var/www
-  - name: zroot/jails/volumes/homepage_agate_tls
-    mountpoint: /usr/local/etc/agate/tls
-    owner: "80"
+  - name: homepage_www
+  - name: homepage_agate_tls
+    owner: "80" # www
     group: "80"
-  - name: zroot/jails/volumes/homepage_gemini
-    mountpoint: /var/gemini
+  - name: homepage_gemini
 
 nullfs:
-  - src: /usr/local/jails/containers/ingress/usr/local/etc/letsencrypt
+  - src: homepage_www
+    dst: /var/www
+  - src: homepage_agate_tls
+    dst: /usr/local/etc/agate/tls
+  - src: homepage_gemini
+    dst: /var/gemini
+  - src: ingress_letsencrypt
     dst: /mnt/letsencrypt
     mode: ro
 

@@ -5,27 +5,31 @@ jail_conf_options:
   - "allow.raw_sockets"
   - "allow.mlock"
 
-nullfs:
-  - src: /usr/local/jails/volumes/storage
-    dst: /mnt/storage
-
 zfs:
-  - name: zroot/jails/volumes/dl_sonarr
-    mountpoint: /usr/local/sonarr
+  - name: dl_sonarr
     owner: 351
     group: 351
-  - name: zroot/jails/volumes/dl_radarr
-    mountpoint: /usr/local/radarr
+  - name: dl_radarr
     owner: 352
     group: 352
-  - name: zroot/jails/volumes/dl_lidarr
-    mountpoint: /usr/local/lidarr
+  - name: dl_lidarr
     owner: 356
     group: 356
-  - name: zroot/jails/volumes/dl_prowlarr
-    mountpoint: /usr/local/prowlarr
+  - name: dl_prowlarr
     owner: 359
     group: 359
+
+nullfs:
+  - src: storage
+    dst: /mnt/storage
+  - src: dl_sonarr
+    dst: /usr/local/sonarr
+  - src: dl_radarr
+    dst: /usr/local/radarr
+  - src: dl_lidarr
+    dst: /usr/local/lidarr
+  - src: dl_prowlarr
+    dst: /usr/local/prowlarr
 
 pkg:
   - transmission-daemon

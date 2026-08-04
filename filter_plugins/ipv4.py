@@ -40,6 +40,29 @@ def ipv4_prefixlen(cidr):
     return cidr.split("/")[1]
 
 
+def normalize_zfs(entries):
+    """Expand short ZFS dataset names to full zroot/jails/volumes/ paths."""
+    result = []
+    for entry in entries:
+        e = dict(entry)
+        if '/' not in e.get('name', ''):
+            e['name'] = 'zroot/jails/volumes/' + e['name']
+        result.append(e)
+    return result
+
+
+def normalize_nullfs(entries):
+    """Expand short nullfs src names to full /usr/local/jails/volumes/ paths."""
+    result = []
+    for entry in entries:
+        e = dict(entry)
+        src = e.get('src', '')
+        if not src.startswith('/'):
+            e['src'] = '/usr/local/jails/volumes/' + src
+        result.append(e)
+    return result
+
+
 class FilterModule(object):
     def filters(self):
         return {
@@ -48,4 +71,6 @@ class FilterModule(object):
             "ipv4_nth_cidr": ipv4_nth_cidr,
             "ipv4_host": ipv4_host,
             "ipv4_prefixlen": ipv4_prefixlen,
+            "normalize_zfs": normalize_zfs,
+            "normalize_nullfs": normalize_nullfs,
         }

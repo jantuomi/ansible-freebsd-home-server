@@ -1,12 +1,15 @@
 userland: "15.1-RELEASE"
 devfs_ruleset: 6
-no_default_route: true
 
 zfs:
-  - name: zroot/jails/volumes/ingress_letsencrypt
-    mountpoint: /usr/local/etc/letsencrypt
-  - name: zroot/jails/volumes/ingress_logs
-    mountpoint: /var/log/nginx
+  - name: ingress_letsencrypt
+  - name: ingress_logs
+
+nullfs:
+  - src: ingress_letsencrypt
+    dst: /usr/local/etc/letsencrypt
+  - src: ingress_logs
+    dst: /var/log/nginx
 
 ingress_routes:
   - { host: jan.systems, jail: homepage }
@@ -36,8 +39,6 @@ contact_email: jan@jantuomi.fi
 
 jail_conf_options:
   - "allow.raw_sockets"
-
-nullfs: []
 
 pkg:
   - pcre2

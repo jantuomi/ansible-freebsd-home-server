@@ -1,8 +1,11 @@
 userland: "15.1-RELEASE"
 
 zfs:
-  - name: zroot/jails/volumes/aggro_data
-    mountpoint: /var/db/aggro
+  - name: aggro_data
+
+nullfs:
+  - src: aggro_data
+    dst: /var/db/aggro
 
 pkg_custom:
   - aggro

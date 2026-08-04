@@ -9,28 +9,19 @@
 {% endfor %}
 
   devfs_ruleset = {{ jail.devfs_ruleset }};
-  host.hostname = "{{ jail.name }}";
+  host.hostname = "${name}";
   path = "/usr/local/jails/containers/${name}";
 
   exec.start = "/bin/sh /etc/rc";
   exec.stop  = "/bin/sh /etc/rc.shutdown";
 
-  # LAN epair
-  exec.prestart  += "ifconfig epl{{ jail.num }}a destroy 2>/dev/null || true";
-  exec.prestart  += "ifconfig epair{{ jail.num }}000 create";
-  exec.prestart  += "ifconfig epair{{ jail.num }}000a name epl{{ jail.num }}a";
-  exec.prestart  += "ifconfig epair{{ jail.num }}000b name epl{{ jail.num }}b";
-  exec.prestart  += "ifconfig epl{{ jail.num }}b ether random";
-  exec.prestart  += "ifconfig brlan0 addm epl{{ jail.num }}a";
-  exec.poststart += "ifconfig epl{{ jail.num }}b vnet ${name}";
-  exec.poststart += "ifconfig epl{{ jail.num }}a up";
-  exec.poststart += "jexec ${name} ifconfig epl{{ jail.num }}b up";
-  exec.poststart += "jexec ${name} ifconfig epl{{ jail.num }}b {{ jail.ip }}";
-  exec.poststart += "jexec ${name} route delete default || true";
-{% if jail.default_route %}
-  exec.poststart += "jexec ${name} route add default {{ ingress_ip }} || true";
-{% endif %}
-  exec.poststop  += "ifconfig epl{{ jail.num }}a destroy 2>/dev/null || true";
+  # Networking
+  exec.prestart  += "jail_net prestart  {{ jail.num }} ${name}";
+  exec.poststart += "jail_net poststart {{ jail.num }} ${name}";
+  exec.prestop   += "jail_net prestop   {{ jail.num }} ${name}";
+  exec.poststop  += "jail_net poststop  {{ jail.num }} ${name}";
+
+  # Custom hooks
 {% for cmd in jail.exec_prestart %}
   exec.prestart  += "{{ cmd }}";
 {% endfor %}
@@ -49,8 +40,9 @@
 {% for cmd in jail.exec_poststop %}
   exec.poststop  += "{{ cmd }}";
 {% endfor %}
-{% for mount in jail.mounts %}
-  exec.prestart += "mount -t nullfs {{ mount.src }} /usr/local/jails/containers/{{ jail.name }}{{ mount.dst }} || true";
-  exec.poststop += "umount /usr/local/jails/containers/{{ jail.name }}{{ mount.dst }} || true";
+
+  # nullfs mounts
+{% for mount in jail.nullfs %}
+  mount += "{{ mount.src }}  ${path}{{ mount.dst }}  nullfs  {{ mount.mode | default('rw') }}  0  0";
 {% endfor %}
 }

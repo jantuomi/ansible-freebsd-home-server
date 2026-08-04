@@ -1,8 +1,11 @@
 userland: "15.1-RELEASE"
 
 zfs:
-  - name: zroot/jails/volumes/spliit_data
-    mountpoint: /var/db/expense-tracker
+  - name: spliit_data
+
+nullfs:
+  - src: spliit_data
+    dst: /var/db/expense-tracker
 
 pkg_custom:
   - expense-tracker
