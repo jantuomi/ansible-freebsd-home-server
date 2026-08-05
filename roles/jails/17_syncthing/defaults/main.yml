@@ -1,5 +1,10 @@
 userland: "15.1-RELEASE"
 
+zfs:
+  - name: syncthing_config
+    owner: "1001"
+    group: "1001"
+
 nullfs:
   - src: storage/docs
     dst: /mnt/docs
@@ -9,13 +14,6 @@ nullfs:
     dst: /mnt/jan-systems-2025-content
   - src: storage/projects-ableton
     dst: /mnt/projects-ableton
-
-zfs:
-  - name: syncthing_config
-    owner: "1001"
-    group: "1001"
-
-nullfs:
   - src: syncthing_config
     dst: /usr/local/etc/syncthing
 

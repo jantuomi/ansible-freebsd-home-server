@@ -84,21 +84,6 @@
     label: "{{ item.name }}"
   delegate_to: "{{ jail_delegate_host }}"
 
-- name: "Inherit mountpoint on ZFS volumes for {{ jail_name }}"
-  shell: |
-    source=$(zfs get -H -o source mountpoint {{ item.name }})
-    if [ "$source" != "inherited" ] && [ "$source" != "received" ]; then
-      zfs unmount {{ item.name }} 2>/dev/null
-      zfs inherit mountpoint {{ item.name }}
-      echo "changed"
-    fi
-  loop: "{{ _zfs }}"
-  loop_control:
-    label: "{{ item.name }}"
-  register: _zfs_inherit
-  changed_when: "'changed' in _zfs_inherit.stdout"
-  delegate_to: "{{ jail_delegate_host }}"
-
 - name: "Set ownership on ZFS volume host mountpoints for {{ jail_name }}"
   file:
     path: "/usr/local/jails/volumes/{{ item.name | basename }}"
@@ -162,6 +147,7 @@
     jail:
       name: "{{ jail_name }}"
       num: "{{ jail_num }}"
+      ip: "{{ jail_ips[jail_name] }}/{{ jail_lan_cidr | ipv4_prefixlen }}"
       devfs_ruleset: "{{ devfs_ruleset | default(4) }}"
       options: "{{ jail_conf_options | default([]) }}"
       exec_prestart: "{{ exec_prestart | default([]) }}"
@@ -193,7 +179,7 @@
   copy:
     content: |
       poudriere: {
-        url: "http://{{ hostvars[jail_delegate_host]['poudriere_repo_ip'] }}/packages",
+        url: "http://{{ jail_ips.poudriere_repo }}/packages",
         enabled: no,
         priority: 100
       }

@@ -15,13 +15,40 @@
   vars:
     lan_ipv4_network: 192.168.0.0/16
     lan_search_domain: local.jan.systems
-    ingress_ip: "{{ jail_lan_cidr | ipv4_nth(1 + jail_lan_offset | int) }}"
+    ingress_ip: "{{ jail_ips.ingress }}"
   pre_tasks:
     - name: Verify secrets are loaded
       assert:
         that: smtp_user != ''
         fail_msg: "Required variables missing. Did you forget to create secrets.yml?"
       no_log: true
+
+    - name: Discover jail directories
+      find:
+        paths: "{{ playbook_dir }}/roles/jails"
+        patterns: "main.yml"
+        file_type: file
+        recurse: true
+      delegate_to: localhost
+      register: _jail_specs
+
+    - name: Build jails list
+      set_fact:
+        jails: "{{ jails | default([]) + [{'num': _num, 'name': _name}] }}"
+      vars:
+        _num: "{{ item.path | regex_replace('.*/jails/([^/]+)/.*', '\\1') | split('_') | first | int }}"
+        _name: "{{ item.path | regex_replace('.*/jails/([^/]+)/.*', '\\1') | regex_replace('^[0-9]+_', '') }}"
+      loop: "{{ _jail_specs.files | sort(attribute='path') }}"
+      loop_control:
+        label: "{{ item.path | regex_replace('.*/jails/([^/]+)/.*', '\\1') }}"
+      when: "'/defaults/' in item.path"
+
+    - name: Build jail_ips dict
+      set_fact:
+        jail_ips: "{{ jail_ips | default({}) | combine({item.name: jail_lan_cidr | ipv4_nth(item.num | int + jail_lan_offset | int)}) }}"
+      loop: "{{ jails }}"
+      loop_control:
+        label: "{{ item.name }}"
 
   tasks:
     - name: Apply host roles
@@ -38,7 +65,7 @@
   vars:
     lan_ipv4_network: 192.168.0.0/16
     lan_search_domain: local.jan.systems
-    ingress_ip: "{{ jail_lan_cidr | ipv4_nth(1 + jail_lan_offset | int) }}"
+    ingress_ip: "{{ jail_ips.ingress }}"
   pre_tasks:
     - name: Resolve jail role directory
       set_fact:
@@ -67,6 +94,13 @@
       loop_control:
         label: "{{ item.path | regex_replace('.*/jails/([^/]+)/.*', '\\1') }}"
       when: "'/defaults/' in item.path"
+
+    - name: Build jail_ips dict
+      set_fact:
+        jail_ips: "{{ jail_ips | default({}) | combine({item.name: jail_lan_cidr | ipv4_nth(item.num | int + jail_lan_offset | int)}) }}"
+      loop: "{{ jails }}"
+      loop_control:
+        label: "{{ item.name }}"
 
   tasks:
     - name: Apply jail role

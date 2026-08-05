@@ -1,4 +1,4 @@
-immich {
+{{ jail.name }} {
   vnet;
   persist;
   exec.clean;
@@ -20,13 +20,13 @@ immich {
   exec.stop  = "/bin/sh /etc/rc.shutdown";
 
   # Networking
-  exec.prestart  += "jail_net prestart  {{ jail_num }} ${name}";
-  exec.poststart += "jail_net poststart {{ jail_num }} ${name}";
-  exec.prestop   += "jail_net prestop   {{ jail_num }} ${name}";
-  exec.poststop  += "jail_net poststop  {{ jail_num }} ${name}";
+  exec.prestart  += "jail_net prestart  ${name} {{ jail.num }} {{ jail.ip }}";
+  exec.poststart += "jail_net poststart ${name} {{ jail.num }} {{ jail.ip }}";
+  exec.prestop   += "jail_net prestop   ${name} {{ jail.num }} {{ jail.ip }}";
+  exec.poststop  += "jail_net poststop  ${name} {{ jail.num }} {{ jail.ip }}";
 
   # nullfs mounts
-{% for mount in nullfs | default([]) | normalize_nullfs %}
+{% for mount in jail.nullfs %}
   mount += "{{ mount.src }}  ${path}{{ mount.dst }}  nullfs  {{ mount.mode | default('rw') }}  0  0";
 {% endfor %}
 {% for img in oci_images %}

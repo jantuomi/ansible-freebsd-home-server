@@ -16,10 +16,10 @@
   exec.stop  = "/bin/sh /etc/rc.shutdown";
 
   # Networking
-  exec.prestart  += "jail_net prestart  {{ jail.num }} ${name}";
-  exec.poststart += "jail_net poststart {{ jail.num }} ${name}";
-  exec.prestop   += "jail_net prestop   {{ jail.num }} ${name}";
-  exec.poststop  += "jail_net poststop  {{ jail.num }} ${name}";
+  exec.prestart  += "jail_net prestart  ${name} {{ jail.num }} {{ jail.ip }}";
+  exec.poststart += "jail_net poststart ${name} {{ jail.num }} {{ jail.ip }}";
+  exec.prestop   += "jail_net prestop   ${name} {{ jail.num }} {{ jail.ip }}";
+  exec.poststop  += "jail_net poststop  ${name} {{ jail.num }} {{ jail.ip }}";
 
   # Custom hooks
 {% for cmd in jail.exec_prestart %}

@@ -84,7 +84,7 @@
   copy:
     content: |
       poudriere: {
-        url: "http://{{ poudriere_repo_ip }}/packages",
+        url: "http://{{ jail_ips.poudriere_repo }}/packages",
         enabled: no
       }
     dest: /usr/local/etc/pkg/repos/poudriere.conf

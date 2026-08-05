@@ -4,7 +4,7 @@
 lan = "epl{{ jail.num }}b"
 wan = "epw{{ jail.num }}b"
 lan_net = "{{ lan_ipv4_network }}"
-gemini_host = "{{ jail_lan_cidr | ipv4_nth(5 + jail_lan_offset | int) }}"
+gemini_host = "{{ jail_ips.homepage }}"
 
 table <blocked> persist
 

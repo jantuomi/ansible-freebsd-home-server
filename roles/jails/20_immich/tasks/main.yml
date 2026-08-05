@@ -10,6 +10,20 @@
     owner: root
     group: wheel
     mode: "0644"
+  vars:
+    jail:
+      name: "{{ jail_name }}"
+      num: "{{ jail_num }}"
+      ip: "{{ jail_ips[jail_name] }}/{{ jail_lan_cidr | ipv4_prefixlen }}"
+      devfs_ruleset: "{{ devfs_ruleset | default(4) }}"
+      options: "{{ jail_conf_options | default([]) }}"
+      exec_prestart: "{{ exec_prestart | default([]) }}"
+      exec_start: "{{ exec_start | default([]) }}"
+      exec_poststart: "{{ exec_poststart | default([]) }}"
+      exec_prestop: "{{ exec_prestop | default([]) }}"
+      exec_stop: "{{ exec_stop | default([]) }}"
+      exec_poststop: "{{ exec_poststop | default([]) }}"
+      nullfs: "{{ nullfs | default([]) | normalize_nullfs }}"
   delegate_to: "{{ jail_delegate_host }}"
 
 # Deploy extraction script
