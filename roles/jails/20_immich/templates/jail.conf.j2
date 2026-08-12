@@ -1,15 +1,8 @@
 {{ jail.name }} {
   vnet;
-  persist;
   exec.clean;
   allow.raw_sockets;
   mount.devfs;
-  allow.mount;
-  allow.mount.devfs;
-  allow.mount.linprocfs;
-  allow.mount.linsysfs;
-  allow.mount.tmpfs;
-  allow.mount.nullfs;
   enforce_statfs = 1;
 
   devfs_ruleset = 4;
