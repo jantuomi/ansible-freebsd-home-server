@@ -26,5 +26,6 @@ nullfs:
 
 pkg:
   - skopeo
+  # umoci is a statically linked Linux binary, fetched by setup task
 
 services: []

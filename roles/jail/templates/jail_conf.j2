@@ -3,10 +3,11 @@
   exec.clean;
   allow.raw_sockets;
 
-  mount.devfs;      # Mount /dev according to devfs_ruleset
+  mount.devfs;        # Mount /dev according to devfs_ruleset
   devfs_ruleset = {{ jail.devfs_ruleset }};
 
   enforce_statfs = 1; # Let jail see own mounts
+
 {% for opt in jail.options %}
   {{ opt }};
 {% endfor %}

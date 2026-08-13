@@ -26,16 +26,20 @@
       nullfs: "{{ nullfs | default([]) | normalize_nullfs }}"
   delegate_to: "{{ jail_delegate_host }}"
 
-# Deploy extraction script
-- name: Deploy extract-image script
-  template:
-    src: "{{ jail_role_dir }}/templates/usr_local_bin_extract_image.sh"
-    dest: /usr/local/bin/extract-image.sh
-    owner: root
-    group: wheel
-    mode: "0755"
+# Fetch umoci Linux binary (statically linked, runs via Linux compat)
+- name: Check if umoci is installed
+  stat:
+    path: /usr/local/bin/umoci
+  register: _umoci_stat
 
-# Create image directory
+- name: Fetch umoci Linux binary
+  shell: |
+    fetch -o /tmp/umoci https://github.com/opencontainers/umoci/releases/latest/download/umoci.linux.amd64
+    install -m 755 /tmp/umoci /usr/local/bin/umoci
+    rm /tmp/umoci
+  when: not _umoci_stat.stat.exists
+
+# Create /image directory
 - name: Create /image directory
   file:
     path: /image
@@ -54,7 +58,15 @@
   register: _images_extracted
 
 - name: Extract OCI images
-  shell: "/usr/local/bin/extract-image.sh {{ item.item.image }} {{ item.item.name }}"
+  shell: |
+    TMPDIR="/tmp/oci_extract_{{ item.item.name }}"
+    rm -rf "$TMPDIR"
+    mkdir -p "$TMPDIR"
+    skopeo copy --override-os linux "docker://{{ item.item.image }}" "oci:$TMPDIR/image"
+    umoci unpack --image "$TMPDIR/image" "$TMPDIR/unpacked"
+    rm -rf "/image/{{ item.item.name }}"
+    mv "$TMPDIR/unpacked/rootfs" "/image/{{ item.item.name }}"
+    rm -rf "$TMPDIR"
   loop: "{{ _images_extracted.results }}"
   loop_control:
     label: "{{ item.item.name }}"
@@ -72,19 +84,6 @@
     label: "{{ item[0].name }}:{{ item[1].dst }}"
   when: "item[1].dst.startswith('/image/' + item[0].name)"
 
-# Create mount points in each rootfs
-- name: Create base mount points in image rootfs
-  file:
-    path: "/image/{{ item[0].name }}/{{ item[1] }}"
-    state: directory
-    owner: root
-    group: wheel
-    mode: "0755"
-  loop: "{{ oci_images | product(['proc', 'sys', 'dev', 'tmp', 'run']) | list }}"
-  loop_control:
-    label: "{{ item[0].name }}/{{ item[1] }}"
-
-# Deploy resolv.conf into each rootfs
 - name: Deploy resolv.conf into image rootfs
   copy:
     content: "nameserver {{ lan_ipv4_gateway }}\n"

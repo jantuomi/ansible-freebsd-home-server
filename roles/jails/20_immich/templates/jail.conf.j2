@@ -1,11 +1,14 @@
+{% set devfs_ruleset = 4 -%}
 {{ jail.name }} {
   vnet;
   exec.clean;
   allow.raw_sockets;
-  mount.devfs;
-  enforce_statfs = 1;
 
-  devfs_ruleset = 4;
+  mount.devfs;        # Mount /dev according to devfs_ruleset
+  devfs_ruleset = {{ devfs_ruleset }};
+
+  enforce_statfs = 1; # Let jail see own mounts
+
   host.hostname = "${name}";
   path = "/usr/local/jails/containers/${name}";
 
@@ -25,10 +28,10 @@
 {% for img in oci_images %}
 
   # Mounts for {{ img.name }} rootfs
-  mount += "linprocfs $path/image/{{ img.name }}/proc  linprocfs rw 0 0";
-  mount += "linsysfs  $path/image/{{ img.name }}/sys   linsysfs  rw 0 0";
-  mount += "devfs     $path/image/{{ img.name }}/dev   devfs     rw 0 0";
-  mount += "tmpfs     $path/image/{{ img.name }}/tmp   tmpfs     rw 0 0";
-  mount += "tmpfs     $path/image/{{ img.name }}/run   tmpfs     rw 0 0";
+  mount += "devfs     $path/image/{{ img.name }}/dev   devfs     rw,ruleset={{ devfs_ruleset }}   0   0";
+  mount += "linprocfs $path/image/{{ img.name }}/proc  linprocfs rw             0   0";
+  mount += "linsysfs  $path/image/{{ img.name }}/sys   linsysfs  rw             0   0";
+  mount += "tmpfs     $path/image/{{ img.name }}/tmp   tmpfs     rw             0   0";
+  mount += "tmpfs     $path/image/{{ img.name }}/run   tmpfs     rw             0   0";
 {% endfor %}
 }
