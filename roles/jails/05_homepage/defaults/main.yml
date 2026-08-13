@@ -14,9 +14,6 @@ nullfs:
     dst: /usr/local/etc/agate/tls
   - src: homepage_gemini
     dst: /var/gemini
-  - src: ingress_letsencrypt
-    dst: /mnt/letsencrypt
-    mode: ro
 
 pkg:
   - pcre2
@@ -28,11 +25,6 @@ pkg:
 files:
   - src: usr_local_etc_nginx_nginx.conf.j2
     dest: /usr/local/etc/nginx/nginx.conf
-  - src: etc_crontab.j2
-    dest: /etc/crontab
-  - src: usr_local_bin_update_agate_certs.sh.j2
-    dest: /usr/local/bin/update-agate-certs
-    mode: "0755"
 
 services:
   - nginx
