@@ -14,6 +14,7 @@ nullfs:
 ingress_routes:
   - { host: jan.systems, jail: homepage }
   - { host: jantuomi.fi, redirect: jan.systems }
+  - { host: sydanviita.fi, redirect: jan.systems }
   - { host: aggro.jan.systems, jail: aggro }
   - { host: diddle.jan.systems, jail: diddle }
   - { host: spliit.jan.systems, jail: spliit }
@@ -31,11 +32,13 @@ cert_domains:
   - "*.jan.systems"
   - "jantuomi.fi"
   - "*.jantuomi.fi"
+  - "sydanviita.fi"
+  - "*.sydanviita.fi"
   - "leolalla.fi"
   - "*.leolalla.fi"
 
 cert_name: "{{ cert_domains[0] }}"
-contact_email: jan@jantuomi.fi
+contact_email: jan@sydanviita.fi
 
 jail_conf_options:
   - "allow.raw_sockets"
