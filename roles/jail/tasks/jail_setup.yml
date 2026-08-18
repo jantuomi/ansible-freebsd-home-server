@@ -115,14 +115,22 @@
   loop: "{{ dirs | default([]) }}"
   delegate_to: "{{ jail_delegate_host }}"
 
-- name: "Create mount point sources for {{ jail_name }}"
-  file:
+- name: "Verify mount point sources exist for {{ jail_name }}"
+  stat:
     path: "{{ item.src }}"
-    state: directory
   loop: "{{ _nullfs }}"
   loop_control:
     label: "{{ item.src }}"
+  register: _nullfs_sources
   delegate_to: "{{ jail_delegate_host }}"
+
+- name: "Assert mount point sources exist for {{ jail_name }}"
+  assert:
+    that: item.stat.exists
+    fail_msg: "nullfs source does not exist: {{ item.item.src }}"
+  loop: "{{ _nullfs_sources.results }}"
+  loop_control:
+    label: "{{ item.item.src }}"
 
 - name: "Create mount point destinations for {{ jail_name }}"
   file:
@@ -134,6 +142,7 @@
   loop: "{{ _nullfs }}"
   loop_control:
     label: "{{ item.dst }}"
+  when: jail_exists.rc != 0 or (jail_origin.stdout is defined and userland + '@base' not in jail_origin.stdout)
   delegate_to: "{{ jail_delegate_host }}"
 
 - name: "Deploy jail.conf.d/{{ jail_name }}.conf"

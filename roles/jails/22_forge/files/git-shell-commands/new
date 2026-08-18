@@ -1,0 +1,12 @@
+#!/bin/sh
+if [ -z "$1" ]; then
+    echo "Usage: new [REPO_NAME]"
+    exit 1
+fi
+if [ -d "$1.git" ]; then
+    echo "Repository $1 already exists"
+    exit 1
+fi
+git init --bare "$1.git"
+echo "$1" > "$1.git/description"
+echo "Created repository $1"

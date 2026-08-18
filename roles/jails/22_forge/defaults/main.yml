@@ -1,0 +1,36 @@
+userland: "15.1-RELEASE"
+
+zfs:
+  - name: forge_repos
+    owner: "1000"
+    group: "1000"
+
+nullfs:
+  - src: forge_repos
+    dst: /home/git
+
+pkg:
+  - git
+  - cgit
+  - fcgiwrap
+  - nginx
+  - highlight
+  - py312-docutils
+  - py312-markdown
+  - py312-pygments
+  - groff
+
+services:
+  - sshd
+  - nginx
+  - fcgiwrap
+
+sysrc:
+  - name: fcgiwrap_socket_owner
+    value: "www"
+  - name: fcgiwrap_socket_group
+    value: "www"
+  - name: fcgiwrap_user
+    value: "www"
+  - name: fcgiwrap_group
+    value: "www"

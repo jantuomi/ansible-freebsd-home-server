@@ -1,0 +1,11 @@
+#!/bin/sh
+if [ -z "$1" ] || [ -z "$2" ]; then
+    echo "Usage: describe [REPO_NAME] [DESCRIPTION]"
+    exit 1
+fi
+if [ ! -d "$1.git" ]; then
+    echo "Repository $1 does not exist"
+    exit 1
+fi
+echo "$2" > "$1.git/description"
+echo "Updated description for $1"

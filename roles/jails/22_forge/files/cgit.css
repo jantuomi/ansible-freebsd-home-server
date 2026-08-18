@@ -1,0 +1,465 @@
+#header {
+	header {
+		font-weight: bold;
+		font-size: var(--font-size);
+	}
+	width: 100%;
+	td {
+	   padding: 0;
+	}
+	td a{
+		margin-right: 5px;
+	}
+	th {
+		text-align: left;
+	}
+	.main::before {
+        margin-right: 8px;
+		content: "►";
+	}
+}
+
+:root {
+	--bg-color: #1b1f29;
+	--bg-light-color: #2b2f39;
+	--color: #ffffff;
+	--light-color: #eff1f8;
+	--border: #eff1f8;
+	--color-link: #5da9e9;
+	--red: #ff6666;
+	--green: #55bb55;
+	--blue: #6666FF;
+	--yellow: #AAAA22;
+	--orange: #BB8811;
+	--light-red: #551111;
+	--light-green: #115511;
+	--light-blue: #bbbbff;
+	--light-yellow: #555511;
+
+	--font-size: 14px;
+}
+
+html {
+	background-color:  var(--bg-color);
+	color: var(--color);
+	font-family: monospace;
+	font-size: var(--font-size);
+}
+
+div#cgit {
+	padding: 2em;
+
+	margin-left: auto;
+	margin-right: auto;
+	max-width: 1200px;
+}
+
+div#summary img {
+	max-width: 100%;
+}
+
+/* unvisited link */
+a:link, a:visited, a:hover, a:active {
+	color: var(--color-link);
+}
+
+a.ls-dir:last-of-type::after {
+	content: "/"
+}
+table.list td > .ls-dir {
+	color: var(--light-blue);
+}
+
+div#cgit a {
+	text-decoration: none
+}
+div#cgit a:hover:not(.button) {
+	text-decoration: underline
+}
+
+table.tabs td a.active {
+	background-color: var(--color-link);
+	color: var(--bg-color);
+}
+
+.tabs td.form, .tabs td a {
+	padding: 2px 5px 2px 5px;
+}
+
+table.list tr:not(.nohover):nth-child(even) {
+	background-color: var(--bg-light-color);
+}
+
+table.list td > a {
+	color: var(--color);
+}
+
+table.list td a:hover {
+	color: var(--color-link);
+}
+
+.left {
+	text-align: left;
+}
+
+.right {
+	text-align: right;
+}
+
+table.list {
+	width: 100%;
+	border: 1px solid var(--border);
+	margin-bottom: 5px;
+}
+
+.button {
+	border: 1px solid var(--border);
+	padding: 3px;
+	margin: 3px;
+	text-decoration: none;
+}
+
+a.button:hover {
+	border-width: 1px;
+	border-color: var(--color-link);
+	transition: 0.2s;
+}
+
+table.list tr td{
+	padding: 3px 5px 5px 3px;
+}
+
+td.linenumbers {
+	border-right: 1px solid var(--border);
+}
+
+table.blob, table.diff {
+	width: 100%;
+	max-width: 100%;
+	background-color: var(--bg-light-color);
+	border-top: 1px solid var(--border);
+	overflow: scroll;
+	display: block;
+	white-space: pre;
+}
+
+table.tabs {
+	margin-bottom: 5px;
+	width: 100%;
+	max-width: 100%;
+	background-color: var(--bg-light-color);
+	border: 1px solid var(--border);
+}
+
+.linenumbers a {
+	text-decoration: none;
+}
+
+div.content {
+	max-width: 100%;
+	width: 100%;
+	overflow: scroll;
+	display: block;
+}
+
+table.tabs a.active {
+	display: inline
+}
+table.tabs .form {
+	white-space: nowrap;
+	text-align: right;
+}
+
+/*Tree*/
+.ls-mode {
+	color: var(--light-color);
+}
+
+/*DIFF*/
+.del {
+	color: var(--red)
+}
+.add {
+	color: var(--green)
+}
+.hunk {
+	color: var(--blue)
+}
+.ctx {
+	color: var(--light-color)
+}
+.head {
+	font-weight: bold;
+}
+div.content table.diffstat {
+	width: auto;
+	display: table;
+	background-color: var(--bg-light-color);
+	border: 1px solid var(--border);
+}
+td.graph td.add {
+	background-color: var(--green)
+}
+
+td.graph td.rem {
+	background-color: var(--red)
+}
+
+span.insertions {
+	color: var(--green)
+}
+
+span.deletions {
+	color: var(--red)
+}
+
+td.graph td {
+	height: 7px;
+}
+
+table.diffstat td.mode {
+	white-space: pre;
+}
+
+td.graph {
+	width: 350px;
+	border-collapse: collapse;
+}
+
+.diffstat-header {
+	font-weight: bold;
+}
+table.diffstat td.add a {
+	color: var(--green);
+}
+table.diffstat td.del a {
+	color: var(--red);
+}
+
+table.ssdiff td.changed {
+	background-color: var(--yellow)
+}
+table.ssdiff td.changed_dark {
+	background-color: var(--light-yellow)
+}
+table.ssdiff td.del {
+	background-color: var(--red);
+	color: var(--color);
+}
+table.ssdiff td.del_dark {
+	background-color: var(--light-red);
+		color: black;
+}
+table.ssdiff td.add {
+	background-color: var(--green);
+	color: var(--color);
+}
+table.ssdiff td.add_dark {
+	background-color: var(--light-green);
+		color: black;
+}
+table.ssdiff td.hunk {
+	background-color: var(--blue);
+	color: var(--color);
+	border-top: 2px solid var(--border);
+    border-bottom: 2px solid var(--border);
+}
+
+table.ssdiff {
+	border-collapse: collapse
+}
+
+table.ssdiff td {
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+}
+
+table.ssdiff td.space {
+	border: none;
+	div {
+		min-height: 3em
+	}
+}
+
+table.ssdiff td.foot {
+	border-bottom: 1px solid var(--border);
+}
+
+table.ssdiff td.head {
+	border-top: 1px solid var(--border);
+}
+
+/*Top*/
+div#cgit div.cgit-panel table {
+	border: 1px solid var(--border);
+	background-color: var(--bg-light-color);
+}
+
+div#cgit div.cgit-panel {
+	float: right;
+	margin-top: 0.5em;
+}
+
+a.deco {
+	color: var(--red);
+	border: 2px solid var(--red);
+	padding: 0px 2px;
+	margin: 0px 2px;
+	text-decoration: none;
+	background-color: var(--bg-light-color);
+}
+
+a.tag-deco {
+	color: var(--yellow);
+	border: 2px solid var(--yellow);
+	padding: 0px 2px;
+	margin: 0px 2px;
+	text-decoration: none;
+	background-color: var(--bg-light-color);
+}
+
+a.remote-deco {
+	color: var(--light-blue);
+	border: 2px solid var(--light-blue);
+	padding: 0px 2px;
+	margin: 0px 2px;
+	text-decoration: none;
+	background-color: var(--bg-light-color);
+}
+
+a.tag-annotated-deco {
+	color: var(--orange);
+	border: 2px solid var(--orange);
+	padding: 0px 2px;
+	margin: 0px 2px;
+	text-decoration: none;
+	background-color: var(--bg-light-color);
+}
+
+a.branch-deco {
+	color: var(--green);
+	border: 2px solid var(--green);
+	padding: 0px 2px;
+	margin: 0px 2px;
+	text-decoration: none;
+	background-color: var(--bg-light-color);
+}
+
+.commit-subject {
+	font-size: var(--font-size);
+	font-weight: bold;
+	margin: 1.5em 0em 0.5em 0em;
+}
+
+div.diffstat-header {
+	padding-top: 1em;
+}
+
+/*Stats*/
+table.stats td,
+table.stats th {
+	border: 2px solid var(--border)
+}
+
+td.commitgraph {
+	white-space: pre;
+	.column1 {
+		color: var(--red);
+	}
+	.column2 {
+		color: var(--green);
+	}
+	.column3 {
+		color: var(--blue);
+	}
+	.column4 {
+		color: var(--light-red);
+	}
+	.column5 {
+		color: var(--light-green);
+	}
+	.column6 {
+		color: var(--light-blue);
+	}
+}
+
+@media (max-width: 767.98px) {
+	table[summary="tree listing"] {
+		th:nth-child(1),
+		th:nth-child(3),
+		tr > .ls-mode,
+		tr > .ls-size {
+			display: none;
+			color: red;
+		}
+	}
+	table:has(td.commitgraph) {
+		tr:not(.nohover-highlight) td:nth-last-child(-n+2),
+		th:nth-last-child(-n+2),
+		td:nth-child(1),
+		th:nth-child(1) {
+			display: none;
+		}
+	}
+	table.tabs {
+		display: block;
+		overflow: scroll;
+		.form {
+			margin-left: 100px;
+			margin-right: 0px;
+			width: 100%
+		}
+	}
+	div#cgit {
+		padding: 0px;
+	}
+
+	div#cgit div.cgit-panel {
+		float: unset;
+	}
+}
+
+input, textarea, button, select {
+    border-radius: 0px;
+    -webkit-appearance: none;
+    -webkit-border-radius: 0px;
+    padding: 4px 10px;
+    border: none;
+    font-family: monospace;
+    font-size: var(--font-size);
+    height: 24px;
+}
+
+select {
+    background-image: url("data:image/svg+xml;utf8,<svg version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' width='24' height='24' viewBox='0 0 24 24'><path fill='%23444' d='M7.406 7.828l4.594 4.594 4.594-4.594 1.406 1.406-6 6-6-6z'></path></svg>");
+    background-position: 100% 0%;
+    background-repeat: no-repeat;
+    padding-right: 20px;
+}
+
+.footer {
+    margin-top: 40px;
+}
+
+.logo {
+    display: none;
+}
+
+#header tr:nth-of-type(1) td:nth-of-type(3) {
+    text-align: right;
+}
+
+#header {
+    margin-bottom: 20px;
+    -webkit-border-vertical-spacing: 0;
+    -webkit-border-horizontal-spacing: 0;
+}
+
+#header tr {
+    height: 24px;
+}
+
+#summary {
+    background-color: var(--bg-light-color);
+    padding: 8px 8px 16px;
+}

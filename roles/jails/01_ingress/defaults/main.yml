@@ -26,6 +26,7 @@ ingress_routes:
   - { host: plex.jan.systems, jail: plex, port: 32400, presets: [streaming] }
   - { host: komga.jan.systems, jail: komga }
   - { host: poudriere.jan.systems, jail: poudriere_repo }
+  - { host: forge.jan.systems, jail: forge }
 
 cert_domains:
   - "jan.systems"

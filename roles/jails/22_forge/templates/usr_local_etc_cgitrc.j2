@@ -1,0 +1,30 @@
+css=/cgit.css
+logo=/cgit.png
+favicon=/favicon.ico
+head-include=/usr/local/etc/cgit/head-include.html
+
+virtual-root=/
+
+# Site settings
+root-title=forge.jan.systems
+root-desc=Jan's personal git repositories
+clone-prefix=git@forge.jan.systems https://forge.jan.systems
+
+# Filters (must appear before scan-path)
+about-filter=/usr/local/lib/cgit/filters/about-formatting.sh
+source-filter=/usr/local/lib/cgit/filters/syntax-highlighting.sh
+
+# Repository display (must appear before scan-path)
+enable-index-owner=0
+enable-commit-graph=1
+enable-log-filecount=1
+enable-log-linecount=1
+max-stats=year
+
+# Render README on summary page
+readme=:README.md
+readme=:README
+readme=:README.txt
+
+# Scan /home/git for bare repositories
+scan-path=/home/git

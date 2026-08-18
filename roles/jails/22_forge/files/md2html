@@ -1,0 +1,24 @@
+#!/usr/local/bin/python3.12
+import markdown
+import sys
+import io
+from pygments.formatters import HtmlFormatter
+from markdown.extensions.toc import TocExtension
+sys.stdin = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8')
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+
+sys.stdout.write("<div class='markdown-body'>")
+sys.stdout.flush()
+# Note: you may want to run this through bleach for sanitization
+markdown.markdownFromFile(
+        output_format="html5",
+        extensions=[
+                "markdown.extensions.fenced_code",
+                "markdown.extensions.codehilite",
+                "markdown.extensions.tables",
+                "markdown.extensions.sane_lists",
+                TocExtension(anchorlink=True)],
+        extension_configs={
+                "markdown.extensions.codehilite":{"css_class":"highlight"}}
+)
+sys.stdout.write("</div>")

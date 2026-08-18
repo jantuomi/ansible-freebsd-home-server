@@ -1,0 +1,11 @@
+#!/bin/sh
+cat <<EOF
+Available commands:
+
+  new [REPO_NAME]                       - create a new bare repository
+  ls                                    - list repositories
+  describe [REPO_NAME] [DESCRIPTION]    - set repository description
+  rename [OLD_NAME] [NEW_NAME]          - rename a repository
+  delete [REPO_NAME]                    - delete a repository
+
+EOF

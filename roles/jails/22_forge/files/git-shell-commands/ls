@@ -1,0 +1,4 @@
+#!/bin/sh
+find . -maxdepth 1 -type d -name "*.git" | while read repo; do
+    basename "$repo" .git
+done | sort

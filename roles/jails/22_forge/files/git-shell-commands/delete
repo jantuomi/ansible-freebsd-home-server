@@ -1,0 +1,11 @@
+#!/bin/sh
+if [ -z "$1" ]; then
+    echo "Usage: delete [REPO_NAME]"
+    exit 1
+fi
+if [ ! -d "$1.git" ]; then
+    echo "Repository $1 does not exist"
+    exit 1
+fi
+rm -rf "$1.git"
+echo "Deleted repository $1"

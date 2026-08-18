@@ -1,0 +1,15 @@
+#!/bin/sh
+if [ -z "$1" ] || [ -z "$2" ]; then
+    echo "Usage: rename [OLD_NAME] [NEW_NAME]"
+    exit 1
+fi
+if [ ! -d "$1.git" ]; then
+    echo "Repository $1 does not exist"
+    exit 1
+fi
+if [ -d "$2.git" ]; then
+    echo "Repository $2 already exists"
+    exit 1
+fi
+mv "$1.git" "$2.git"
+echo "Renamed $1 to $2"

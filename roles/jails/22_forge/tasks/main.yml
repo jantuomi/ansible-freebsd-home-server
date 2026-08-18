@@ -1,0 +1,163 @@
+- import_role:
+    name: jail
+    tasks_from: jail_setup
+
+- name: Create git group
+  group:
+    name: git
+    gid: 1000
+
+- name: Create git user
+  user:
+    name: git
+    uid: 1000
+    group: git
+    home: /home/git
+    shell: /usr/local/bin/git-shell
+    comment: "Git Server"
+    create_home: false
+
+- name: Deploy gitconfig for git user
+  copy:
+    content: |
+      [init]
+          defaultBranch = main
+    dest: /home/git/.gitconfig
+    owner: git
+    group: git
+    mode: "0644"
+
+- name: Create /usr/local/etc/git directory
+  file:
+    path: /usr/local/etc/git
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Deploy gitconfig for www user (safe.directory for cgit/fcgiwrap)
+  copy:
+    content: |
+      [safe]
+          directory = *
+    dest: /usr/local/etc/git/gitconfig-www
+    owner: root
+    group: wheel
+    mode: "0644"
+
+- name: Create git .ssh directory
+  file:
+    path: /home/git/.ssh
+    state: directory
+    owner: git
+    group: git
+    mode: "0700"
+
+- name: Deploy authorized_keys
+  copy:
+    content: "{{ forge_authorized_keys }}\n"
+    dest: /home/git/.ssh/authorized_keys
+    owner: git
+    group: git
+    mode: "0600"
+
+- name: Create git-shell-commands directory
+  file:
+    path: /home/git/git-shell-commands
+    state: directory
+    owner: git
+    group: git
+    mode: "0755"
+
+- name: Deploy git-shell-commands
+  copy:
+    src: "{{ jail_role_dir }}/files/git-shell-commands/{{ item }}"
+    dest: "/home/git/git-shell-commands/{{ item }}"
+    owner: git
+    group: git
+    mode: "0755"
+  loop:
+    - help
+    - new
+    - ls
+    - delete
+    - rename
+    - describe
+
+- name: Create /usr/local/etc/cgit directory
+  file:
+    path: /usr/local/etc/cgit
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Deploy cgit head-include
+  copy:
+    src: "{{ jail_role_dir }}/files/head-include.html"
+    dest: /usr/local/etc/cgit/head-include.html
+    owner: root
+    group: wheel
+    mode: "0644"
+
+- name: Deploy custom cgit.css
+  copy:
+    src: "{{ jail_role_dir }}/files/cgit.css"
+    dest: /usr/local/www/cgit/cgit.css
+    owner: root
+    group: wheel
+    mode: "0644"
+
+- name: Deploy syntax-highlighting filter
+  copy:
+    src: "{{ jail_role_dir }}/files/syntax-highlighting.sh"
+    dest: /usr/local/lib/cgit/filters/syntax-highlighting.sh
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Deploy custom md2html filter
+  copy:
+    src: "{{ jail_role_dir }}/files/md2html"
+    dest: /usr/local/lib/cgit/filters/html-converters/md2html
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Deploy custom about-formatting filter
+  copy:
+    src: "{{ jail_role_dir }}/files/about-formatting.sh"
+    dest: /usr/local/lib/cgit/filters/about-formatting.sh
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Deploy nginx config
+  template:
+    src: "{{ jail_role_dir }}/templates/usr_local_etc_nginx_nginx.conf.j2"
+    dest: /usr/local/etc/nginx/nginx.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+  notify: Reload nginx
+
+- name: Deploy cgitrc
+  template:
+    src: "{{ jail_role_dir }}/templates/usr_local_etc_cgitrc.j2"
+    dest: /usr/local/etc/cgitrc
+    owner: root
+    group: wheel
+    mode: "0644"
+
+- name: Deploy sshd_config
+  template:
+    src: "{{ jail_role_dir }}/templates/etc_ssh_sshd_config.j2"
+    dest: /etc/ssh/sshd_config
+    owner: root
+    group: wheel
+    mode: "0644"
+  notify: Restart sshd
+
+- import_role:
+    name: jail
+    tasks_from: jail_launch
