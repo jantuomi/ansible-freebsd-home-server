@@ -53,6 +53,34 @@
     group: git
     mode: "0700"
 
+- name: Deploy forge deploy private key
+  copy:
+    content: "{{ forge_deploy_key.private }}"
+    dest: /home/git/.ssh/forge_deploy
+    owner: git
+    group: git
+    mode: "0600"
+
+- name: Deploy forge deploy public key
+  copy:
+    content: "{{ forge_deploy_key.public }}"
+    dest: /home/git/.ssh/forge_deploy.pub
+    owner: git
+    group: git
+    mode: "0644"
+
+- name: Deploy SSH config for git user
+  copy:
+    content: |
+      Host *
+          IdentityFile ~/.ssh/forge_deploy
+          IdentitiesOnly yes
+          StrictHostKeyChecking=accept-new
+    dest: /home/git/.ssh/config
+    owner: git
+    group: git
+    mode: "0600"
+
 - name: Deploy authorized_keys
   copy:
     content: "{{ forge_authorized_keys }}\n"
@@ -83,6 +111,7 @@
     - delete
     - rename
     - describe
+    - mirror-to
 
 - name: Create /usr/local/etc/cgit directory
   file:
@@ -91,6 +120,33 @@
     owner: root
     group: wheel
     mode: "0755"
+
+- name: Create git-mirrors log file
+  file:
+    path: /var/log/git-mirrors.log
+    state: touch
+    owner: git
+    group: git
+    mode: "0644"
+
+- name: Deploy git-mirrors script
+  copy:
+    src: "{{ jail_role_dir }}/files/git-mirrors.sh"
+    dest: /usr/local/bin/git-mirrors
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Deploy crontab for git user
+  copy:
+    content: |
+      SHELL=/bin/sh
+      PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+      0 * * * * /usr/local/bin/git-mirrors
+    dest: /var/cron/tabs/git
+    owner: root
+    group: wheel
+    mode: "0600"
 
 - name: Deploy cgit head-include
   copy:

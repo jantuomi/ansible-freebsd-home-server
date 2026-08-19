@@ -2,10 +2,11 @@
 cat <<EOF
 Available commands:
 
-  new [REPO_NAME]                       - create a new bare repository
-  ls                                    - list repositories
-  describe [REPO_NAME] [DESCRIPTION]    - set repository description
-  rename [OLD_NAME] [NEW_NAME]          - rename a repository
-  delete [REPO_NAME]                    - delete a repository
+  new [REPO_NAME]                            create a new bare repository
+  ls                                         list repositories
+  describe [REPO_NAME] [DESCRIPTION]         set repository description
+  rename [OLD_NAME] [NEW_NAME]               rename a repository
+  delete [REPO_NAME]                         delete a repository
+  mirror-to [REPO_NAME] [GIT_URL]            set up hourly mirror to a remote git URL
 
 EOF

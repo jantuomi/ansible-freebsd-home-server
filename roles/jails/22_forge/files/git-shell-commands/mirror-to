@@ -1,0 +1,39 @@
+#!/bin/sh
+# mirror-to [REPO_NAME] [GIT_URL]
+# Configures a repo to be mirrored hourly to a remote git URL.
+# Example: mirror-to myrepo git@example.com:user/myrepo.git
+if [ -z "$1" ]; then
+    echo "Usage: mirror-to [REPO_NAME] [GIT_URL]"
+    echo "       mirror-to [REPO_NAME]           - remove mirror"
+    echo "Example: mirror-to myrepo git@example.com:user/myrepo.git"
+    exit 1
+fi
+if [ ! -d "$1.git" ]; then
+    echo "Repository $1 does not exist"
+    exit 1
+fi
+
+REPO="$1"
+REMOTE="$2"
+REPO_PATH="$HOME/$REPO.git"
+
+cd "$REPO_PATH" || exit 1
+
+if [ -z "$REMOTE" ]; then
+    if git remote get-url mirror-to >/dev/null 2>&1; then
+        git remote remove mirror-to
+        echo "Removed mirror for $REPO"
+    else
+        echo "No mirror configured for $REPO"
+    fi
+    exit 0
+fi
+
+if git remote get-url mirror-to >/dev/null 2>&1; then
+    git remote set-url mirror-to "$REMOTE"
+else
+    git remote add mirror-to "$REMOTE"
+fi
+
+echo "Configured $REPO to mirror to $REMOTE"
+echo "Mirrors run hourly. Logs: /var/log/git-mirrors.log"
