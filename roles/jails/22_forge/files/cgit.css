@@ -468,3 +468,9 @@ select {
     border: 1px solid var(--color);
     padding: 8px 10px;
 }
+
+/* Hide idle/age column in repo index */
+table[summary="repository list"] tr th:nth-child(3),
+table[summary="repository list"] tr td:nth-child(3) {
+	display: none;
+}

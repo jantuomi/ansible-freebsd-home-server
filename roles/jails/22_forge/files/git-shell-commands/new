@@ -10,3 +10,5 @@ fi
 git init --bare "$1.git"
 echo "$1" > "$1.git/description"
 echo "Created repository $1"
+echo "Clone: git@forge.jan.systems:$1.git"
+echo "Web:   https://forge.jan.systems/$1.git"
