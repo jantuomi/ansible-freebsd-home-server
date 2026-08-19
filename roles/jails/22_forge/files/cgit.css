@@ -463,3 +463,8 @@ select {
     background-color: var(--bg-light-color);
     padding: 8px 8px 16px;
 }
+
+#summary pre {
+    border: 1px solid var(--color);
+    padding: 8px 10px;
+}
