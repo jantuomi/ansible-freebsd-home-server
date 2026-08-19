@@ -2,14 +2,42 @@
 import markdown
 import sys
 import io
+import os
+import re
 from pygments.formatters import HtmlFormatter
 from markdown.extensions.toc import TocExtension
+from markdown.treeprocessors import Treeprocessor
+from markdown import Extension
+
 sys.stdin = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8')
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
+# Build root-relative plain URL base: /<repo>/plain/
+repo_url = os.environ.get('CGIT_REPO_URL', '')
+if repo_url:
+    plain_base = '/' + repo_url.strip('/') + '/plain/'
+else:
+    plain_base = None
+
+class RewriteRelativeURLs(Treeprocessor):
+    def run(self, root):
+        if not plain_base:
+            return
+        for img in root.iter('img'):
+            src = img.get('src', '')
+            if src and not src.startswith(('http://', 'https://', '//', '#', 'data:')):
+                img.set('src', plain_base + src.lstrip('/'))
+        for a in root.iter('a'):
+            href = a.get('href', '')
+            if href and not href.startswith(('http://', 'https://', '//', '#', 'mailto:')):
+                a.set('href', plain_base + href.lstrip('/'))
+
+class RewriteURLsExtension(Extension):
+    def extendMarkdown(self, md):
+        md.treeprocessors.register(RewriteRelativeURLs(md), 'rewrite_urls', 5)
+
 sys.stdout.write("<div class='markdown-body'>")
 sys.stdout.flush()
-# Note: you may want to run this through bleach for sanitization
 markdown.markdownFromFile(
         output_format="html5",
         extensions=[
@@ -17,7 +45,8 @@ markdown.markdownFromFile(
                 "markdown.extensions.codehilite",
                 "markdown.extensions.tables",
                 "markdown.extensions.sane_lists",
-                TocExtension(anchorlink=True)],
+                TocExtension(anchorlink=True),
+                RewriteURLsExtension()],
         extension_configs={
                 "markdown.extensions.codehilite":{"css_class":"highlight"}}
 )
