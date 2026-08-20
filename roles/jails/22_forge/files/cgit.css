@@ -467,6 +467,7 @@ select {
 #summary pre {
     border: 1px solid var(--color);
     padding: 8px 10px;
+    overflow-x: scroll;
 }
 
 /* Hide idle/age column in repo index */
