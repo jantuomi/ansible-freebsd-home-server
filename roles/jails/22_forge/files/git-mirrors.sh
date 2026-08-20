@@ -1,9 +1,11 @@
 #!/bin/sh
 # Run hourly via cron. Mirrors all repos that have a 'mirror' remote configured.
 
-REPOS_DIR="/home/git"
+REPOS_DIR="/var/db/repos"
 LOG="/var/log/git-mirrors.log"
-export GIT_SSH_COMMAND="ssh -i /home/git/.ssh/forge_deploy -o IdentitiesOnly=yes"
+CONFIG_DIR="/var/db/forge-config/$(whoami)"
+export GIT_SSH_COMMAND="ssh -i $CONFIG_DIR/.ssh/forge_deploy -F $CONFIG_DIR/.ssh/config -o IdentitiesOnly=yes"
+export GIT_CONFIG_GLOBAL="$CONFIG_DIR/.gitconfig"
 
 echo "$(date) Starting mirror run" >> "$LOG"
 

@@ -2,30 +2,170 @@
     name: jail
     tasks_from: jail_setup
 
-- name: Create git group
-  group:
-    name: git
-    gid: 1000
+# --- Shared git-shell-commands ---
 
-- name: Create git user
+- name: Create /usr/local/libexec/git-shell-commands directory
+  file:
+    path: /var/db/repos/git-shell-commands
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Deploy git-shell-commands
+  copy:
+    src: "{{ jail_role_dir }}/files/git-shell-commands/{{ item }}"
+    dest: "/var/db/repos/git-shell-commands/{{ item }}"
+    owner: root
+    group: wheel
+    mode: "0755"
+  loop:
+    - help
+    - new
+    - ls
+    - delete
+    - rename
+    - describe
+    - mirror-to
+
+# --- Remove legacy git user ---
+
+- name: Remove legacy git user
   user:
     name: git
-    uid: 1000
-    group: git
-    home: /home/git
-    shell: /usr/local/bin/git-shell
-    comment: "Git Server"
-    create_home: false
+    state: absent
+    remove: false
+  ignore_errors: true
 
-- name: Deploy gitconfig for git user
+- name: Remove legacy git group
+  group:
+    name: git
+    state: absent
+  ignore_errors: true
+
+# --- Forge users ---
+
+- name: Create forge user groups
+  group:
+    name: "{{ item.name }}"
+    gid: "{{ item.uid }}"
+  loop: "{{ forge_users }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Create forge users
+  user:
+    name: "{{ item.name }}"
+    uid: "{{ item.uid }}"
+    group: "{{ item.name }}"
+    home: /var/db/repos
+    shell: /usr/local/bin/git-shell
+    create_home: false
+  loop: "{{ forge_users }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Create per-user config directories
+  file:
+    path: "/var/db/forge-config/{{ item.name }}"
+    state: directory
+    owner: "{{ item.name }}"
+    group: "{{ item.name }}"
+    mode: "0700"
+  loop: "{{ forge_users }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Create .ssh directories for forge users
+  file:
+    path: "/var/db/forge-config/{{ item.name }}/.ssh"
+    state: directory
+    owner: "{{ item.name }}"
+    group: "{{ item.name }}"
+    mode: "0700"
+  loop: "{{ forge_users }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Deploy authorized_keys for forge users
+  copy:
+    content: "{{ item.authorized_keys }}\n"
+    dest: "/var/db/forge-config/{{ item.name }}/.ssh/authorized_keys"
+    owner: "{{ item.name }}"
+    group: "{{ item.name }}"
+    mode: "0600"
+  loop: "{{ forge_users }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Deploy gitconfig for primary forge user (jan)
   copy:
     content: |
       [init]
           defaultBranch = main
-    dest: /home/git/.gitconfig
-    owner: git
-    group: git
+    dest: "/var/db/forge-config/{{ forge_users[0].name }}/.gitconfig"
+    owner: "{{ forge_users[0].name }}"
+    group: "{{ forge_users[0].name }}"
     mode: "0644"
+
+- name: Deploy forge deploy private key
+  copy:
+    content: "{{ forge_deploy_key.private }}"
+    dest: "/var/db/forge-config/{{ forge_users[0].name }}/.ssh/forge_deploy"
+    owner: "{{ forge_users[0].name }}"
+    group: "{{ forge_users[0].name }}"
+    mode: "0600"
+
+- name: Deploy forge deploy public key
+  copy:
+    content: "{{ forge_deploy_key.public }}"
+    dest: "/var/db/forge-config/{{ forge_users[0].name }}/.ssh/forge_deploy.pub"
+    owner: "{{ forge_users[0].name }}"
+    group: "{{ forge_users[0].name }}"
+    mode: "0644"
+
+- name: Deploy SSH config for primary forge user
+  copy:
+    content: |
+      Host *
+          IdentityFile /var/db/forge-config/{{ forge_users[0].name }}/.ssh/forge_deploy
+          IdentitiesOnly yes
+          StrictHostKeyChecking=accept-new
+    dest: "/var/db/forge-config/{{ forge_users[0].name }}/.ssh/config"
+    owner: "{{ forge_users[0].name }}"
+    group: "{{ forge_users[0].name }}"
+    mode: "0600"
+
+# --- Git mirrors ---
+
+- name: Create git-mirrors log file
+  file:
+    path: /var/log/git-mirrors.log
+    state: touch
+    owner: "{{ forge_users[0].name }}"
+    group: "{{ forge_users[0].name }}"
+    mode: "0644"
+
+- name: Deploy git-mirrors script
+  copy:
+    src: "{{ jail_role_dir }}/files/git-mirrors.sh"
+    dest: /usr/local/bin/git-mirrors
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Deploy crontab for primary forge user
+  copy:
+    content: |
+      SHELL=/bin/sh
+      PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+      0 * * * * /usr/local/bin/git-mirrors
+    dest: "/var/cron/tabs/{{ forge_users[0].name }}"
+    owner: root
+    group: wheel
+    mode: "0600"
+
+# --- cgit/www config ---
 
 - name: Create /usr/local/etc/git directory
   file:
@@ -45,74 +185,6 @@
     group: wheel
     mode: "0644"
 
-- name: Create git .ssh directory
-  file:
-    path: /home/git/.ssh
-    state: directory
-    owner: git
-    group: git
-    mode: "0700"
-
-- name: Deploy forge deploy private key
-  copy:
-    content: "{{ forge_deploy_key.private }}"
-    dest: /home/git/.ssh/forge_deploy
-    owner: git
-    group: git
-    mode: "0600"
-
-- name: Deploy forge deploy public key
-  copy:
-    content: "{{ forge_deploy_key.public }}"
-    dest: /home/git/.ssh/forge_deploy.pub
-    owner: git
-    group: git
-    mode: "0644"
-
-- name: Deploy SSH config for git user
-  copy:
-    content: |
-      Host *
-          IdentityFile ~/.ssh/forge_deploy
-          IdentitiesOnly yes
-          StrictHostKeyChecking=accept-new
-    dest: /home/git/.ssh/config
-    owner: git
-    group: git
-    mode: "0600"
-
-- name: Deploy authorized_keys
-  copy:
-    content: "{{ forge_authorized_keys }}\n"
-    dest: /home/git/.ssh/authorized_keys
-    owner: git
-    group: git
-    mode: "0600"
-
-- name: Create git-shell-commands directory
-  file:
-    path: /home/git/git-shell-commands
-    state: directory
-    owner: git
-    group: git
-    mode: "0755"
-
-- name: Deploy git-shell-commands
-  copy:
-    src: "{{ jail_role_dir }}/files/git-shell-commands/{{ item }}"
-    dest: "/home/git/git-shell-commands/{{ item }}"
-    owner: git
-    group: git
-    mode: "0755"
-  loop:
-    - help
-    - new
-    - ls
-    - delete
-    - rename
-    - describe
-    - mirror-to
-
 - name: Create /usr/local/etc/cgit directory
   file:
     path: /usr/local/etc/cgit
@@ -120,33 +192,6 @@
     owner: root
     group: wheel
     mode: "0755"
-
-- name: Create git-mirrors log file
-  file:
-    path: /var/log/git-mirrors.log
-    state: touch
-    owner: git
-    group: git
-    mode: "0644"
-
-- name: Deploy git-mirrors script
-  copy:
-    src: "{{ jail_role_dir }}/files/git-mirrors.sh"
-    dest: /usr/local/bin/git-mirrors
-    owner: root
-    group: wheel
-    mode: "0755"
-
-- name: Deploy crontab for git user
-  copy:
-    content: |
-      SHELL=/bin/sh
-      PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-      0 * * * * /usr/local/bin/git-mirrors
-    dest: /var/cron/tabs/git
-    owner: root
-    group: wheel
-    mode: "0600"
 
 - name: Deploy cgit head-include
   copy:
@@ -213,7 +258,6 @@
     group: wheel
     mode: "0644"
   notify: Restart sshd
-
 - import_role:
     name: jail
     tasks_from: jail_launch

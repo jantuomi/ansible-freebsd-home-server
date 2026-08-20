@@ -11,5 +11,18 @@ if [ -d "$2.git" ]; then
     echo "Repository $2 already exists"
     exit 1
 fi
+
+OLD_GROUP="r_$(echo "$1" | sed 's/^\.//' | sha1 -q | cut -c1-14)"
+NEW_GROUP="r_$(echo "$2" | sed 's/^\.//' | sha1 -q | cut -c1-14)"
+
 mv "$1.git" "$2.git"
+
+# Rename group
+pw groupmod "$OLD_GROUP" -l "$NEW_GROUP" 2>/dev/null || {
+    pw groupadd "$NEW_GROUP" 2>/dev/null || true
+    pw groupmod "$NEW_GROUP" -m "$USER" 2>/dev/null || true
+    pw groupdel "$OLD_GROUP" 2>/dev/null || true
+}
+
+chown -R "$USER:$NEW_GROUP" "$2.git"
 echo "Renamed $1 to $2"
