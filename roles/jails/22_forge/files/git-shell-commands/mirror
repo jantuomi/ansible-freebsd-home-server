@@ -1,0 +1,75 @@
+#!/bin/sh
+# mirror [REPO] to [URL]     - set up hourly push mirror
+# mirror [REPO] from [URL]   - set up hourly fetch mirror
+# mirror [REPO] delete       - remove any mirror
+
+_usage() {
+    echo "Usage:"
+    echo "  mirror [REPO] to [URL]     set up hourly push mirror"
+    echo "  mirror [REPO] from [URL]   set up hourly fetch mirror"
+    echo "  mirror [REPO] delete       remove any mirror"
+    exit "${1:-0}"
+}
+
+[ -z "$1" ] && _usage
+[ -z "$2" ] && _usage
+
+REPO="$1"
+CMD="$2"
+ARG="$3"
+REPO_PATH="$HOME/$REPO.git"
+
+if [ ! -d "$REPO_PATH" ]; then
+    echo "Repository $REPO does not exist"
+    exit 1
+fi
+
+cd "$REPO_PATH" || exit 1
+
+case "$CMD" in
+to)
+    [ -z "$ARG" ] && _usage 1
+    if git remote get-url mirror-from >/dev/null 2>&1; then
+        echo "Error: $REPO already has a mirror-from. Remove it first with: mirror $REPO delete"
+        exit 1
+    fi
+    if git remote get-url mirror-to >/dev/null 2>&1; then
+        git remote set-url mirror-to "$ARG"
+    else
+        git remote add mirror-to "$ARG"
+    fi
+    echo "Configured $REPO to mirror to $ARG"
+    echo "Runs hourly. Logs: /var/log/git-mirrors.log"
+    ;;
+from)
+    [ -z "$ARG" ] && _usage 1
+    if git remote get-url mirror-to >/dev/null 2>&1; then
+        echo "Error: $REPO already has a mirror-to. Remove it first with: mirror $REPO delete"
+        exit 1
+    fi
+    if git remote get-url mirror-from >/dev/null 2>&1; then
+        git remote set-url mirror-from "$ARG"
+    else
+        git remote add mirror-from "$ARG"
+    fi
+    echo "Configured $REPO to mirror from $ARG"
+    echo "Runs hourly. Logs: /var/log/git-mirrors.log"
+    ;;
+delete)
+    removed=0
+    if git remote get-url mirror-to >/dev/null 2>&1; then
+        git remote remove mirror-to
+        echo "Removed mirror-to for $REPO"
+        removed=1
+    fi
+    if git remote get-url mirror-from >/dev/null 2>&1; then
+        git remote remove mirror-from
+        echo "Removed mirror-from for $REPO"
+        removed=1
+    fi
+    [ "$removed" -eq 0 ] && echo "No mirror configured for $REPO"
+    ;;
+*)
+    _usage 1
+    ;;
+esac

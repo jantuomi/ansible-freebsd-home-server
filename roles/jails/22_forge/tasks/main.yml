@@ -26,23 +26,7 @@
     - delete
     - rename
     - describe
-    - mirror-to
-    - mirror-from
-
-# --- Remove legacy git user ---
-
-- name: Remove legacy git user
-  user:
-    name: git
-    state: absent
-    remove: false
-  ignore_errors: true
-
-- name: Remove legacy git group
-  group:
-    name: git
-    state: absent
-  ignore_errors: true
+    - mirror
 
 # --- Forge users ---
 
@@ -198,6 +182,14 @@
   copy:
     src: "{{ jail_role_dir }}/files/head-include.html"
     dest: /usr/local/etc/cgit/head-include.html
+    owner: root
+    group: wheel
+    mode: "0644"
+
+- name: Deploy cgit footer
+  copy:
+    src: "{{ jail_role_dir }}/files/footer.html"
+    dest: /usr/local/etc/cgit/footer.html
     owner: root
     group: wheel
     mode: "0644"
