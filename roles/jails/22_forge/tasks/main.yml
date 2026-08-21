@@ -27,6 +27,7 @@
     - rename
     - describe
     - mirror-to
+    - mirror-from
 
 # --- Remove legacy git user ---
 

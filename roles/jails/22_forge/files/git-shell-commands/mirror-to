@@ -29,6 +29,11 @@ if [ -z "$REMOTE" ]; then
     exit 0
 fi
 
+if git remote get-url mirror-from >/dev/null 2>&1; then
+    echo "Error: $REPO already has a mirror-from configured. Remove it first with: mirror-from $REPO"
+    exit 1
+fi
+
 if git remote get-url mirror-to >/dev/null 2>&1; then
     git remote set-url mirror-to "$REMOTE"
 else

@@ -8,5 +8,6 @@ Available commands:
   rename [OLD_NAME] [NEW_NAME]               rename a repository
   delete [REPO_NAME]                         delete a repository
   mirror-to [REPO_NAME] [GIT_URL]            set up hourly mirror to a remote git URL
+  mirror-from [REPO_NAME] [GIT_URL]          set up hourly fetch from a remote git URL
 
 EOF
