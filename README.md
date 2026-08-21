@@ -8,6 +8,7 @@ The playbook is unlikely to work without modification for you.
 
 1. Download a recent FreeBSD release. Tested with https://download.freebsd.org/releases/amd64/amd64/ISO-IMAGES/14.3/FreeBSD-14.3-RELEASE-amd64-memstick.img.
 2. Run the installer off a USB drive. During installation, configure:
+
    - a Finnish keymap
    - hostname "pursotin"
    - an Auto-ZFS setup with Root-on-ZFS, pool name "zroot"
