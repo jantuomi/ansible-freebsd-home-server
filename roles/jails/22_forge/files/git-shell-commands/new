@@ -20,7 +20,7 @@ pw groupmod "$GROUP" -m "$USER" 2>/dev/null || true
 
 # Init bare repo
 git init --bare "$REPO_PATH"
-echo "$REPO" > "$REPO_PATH/description"
+echo "" > "$REPO_PATH/description"
 
 # Set ownership and permissions
 chown -R "$USER:$GROUP" "$REPO_PATH"
