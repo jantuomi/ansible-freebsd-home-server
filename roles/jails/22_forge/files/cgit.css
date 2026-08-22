@@ -449,6 +449,10 @@ select {
     text-align: right;
 }
 
+#header tr:nth-of-type(2) td:nth-of-type(2) {
+    display: none;
+}
+
 #header {
     margin-bottom: 20px;
     -webkit-border-vertical-spacing: 0;
