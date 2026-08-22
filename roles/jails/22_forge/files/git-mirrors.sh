@@ -4,9 +4,8 @@
 
 REPOS_DIR="/var/db/repos"
 LOG="/var/log/git-mirrors.log"
-CONFIG_DIR="/var/db/forge-config/$(whoami)"
-export GIT_SSH_COMMAND="ssh -i $CONFIG_DIR/.ssh/forge_deploy -F $CONFIG_DIR/.ssh/config -o IdentitiesOnly=yes"
-export GIT_CONFIG_GLOBAL="$CONFIG_DIR/.gitconfig"
+export GIT_SSH_COMMAND="ssh -i /var/db/repos/.ssh/forge_deploy -F /var/db/repos/.ssh/config -o IdentitiesOnly=yes"
+export GIT_CONFIG_GLOBAL="/var/db/repos/.gitconfig"
 
 echo "$(date) Starting mirror run" >> "$LOG"
 

@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 # mirror [REPO] to [URL]     - set up hourly push mirror
 # mirror [REPO] from [URL]   - set up hourly fetch mirror
 # mirror [REPO] delete       - remove any mirror

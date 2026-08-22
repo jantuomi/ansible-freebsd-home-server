@@ -8,14 +8,11 @@ HostKey /etc/ssh/ssh_host_ed25519_key
 
 PermitRootLogin no
 PubkeyAuthentication yes
-AuthorizedKeysFile /var/db/forge-config/%u/.ssh/authorized_keys
+AuthorizedKeysFile .ssh/authorized_keys
 PasswordAuthentication no
 ChallengeResponseAuthentication no
 
+AllowUsers git
+
 UseDNS no
 PrintMotd no
-
-{% for user in forge_users %}
-Match User {{ user.name }}
-    SetEnv GIT_CONFIG_GLOBAL=/var/db/forge-config/{{ user.name }}/.gitconfig
-{% endfor %}

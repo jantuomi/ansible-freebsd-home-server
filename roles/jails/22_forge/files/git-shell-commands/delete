@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 if [ -z "$1" ]; then
     echo "Usage: delete [REPO_NAME]"
     exit 1
@@ -7,8 +8,5 @@ if [ ! -d "$1.git" ]; then
     echo "Repository $1 does not exist"
     exit 1
 fi
-
-GROUP="r_$(echo "$1" | sed 's/^\.//' | sha1 -q | cut -c1-14)"
 rm -rf "$1.git"
-pw groupdel "$GROUP" 2>/dev/null || true
 echo "Deleted repository $1"

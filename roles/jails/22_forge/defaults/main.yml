@@ -2,20 +2,13 @@ userland: "15.1-RELEASE"
 
 zfs:
   - name: forge_repos
-    mode: "0755"
-  - name: forge_config
+    owner: "1000"
+    group: "1000"
     mode: "0755"
 
 nullfs:
   - src: forge_repos
     dst: /var/db/repos
-  - src: forge_config
-    dst: /var/db/forge-config
-
-forge_users:
-  - name: jan
-    uid: 2000
-    authorized_keys: "{{ forge_authorized_keys }}"
 
 pkg:
   - git

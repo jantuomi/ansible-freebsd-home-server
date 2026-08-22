@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 if [ -z "$1" ]; then
     echo "Usage: new [REPO_NAME]"
     echo "Tip:   prefix with '.' to make private (e.g. new .myrepo)"
@@ -7,26 +8,16 @@ fi
 
 REPO="$1"
 REPO_PATH="$HOME/$REPO.git"
-GROUP="r_$(echo "$REPO" | sed 's/^\.//' | sha1 -q | cut -c1-14)"
 
 if [ -d "$REPO_PATH" ]; then
     echo "Repository $REPO already exists"
     exit 1
 fi
 
-# Create repo group
-pw groupadd "$GROUP" 2>/dev/null || true
-pw groupmod "$GROUP" -m "$USER" 2>/dev/null || true
-
-# Init bare repo
 git init --bare "$REPO_PATH"
 echo "" > "$REPO_PATH/description"
+chown -R git:git "$REPO_PATH"
 
-# Set ownership and permissions
-chown -R "$USER:$GROUP" "$REPO_PATH"
-
-# Public: rwxr-x--- (group can read, others nothing)
-# Private (dot-prefix): rwx------ (only owner)
 if [ "${REPO#.}" = "$REPO" ]; then
     chmod -R 2755 "$REPO_PATH"
 else
@@ -34,7 +25,7 @@ else
 fi
 
 echo "Created repository $REPO"
-echo "Clone: $USER@forge.jan.systems:$REPO.git"
+echo "Clone: git@forge.jan.systems:$REPO.git"
 if [ "${REPO#.}" = "$REPO" ]; then
     echo "Web:   https://forge.jan.systems/$REPO.git"
 fi

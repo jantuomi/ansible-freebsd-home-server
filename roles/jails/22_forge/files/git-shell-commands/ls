@@ -1,11 +1,12 @@
 #!/bin/sh
-find . -maxdepth 1 -type d -name "*.git" | sort | while read repo; do
+for repo in "$HOME"/*.git "$HOME"/.*.git; do
+    [ -d "$repo" ] || continue
     name="$(basename "$repo" .git)"
     desc="$(cat "$repo/description" 2>/dev/null)"
-    mirror_to="$(git -C "$repo" remote get-url mirror-to 2>/dev/null)"
-    mirror_from="$(git -C "$repo" remote get-url mirror-from 2>/dev/null)"
+    mirror_to="$(git -C "$repo" remote get-url mirror-to 2>/dev/null || true)"
+    mirror_from="$(git -C "$repo" remote get-url mirror-from 2>/dev/null || true)"
 
-    printf "%-30s %s\n" "$name" "$desc"
+    printf "%-30s %s\n" "$name" "${desc:-<no description>}"
     [ -n "$mirror_to" ]   && printf "  %-28s -> %s\n" "" "$mirror_to"
     [ -n "$mirror_from" ] && printf "  %-28s <- %s\n" "" "$mirror_from"
 done

@@ -2,9 +2,80 @@
     name: jail
     tasks_from: jail_setup
 
-# --- Shared git-shell-commands ---
+# --- git user ---
 
-- name: Create /usr/local/libexec/git-shell-commands directory
+- name: Create git group
+  group:
+    name: git
+    gid: 1000
+
+- name: Create git user
+  user:
+    name: git
+    uid: 1000
+    group: git
+    home: /var/db/repos
+    shell: /usr/local/bin/git-shell
+    comment: "Git Server"
+    create_home: false
+
+- name: Create .ssh directory for git user
+  file:
+    path: /var/db/repos/.ssh
+    state: directory
+    owner: git
+    group: git
+    mode: "0700"
+
+- name: Deploy authorized_keys
+  copy:
+    content: "{{ forge_authorized_keys }}\n"
+    dest: /var/db/repos/.ssh/authorized_keys
+    owner: git
+    group: git
+    mode: "0600"
+
+- name: Deploy gitconfig for git user
+  copy:
+    content: |
+      [init]
+          defaultBranch = main
+    dest: /var/db/repos/.gitconfig
+    owner: git
+    group: git
+    mode: "0644"
+
+- name: Deploy SSH config for git user
+  copy:
+    content: |
+      Host *
+          IdentityFile ~/.ssh/forge_deploy
+          IdentitiesOnly yes
+          StrictHostKeyChecking=accept-new
+    dest: /var/db/repos/.ssh/config
+    owner: git
+    group: git
+    mode: "0600"
+
+- name: Deploy forge deploy private key
+  copy:
+    content: "{{ forge_deploy_key.private }}"
+    dest: /var/db/repos/.ssh/forge_deploy
+    owner: git
+    group: git
+    mode: "0600"
+
+- name: Deploy forge deploy public key
+  copy:
+    content: "{{ forge_deploy_key.public }}"
+    dest: /var/db/repos/.ssh/forge_deploy.pub
+    owner: git
+    group: git
+    mode: "0644"
+
+# --- git-shell-commands ---
+
+- name: Create git-shell-commands directory
   file:
     path: /var/db/repos/git-shell-commands
     state: directory
@@ -28,107 +99,14 @@
     - describe
     - mirror
 
-# --- Forge users ---
-
-- name: Create forge user groups
-  group:
-    name: "{{ item.name }}"
-    gid: "{{ item.uid }}"
-  loop: "{{ forge_users }}"
-  loop_control:
-    label: "{{ item.name }}"
-
-- name: Create forge users
-  user:
-    name: "{{ item.name }}"
-    uid: "{{ item.uid }}"
-    group: "{{ item.name }}"
-    home: /var/db/repos
-    shell: /usr/local/bin/git-shell
-    create_home: false
-  loop: "{{ forge_users }}"
-  loop_control:
-    label: "{{ item.name }}"
-
-- name: Create per-user config directories
-  file:
-    path: "/var/db/forge-config/{{ item.name }}"
-    state: directory
-    owner: "{{ item.name }}"
-    group: "{{ item.name }}"
-    mode: "0700"
-  loop: "{{ forge_users }}"
-  loop_control:
-    label: "{{ item.name }}"
-
-- name: Create .ssh directories for forge users
-  file:
-    path: "/var/db/forge-config/{{ item.name }}/.ssh"
-    state: directory
-    owner: "{{ item.name }}"
-    group: "{{ item.name }}"
-    mode: "0700"
-  loop: "{{ forge_users }}"
-  loop_control:
-    label: "{{ item.name }}"
-
-- name: Deploy authorized_keys for forge users
-  copy:
-    content: "{{ item.authorized_keys }}\n"
-    dest: "/var/db/forge-config/{{ item.name }}/.ssh/authorized_keys"
-    owner: "{{ item.name }}"
-    group: "{{ item.name }}"
-    mode: "0600"
-  loop: "{{ forge_users }}"
-  loop_control:
-    label: "{{ item.name }}"
-
-- name: Deploy gitconfig for primary forge user (jan)
-  copy:
-    content: |
-      [init]
-          defaultBranch = main
-    dest: "/var/db/forge-config/{{ forge_users[0].name }}/.gitconfig"
-    owner: "{{ forge_users[0].name }}"
-    group: "{{ forge_users[0].name }}"
-    mode: "0644"
-
-- name: Deploy forge deploy private key
-  copy:
-    content: "{{ forge_deploy_key.private }}"
-    dest: "/var/db/forge-config/{{ forge_users[0].name }}/.ssh/forge_deploy"
-    owner: "{{ forge_users[0].name }}"
-    group: "{{ forge_users[0].name }}"
-    mode: "0600"
-
-- name: Deploy forge deploy public key
-  copy:
-    content: "{{ forge_deploy_key.public }}"
-    dest: "/var/db/forge-config/{{ forge_users[0].name }}/.ssh/forge_deploy.pub"
-    owner: "{{ forge_users[0].name }}"
-    group: "{{ forge_users[0].name }}"
-    mode: "0644"
-
-- name: Deploy SSH config for primary forge user
-  copy:
-    content: |
-      Host *
-          IdentityFile /var/db/forge-config/{{ forge_users[0].name }}/.ssh/forge_deploy
-          IdentitiesOnly yes
-          StrictHostKeyChecking=accept-new
-    dest: "/var/db/forge-config/{{ forge_users[0].name }}/.ssh/config"
-    owner: "{{ forge_users[0].name }}"
-    group: "{{ forge_users[0].name }}"
-    mode: "0600"
-
-# --- Git mirrors ---
+# --- git mirrors ---
 
 - name: Create git-mirrors log file
   file:
     path: /var/log/git-mirrors.log
     state: touch
-    owner: "{{ forge_users[0].name }}"
-    group: "{{ forge_users[0].name }}"
+    owner: git
+    group: git
     mode: "0644"
 
 - name: Deploy git-mirrors script
@@ -139,13 +117,13 @@
     group: wheel
     mode: "0755"
 
-- name: Deploy crontab for primary forge user
+- name: Deploy crontab for git user
   copy:
     content: |
       SHELL=/bin/sh
       PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
       0 * * * * /usr/local/bin/git-mirrors
-    dest: "/var/cron/tabs/{{ forge_users[0].name }}"
+    dest: /var/cron/tabs/git
     owner: root
     group: wheel
     mode: "0600"
@@ -251,6 +229,7 @@
     group: wheel
     mode: "0644"
   notify: Restart sshd
+
 - import_role:
     name: jail
     tasks_from: jail_launch
