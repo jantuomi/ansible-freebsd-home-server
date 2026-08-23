@@ -1,5 +1,5 @@
 userland: "15.1-RELEASE"
-immich_version: "v3.0.3"
+immich_version: "v3.1.0"
 
 dirs:
   - /usr/local/etc/rc.d
@@ -22,7 +22,7 @@ nullfs:
   - src: immich_data
     dst: /image/immich-server/data
   - src: immich_model_cache
-    dst: /image/immich-server/cache
+    dst: /image/immich-ml/cache
 
 pkg:
   - skopeo
