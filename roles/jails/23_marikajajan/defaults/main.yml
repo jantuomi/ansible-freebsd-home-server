@@ -1,0 +1,21 @@
+userland: "15.1-RELEASE"
+
+zfs:
+  - name: marikajajan_html
+    owner: "80"  # www
+    group: "80"
+
+nullfs:
+  - src: marikajajan_html
+    dst: /var/www/marikajajan
+
+pkg:
+  - pcre2
+  - nginx
+
+files:
+  - src: usr_local_etc_nginx_nginx.conf.j2
+    dest: /usr/local/etc/nginx/nginx.conf
+
+services:
+  - nginx

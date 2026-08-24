@@ -1,0 +1,31 @@
+worker_processes auto;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    include      mime.types;
+    default_type application/octet-stream;
+
+    sendfile on;
+    keepalive_timeout 65;
+
+    server {
+        listen 80;
+        server_name www.marikajajan.fi;
+        return 301 http://marikajajan.fi$request_uri;
+    }
+
+    server {
+        listen 80;
+        server_name marikajajan.fi;
+
+        root /var/www/marikajajan;
+        index index.html;
+
+        location / {
+            try_files $uri $uri/ =404;
+        }
+    }
+}

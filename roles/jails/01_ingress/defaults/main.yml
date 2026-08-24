@@ -27,6 +27,8 @@ ingress_routes:
   - { host: komga.jan.systems, jail: komga }
   - { host: poudriere.jan.systems, jail: poudriere_repo }
   - { host: forge.jan.systems, jail: forge }
+  - { host: marikajajan.fi, jail: marikajajan }
+  - { host: www.marikajajan.fi, jail: marikajajan }
 
 cert_domains:
   - "jan.systems"
@@ -37,6 +39,8 @@ cert_domains:
   - "*.sydanviita.fi"
   - "leolalla.fi"
   - "*.leolalla.fi"
+  - "marikajajan.fi"
+  - "*.marikajajan.fi"
 
 cert_name: "{{ cert_domains[0] }}"
 contact_email: jan@sydanviita.fi
