@@ -15,17 +15,25 @@ http {
         server_name _;
 
         root /usr/local/www/cgit;
-        try_files $uri @cgit;
+
+        # Block HTTP access to private (dot-prefixed) repos
+        location ~ ^/\..+ {
+            return 403;
+        }
 
         # Anonymous git HTTP clone
-        location ~ ^/(.+\.git)/(HEAD|info/refs|objects/.*|git-upload-pack)$ {
+        location ~ ^/(.+\.git)/(info/refs|git-upload-pack)$ {
             include fastcgi_params;
-            fastcgi_param SCRIPT_FILENAME /usr/local/bin/git-http-backend;
-            fastcgi_param GIT_HTTP_EXPORT_ALL "";
+            fastcgi_param SCRIPT_FILENAME /usr/local/libexec/git-core/git-http-backend;
+            fastcgi_param GIT_HTTP_EXPORT_ALL 1;
             fastcgi_param GIT_PROJECT_ROOT /var/db/repos;
             fastcgi_param GIT_CONFIG_GLOBAL /usr/local/etc/git/gitconfig-www;
-            fastcgi_param PATH_INFO /$1/$2;
+            fastcgi_param PATH_INFO $uri;
             fastcgi_pass unix:/var/run/fcgiwrap/fcgiwrap.sock;
+        }
+
+        location / {
+            try_files $uri @cgit;
         }
 
         location @cgit {
@@ -35,14 +43,6 @@ http {
             fastcgi_param QUERY_STRING $query_string;
             fastcgi_param GIT_CONFIG_GLOBAL /usr/local/etc/git/gitconfig-www;
             fastcgi_pass unix:/var/run/fcgiwrap/fcgiwrap.sock;
-        }
-
-        location /cgit.css {
-            root /usr/local/www/cgit;
-        }
-
-        location /cgit.png {
-            root /usr/local/www/cgit;
         }
     }
 }

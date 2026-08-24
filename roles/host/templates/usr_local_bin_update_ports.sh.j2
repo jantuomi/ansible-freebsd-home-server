@@ -10,7 +10,7 @@ usage() {
 
 BASEDIR=/usr/ports
 REMOTE_QUARTERLY="https://github.com/freebsd/freebsd-ports.git"
-REMOTE_CUSTOM="https://github.com/jantuomi/freebsd-ports-custom.git"
+REMOTE_CUSTOM="http://{{ jail_ips.forge }}/freebsd-ports-custom.git"
 
 case "$1" in
 quarterly)
@@ -46,6 +46,7 @@ custom)
     # Clone or update
     if [ -d "${BASEDIR}/custom/.git" ]; then
         echo "Updating custom ports overlay..."
+        git -C "${BASEDIR}/custom" remote set-url origin "$REMOTE_CUSTOM"
         git -C "${BASEDIR}/custom" fetch origin
         git -C "${BASEDIR}/custom" reset --hard origin/main
     else
