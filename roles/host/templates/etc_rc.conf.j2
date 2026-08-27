@@ -19,6 +19,7 @@ ifconfig_lan0_ipv6="inet6 accept_rtadv"
 ifconfig_wan0="up"
 ifconfig_brlan0="addm lan0 up"
 ifconfig_brwan0="addm wan0 up"
+kld_list="pf if_wg fdescfs linux64"
 {% else %}
 ifconfig_bridge0_name="brlan0"
 ifconfig_bridge1_name="brwan0"
@@ -26,6 +27,7 @@ ifconfig_vtnet0="inet {{ lan_ipv4_cidr }}"
 ifconfig_vtnet0_ipv6="inet6 accept_rtadv"
 ifconfig_brlan0="addm vtnet0 up"
 ifconfig_brwan0="up"
+kld_list="pf if_wg linux64"
 {% endif %}
 zpool_gpt_labels_enable="YES"
 smartd_enable="YES"
@@ -40,8 +42,4 @@ clear_tmp_enable="YES"
 cleanvar_enable="YES"
 auditd_enable="YES"
 devd_enable="YES"
-{% if is_prod %}
-kld_list="pf if_wg fdescfs linux64"
-{% else %}
-kld_list="pf if_wg linux64"
-{% endif %}
+netdata_enable="YES"
