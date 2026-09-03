@@ -28,8 +28,8 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
 # Run pylogsentinel
 */10    *       *       *       *       root    python -m pylogsentinel
-# Run pylogsentinel batch job once a day
-5       6       *       *       *       root    /usr/local/bin/pylogsentinel-batch-email.sh
+# Run pylogsentinel batch job every Monday
+5       6       *       *       1       root    /usr/local/bin/pylogsentinel-batch-email.sh
 
 # Update ports trees nightly
 0       2       *       *       *       root    /usr/local/bin/update-ports quarterly >>/var/log/update-ports.log 2>&1

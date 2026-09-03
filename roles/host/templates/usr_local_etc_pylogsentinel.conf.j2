@@ -3,7 +3,7 @@ state_dir = /var/run/pylogsentinel
 max_block_size = 10M
 
 [logs.standard]
-cmd = /usr/local/bin/fd -t f -E 'access.log' -E 'syncthing.log' '^[a-zA-Z-_]+(\.log|\.txt)$' /var/log /usr/local/jails/containers/*/var/log
+cmd = /usr/local/bin/fd -t f -E 'access.log' -E 'syncthing.log' -E '*netdata/health.log' '^[a-zA-Z-_]+(\.log|\.txt)$' /var/log /usr/local/jails/containers/*/var/log
 
 [logs.arr]
 cmd = /usr/local/bin/fd -t f '^[a-zA-Z-_]+(\.log|\.txt)$' /usr/local/jails/containers/dl/usr/local/*/logs
@@ -12,7 +12,7 @@ cmd = /usr/local/bin/fd -t f '^[a-zA-Z-_]+(\.log|\.txt)$' /usr/local/jails/conta
 paths = /usr/local/jails/containers/ingress/var/log/nginx/access.log
 
 [action.default]
-cmd = echo -e "---------\nMatched $RULE_ID in $FILE at line $LINE, context:\n\n$CONTEXT\n" >> /tmp/pylogsentinel.daily
+cmd = echo -e "---------\nMatched $RULE_ID in $FILE at line $LINE, context:\n\n$CONTEXT\n" >> /var/run/pylogsentinel.weekly
 
 [rule.error_std]
 description = Error-like conditions
