@@ -46,3 +46,5 @@ sysrc:
     value: "0.0.0.0"
   - name: agate_port
     value: "1965"
+  - name: agate_env
+    value: "RUST_LOG=error"
