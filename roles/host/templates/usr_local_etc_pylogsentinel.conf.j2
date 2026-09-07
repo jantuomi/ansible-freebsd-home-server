@@ -12,7 +12,7 @@ cmd = /usr/local/bin/fd -t f '^[a-zA-Z-_]+(\.log|\.txt)$' /usr/local/jails/conta
 paths = /usr/local/jails/containers/ingress/var/log/nginx/access.log
 
 [action.default]
-cmd = echo -e "---------\nMatched $RULE_ID in $FILE at line $LINE, context:\n\n$CONTEXT\n" >> /var/run/pylogsentinel.weekly
+cmd = echo -e "--------- $DT\nMatched $RULE_ID in $FILE at line $LINE, context:\n\n$CONTEXT\n" >> /var/run/pylogsentinel.weekly
 
 [rule.error_std]
 description = Error-like conditions
