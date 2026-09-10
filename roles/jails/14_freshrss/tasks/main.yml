@@ -10,6 +10,14 @@
     group: www
     mode: "0755"
 
+- name: Create freshrss cron log file
+  file:
+    path: /var/log/freshrss.cron.log
+    state: touch
+    owner: www
+    group: www
+    mode: "0644"
+
 - import_role:
     name: jail
     tasks_from: jail_launch

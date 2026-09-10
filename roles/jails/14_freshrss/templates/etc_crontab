@@ -22,4 +22,4 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 1,31    0-5     *       *       *       root    adjkerntz -a
 
 # Update FreshRSS feeds
-*/15 * * * * www /usr/local/bin/php /usr/local/www/freshrss/app/actualize_script.php >> /var/log/freshrss.cron.log 2>&1
+*/15    *       *       *       *       www     /usr/local/bin/php /usr/local/www/freshrss/app/actualize_script.php >>/var/log/freshrss.cron.log 2>&1
