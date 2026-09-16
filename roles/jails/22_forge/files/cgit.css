@@ -81,6 +81,16 @@ div#cgit a:hover:not(.button) {
 	text-decoration: underline
 }
 
+table.tabs td:first-of-type {
+    display: flex;
+    flex-flow: row wrap;
+
+    a {
+        height: 24px;
+        line-height: 24px;
+    }
+}
+
 table.tabs td a.active {
 	background-color: var(--color-link);
 	color: var(--bg-color);
@@ -88,6 +98,10 @@ table.tabs td a.active {
 
 .tabs td.form, .tabs td a {
 	padding: 2px 5px 2px 5px;
+}
+
+table.tabs td:has(a[href="/"]) {
+    display: none;
 }
 
 table.list tr:not(.nohover):nth-child(even) {
@@ -141,9 +155,12 @@ table.blob, table.diff {
 	width: 100%;
 	max-width: 100%;
 	background-color: var(--bg-light-color);
-	border-top: 1px solid var(--border);
+	border: 1px solid var(--border);
 	overflow: scroll;
 	display: block;
+}
+
+table.diff {
 	white-space: pre;
 }
 
@@ -197,9 +214,13 @@ table.tabs .form {
 }
 div.content table.diffstat {
 	width: auto;
-	display: table;
+	display: block;
 	background-color: var(--bg-light-color);
 	border: 1px solid var(--border);
+	max-width: 100%;
+	width: 100%;
+	white-space: pre;
+	overflow: scroll;
 }
 td.graph td.add {
 	background-color: var(--green)
@@ -297,10 +318,14 @@ table.ssdiff td.head {
 div#cgit div.cgit-panel table {
 	border: 1px solid var(--border);
 	background-color: var(--bg-light-color);
+	width: 100%;
+
+	tr td:last-of-type {
+	    text-align: right;
+	}
 }
 
 div#cgit div.cgit-panel {
-	float: right;
 	margin-top: 0.5em;
 }
 
@@ -355,14 +380,37 @@ a.branch-deco {
 	margin: 1.5em 0em 0.5em 0em;
 }
 
+.commit-info {
+    margin-top: 16px;
+}
+
+.commit-info th {
+    text-align: left;
+}
+
 div.diffstat-header {
 	padding-top: 1em;
 }
 
+.diffstat-summary {
+    margin-top: 1em;
+}
+
 /*Stats*/
+table.stats {
+    border-spacing: 0;
+    border-collapse: collapse;
+    width: 100%;
+
+    td:first-of-type,
+    th:first-of-type {
+        width: 50%;
+    }
+}
 table.stats td,
 table.stats th {
-	border: 2px solid var(--border)
+	border: 1px solid var(--border);
+	padding: 0.5em;
 }
 
 td.commitgraph {
@@ -387,6 +435,10 @@ td.commitgraph {
 	}
 }
 
+table[summary="tree listing"] {
+	td:last-of-type { text-align: right; }
+}
+
 @media (max-width: 767.98px) {
 	table[summary="tree listing"] {
 		th:nth-child(1),
@@ -405,14 +457,9 @@ td.commitgraph {
 			display: none;
 		}
 	}
-	table.tabs {
-		display: block;
-		overflow: scroll;
-		.form {
-			margin-left: 100px;
-			margin-right: 0px;
-			width: 100%
-		}
+	table.tabs tr {
+        display: flex;
+        flex-flow: column nowrap;
 	}
 	div#cgit {
 		padding: 0px;
@@ -493,4 +540,19 @@ table[summary="repository list"] tr td:nth-child(3) {
 
 .pager li {
     display: inline;
+}
+
+.oid {
+    /* Break things like git commit hashes */
+    word-break: break-all;
+}
+
+.markdown-body table {
+    border-collapse: collapse;
+    width: 100%;
+
+    td, th {
+        border: 1px solid var(--border);
+        padding: 0.5em;
+    }
 }
