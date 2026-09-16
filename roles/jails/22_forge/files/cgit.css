@@ -555,4 +555,8 @@ table[summary="repository list"] tr td:nth-child(3) {
         border: 1px solid var(--border);
         padding: 0.5em;
     }
+
+    td {
+        word-break: break-word;
+    }
 }
