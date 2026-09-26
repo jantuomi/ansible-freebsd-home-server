@@ -20,7 +20,10 @@ Usage: hetzner_ddns.sh [OPTIONS]
 
 Options (named):
   --zone NAME_OR_ID       Hetzner Zone name or ID (primary mode only)
-  --rr-id ID              RRSet identifier in the form "rr-name/rr-type" (e.g., "host/A")
+  --rr-id ID              RRSet identifier in the form "rr-name/rr-type"
+                          (e.g., "host/A" or "host/AAAA"). The rr-type
+                          selects whether the IPv4 or IPv6 address found
+                          via --iface-cmd is published.
   --iface-cmd CMD         Command that prints interface info (for IP discovery)
   --ttl TTL               Time-to-live of the record (optional)
   -h, --help              Show this help
@@ -79,6 +82,12 @@ done
 [ -n "${RR_ID:-}" ]     || fail "Missing --rr-id"
 [ -n "${IFACE_CMD:-}" ] || fail "Missing --iface-cmd"
 
+RR_TYPE="${RR_ID##*/}"
+case "${RR_TYPE}" in
+  A|AAAA) ;;
+  *) fail "Unsupported rr-type '${RR_TYPE}' in --rr-id (expected .../A or .../AAAA)" ;;
+esac
+
 # ------------------------------ Auth -----------------------------------------
 if [ ! -r "${API_TOKEN_FILE}" ]; then
   fail "Token file missing or unreadable: ${API_TOKEN_FILE}"
@@ -87,15 +96,28 @@ API_TOKEN="$(cat "${API_TOKEN_FILE}" | tr -d '[:space:]')"
 [ -n "${API_TOKEN}" ] || fail "API token is empty"
 
 # ------------------------------ Helpers --------------------------------------
-get_ip() {
+get_ipv4() {
   # Extract first IPv4 after 'inet ' (ignore inet6)
   sh -c "${IFACE_CMD}" 2>/dev/null | awk '/(^|[[:space:]])inet[[:space:]]/ {print $2; exit}'
 }
 
+get_ipv6() {
+  # Extract first non-link-local IPv6 after 'inet6 ', stripping any %scope-id suffix
+  sh -c "${IFACE_CMD}" 2>/dev/null | awk '/(^|[[:space:]])inet6[[:space:]]/ {
+    ip = $2
+    sub(/%.*/, "", ip)
+    if (ip !~ /^fe80:/) { print ip; exit }
+  }'
+}
+
 # ------------------------------ Main -----------------------------------------
-IFACE_IP="$(get_ip || true)"
+case "${RR_TYPE}" in
+  AAAA) IFACE_IP="$(get_ipv6 || true)" ;;
+  *)    IFACE_IP="$(get_ipv4 || true)" ;;
+esac
+
 if [ -z "${IFACE_IP}" ]; then
-  warn "No IPv4 address found via '${IFACE_CMD}' (interface not ready?)"
+  warn "No ${RR_TYPE} address found via '${IFACE_CMD}' (interface not ready?)"
   exit 1
 fi
 

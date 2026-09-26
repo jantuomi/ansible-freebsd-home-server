@@ -81,8 +81,10 @@ _poststart() {
 {% if is_prod %}
         jexec ${NAME} dhclient epw${NUM}b
         jexec ${NAME} route add {{ router_wg_network }} {{ lan_ipv4_gateway }} || true
-        jexec ${NAME} ifconfig epw${NUM}b inet6 auto_linklocal
+        jexec ${NAME} ifconfig epw${NUM}b inet6 auto_linklocal accept_rtadv
         jexec ${NAME} ifconfig epw${NUM}b inet6 -ifdisabled
+
+        # dhcp6c must be started late after the epair has been set up
         jexec ${NAME} service dhcp6c start
 {% else %}
         jexec ${NAME} ifconfig epw${NUM}b inet {{ ingress_wan_static }}
