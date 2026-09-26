@@ -80,7 +80,10 @@ _poststart() {
         jexec ${NAME} ifconfig epw${NUM}b up
 {% if is_prod %}
         jexec ${NAME} dhclient epw${NUM}b
-        jexec ${NAME} route add 10.6.210.0/24 {{ lan_ipv4_gateway }} || true
+        jexec ${NAME} route add {{ router_wg_network }} {{ lan_ipv4_gateway }} || true
+        jexec ${NAME} ifconfig epw${NUM}b inet6 auto_linklocal
+        jexec ${NAME} ifconfig epw${NUM}b inet6 -ifdisabled
+        jexec ${NAME} service dhcp6c start
 {% else %}
         jexec ${NAME} ifconfig epw${NUM}b inet {{ ingress_wan_static }}
         jexec ${NAME} route add default {{ lan_ipv4_gateway }}

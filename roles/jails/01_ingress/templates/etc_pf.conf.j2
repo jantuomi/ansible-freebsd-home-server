@@ -1,8 +1,6 @@
-{% for jail in jails -%}
-{% if jail.name == 'ingress' -%}
 # Interfaces & nets
-lan = "epl{{ jail.num }}b"
-wan = "epw{{ jail.num }}b"
+lan = "epl{{ jail_num }}b"
+wan = "epw{{ jail_num }}b"
 lan_net = "{{ lan_ipv4_network }}"
 gemini_host = "{{ jail_ips.homepage }}"
 
@@ -33,8 +31,18 @@ pass out on $lan all keep state
 
 # Allow public HTTP and HTTPS
 pass in on $wan inet proto { tcp, udp } from any to ($wan) port { 80, 443 } keep state
+pass in on $wan inet6 proto { tcp, udp } from any to ($wan) port { 80, 443 } keep state
 
 # Allow redirected Gemini traffic to the backend
 pass in on $wan inet proto tcp from any to $gemini_host port 1965 keep state
-{% endif %}
-{% endfor %}
+
+# Allow DHCPv6 client traffic: server replies (Advertise/Reply) come from a
+# unicast link-local address, not the multicast address we solicited to,
+# so the normal outbound "keep state" entry never matches the reply.
+pass in on $wan inet6 proto udp from any port 547 to any port 546 keep state
+
+# Allow ICMPv6 neighbor discovery / router advertisement — needed for
+# basic IPv6 operation (link-local reachability, RA processing) regardless
+# of whether SLAAC or DHCPv6 is used for addressing.
+pass in on $wan inet6 proto icmp6 icmp6-type { routersol, routeradv, neighbrsol, neighbradv } keep state
+pass in on $lan inet6 proto icmp6 icmp6-type { routersol, routeradv, neighbrsol, neighbradv } keep state
