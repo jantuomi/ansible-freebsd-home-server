@@ -113,31 +113,6 @@
     group: wheel
     mode: "0755"
 
-- name: Check if quarterly ports tree exists
-  stat:
-    path: /usr/ports/quarterly/Mk
-  register: _quarterly_exists
-
-- name: Download quarterly ports tree
-  shell: /usr/local/bin/update-ports quarterly
-  when: not _quarterly_exists.stat.exists
-
-- name: Check if custom ports overlay exists
-  shell: "ls /usr/ports/custom/ 2>/dev/null | head -1"
-  register: _custom_exists
-  changed_when: false
-
-- name: Download custom ports overlay
-  shell: /usr/local/bin/update-ports custom
-  when: _custom_exists.stdout == ""
-- name: Discover jail directories
-  find:
-    paths: "{{ playbook_dir }}/roles/jails"
-    patterns: "main.yml"
-    recurse: true
-  delegate_to: localhost
-  register: _jail_specs
-
 - name: Load jail definitions
   set_fact:
     jail_defs: "{{ jail_defs | default([]) + [_content | combine({'num': _num, 'name': _name})] }}"
@@ -239,6 +214,54 @@
     group: wheel
     mode: "0644"
   notify: Restart cron
+
+# Ports trees and forge
+- name: Check if quarterly ports tree exists
+  stat:
+    path: /usr/ports/quarterly/Mk
+  register: _quarterly_exists
+
+- name: Download quarterly ports tree
+  shell: /usr/local/bin/update-ports quarterly
+  when: not _quarterly_exists.stat.exists
+
+- name: Check if custom ports overlay exists
+  shell: "ls /usr/ports/custom/ 2>/dev/null | head -1"
+  register: _custom_exists
+  changed_when: false
+
+- name: Check if forge git server is reachable
+  wait_for:
+    host: "{{ jail_ips.forge }}"
+    port: 80
+    timeout: 5
+  when: _custom_exists.stdout == ""
+  register: _forge_reachable
+  ignore_errors: true
+
+- name: "*** FORGE NOT READY ***"
+  fail:
+    msg: |
+      ════════════════════════════════════════════════════════════════
+        FORGE JAIL NOT READY
+      ════════════════════════════════════════════════════════════════
+        The custom ports overlay is cloned from the forge jail's git
+        server ({{ jail_ips.forge }}), but forge is not reachable.
+
+        Set up the forge jail using its jail role, and try again.
+      ════════════════════════════════════════════════════════════════
+  when: _custom_exists.stdout == "" and _forge_reachable is failed
+
+- name: Download custom ports overlay
+  shell: /usr/local/bin/update-ports custom
+  when: _custom_exists.stdout == ""
+- name: Discover jail directories
+  find:
+    paths: "{{ playbook_dir }}/roles/jails"
+    patterns: "main.yml"
+    recurse: true
+  delegate_to: localhost
+  register: _jail_specs
 
 - name: Set up poudriere
   include_tasks: poudriere.yml
