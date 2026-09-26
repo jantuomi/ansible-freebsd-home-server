@@ -128,7 +128,7 @@ cmd_init() {
 }
 
 cmd_up() {
-    if [[ -f "$PID_FILE" ]] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
+    if [[ -f "$PID_FILE" ]] && ps -p "$(cat "$PID_FILE")" >/dev/null 2>&1; then
         echo "VM already running (PID $(cat "$PID_FILE"))"
         exit 0
     fi
@@ -175,10 +175,10 @@ cmd_down() {
     pid=$(cat "$PID_FILE" 2>/dev/null || true)
     if [[ -n "$pid" ]]; then
         for _ in $(seq 1 30); do
-            sudo kill -0 "$pid" 2>/dev/null || break
+            ps -p "$pid" >/dev/null 2>&1 || break
             sleep 1
         done
-        if sudo kill -0 "$pid" 2>/dev/null; then
+        if ps -p "$pid" >/dev/null 2>&1; then
             echo "VM still running after 30s. Use './vm.sh kill' to force."
         else
             rm -f "$PID_FILE"
@@ -220,11 +220,11 @@ cmd_console() {
 }
 
 cmd_status() {
-    if [[ -f "$PID_FILE" ]] && sudo kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
+    if [[ -f "$PID_FILE" ]] && ps -p "$(cat "$PID_FILE")" >/dev/null 2>&1; then
         echo "VM running (PID $(cat "$PID_FILE"))"
     else
         echo "VM not running"
-        rm -f "$PID_FILE" 2>/dev/null
+        [[ -f "$PID_FILE" ]] && rm -f "$PID_FILE" 2>/dev/null
     fi
 }
 
