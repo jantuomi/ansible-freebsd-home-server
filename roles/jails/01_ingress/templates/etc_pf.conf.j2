@@ -46,3 +46,15 @@ pass in on $wan inet6 proto udp from any port 547 to any port 546 keep state
 # of whether SLAAC or DHCPv6 is used for addressing.
 pass in on $wan inet6 proto icmp6 icmp6-type { routersol, routeradv, neighbrsol, neighbradv } keep state
 pass in on $lan inet6 proto icmp6 icmp6-type { routersol, routeradv, neighbrsol, neighbradv } keep state
+
+# Allow ping (ICMPv4 echo-request) from WAN;
+# outbound requests/replies are already covered by the "pass out ... all" rules above.
+pass in on $wan inet proto icmp from any to ($wan) icmp-type echoreq keep state
+
+# Allow ping6 (ICMPv6 echo-request) from WAN;
+# outbound requests/replies are already covered by the "pass out ... all" rules above.
+pass in on $wan inet6 proto icmp6 from any to ($wan) icmp6-type echoreq keep state
+
+# Allow ping / ping6 freely within the LAN (both directions, any host)
+pass on $lan inet proto icmp icmp-type { echoreq, echorep } keep state
+pass on $lan inet6 proto icmp6 icmp6-type { echoreq, echorep } keep state
