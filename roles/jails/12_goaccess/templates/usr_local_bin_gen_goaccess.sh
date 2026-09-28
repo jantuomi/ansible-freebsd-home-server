@@ -1,3 +1,12 @@
 #!/bin/sh
 mkdir -p /var/db/goaccess/html
-cat /mnt/nginx_logs/access.log | goaccess --log-format=VCOMBINED -a -o /var/db/goaccess/html/index.html --restore --db-path /var/db/goaccess --persist
+goaccess \
+    --db-path /var/db/goaccess \
+    --log-format=VCOMBINED \
+    --concat-vhost-req \
+    --agent-list \
+    --restore \
+    --persist \
+    --no-parsing-spinner \
+    -f /mnt/nginx_logs/access.log \
+    -o /var/db/goaccess/html/index.html
