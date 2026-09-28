@@ -71,6 +71,9 @@ http {
         ssl_certificate_key /usr/local/etc/letsencrypt/live/{{ cert_name }}/privkey.pem;
         include /usr/local/etc/letsencrypt/options-ssl-nginx.conf;
         ssl_dhparam /usr/local/etc/letsencrypt/ssl-dhparams.pem;
+
+        # Only use secure algos
+        ssl_conf_command SignatureAlgorithms RSA+SHA256:RSA+SHA384:RSA+SHA512:ECDSA+SHA256:ECDSA+SHA384:ECDSA+SHA512;
 {% endif %}
 
     {% if route.jail is defined -%}
