@@ -131,15 +131,6 @@
     mode: "0600"
   notify: Restart immich services
 
-# Enable services
-- name: Enable immich services
-  community.general.sysrc:
-    name: "{{ item }}_enable"
-    value: "YES"
-  loop:
-    - immich_server
-    - immich_ml
-
 - import_role:
     name: jail
     tasks_from: jail_launch

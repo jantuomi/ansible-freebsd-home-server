@@ -12,3 +12,7 @@ pkg_custom:
 
 services:
   - thelounge
+
+rc_conf: |
+  thelounge_user="root"
+  thelounge_group="wheel"

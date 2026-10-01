@@ -12,3 +12,7 @@ pkg_custom:
 
 services:
   - expense_tracker
+
+rc_conf: |
+  expense_tracker_base_url="https://spliit.jan.systems"
+  expense_tracker_port="80"

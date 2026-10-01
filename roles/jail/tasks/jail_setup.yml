@@ -197,6 +197,18 @@
     group: wheel
     mode: "0644"
 
+# The system pkg config defines FreeBSD-base but disables it. Enabling it lets
+# jails install base components the minimal-jail set omits (e.g. FreeBSD-pf)
+# via the normal pkg list, and receive base patch updates with pkg upgrade.
+- name: Enable FreeBSD-base repo in jail
+  copy:
+    content: |
+      FreeBSD-base: { enabled: yes }
+    dest: /usr/local/etc/pkg/repos/FreeBSD-base.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+
 - name: Install packages
   shell: "pkg install -y {{ pkg | join(' ') }}"
   environment:
@@ -236,18 +248,22 @@
   when: files is defined
   notify: Restart jail services
 
-- name: Enable services
-  community.general.sysrc:
-    name: "{{ item }}_enable"
-    value: "YES"
-  loop: "{{ services | default([]) }}"
-
-- name: Set sysrc values
-  community.general.sysrc:
-    name: "{{ item.name }}"
-    value: "{{ item.value }}"
-  loop: "{{ sysrc | default([]) }}"
-  when: sysrc is defined
+# rc.conf is written directly as one managed block: the minimal-jail userland
+# has no sysrc(8). `services` yields the *_enable lines, `rc_conf` is a free-form
+# multiline string of extra rc.conf lines from the jail definition.
+- name: Manage rc.conf
+  blockinfile:
+    path: /etc/rc.conf
+    create: true
+    owner: root
+    group: wheel
+    mode: "0644"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK"
+    block: |
+      {% for svc in services | default([]) %}
+      {{ svc }}_enable="YES"
+      {% endfor %}
+      {{ rc_conf | default('') }}
 
 - name: Set sysctl values
   sysctl:

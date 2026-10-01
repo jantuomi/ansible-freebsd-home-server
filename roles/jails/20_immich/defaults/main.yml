@@ -29,3 +29,9 @@ pkg:
   # umoci is a statically linked Linux binary, fetched by setup task
 
 services: []
+
+# immich services are started by the jail role's own tasks, not the
+# generic service loop, so only the enable flags live here.
+rc_conf: |
+  immich_server_enable="YES"
+  immich_ml_enable="YES"

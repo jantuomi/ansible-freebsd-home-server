@@ -16,11 +16,6 @@
   shell: "pw groupmod storage -m sonarr,radarr,lidarr,transmission"
   changed_when: false
 
-- name: Configure transmission to run as storage user
-  community.general.sysrc:
-    name: transmission_user
-    value: storage
-
 - name: Fix transmission config directory ownership
   file:
     path: /usr/local/etc/transmission/home
@@ -28,11 +23,6 @@
     owner: storage
     group: storage
     recurse: true
-
-- name: Configure transmission download directory
-  community.general.sysrc:
-    name: transmission_download_dir
-    value: /mnt/storage/downloads/complete
 
 - name: Deploy initial transmission settings
   template:
@@ -59,18 +49,6 @@
     owner: storage
     group: storage
     mode: "0755"
-
-- name: Configure nzbget config path
-  community.general.sysrc:
-    name: nzbget_conf
-    value: /usr/local/etc/nzbget.conf
-  notify: Restart nzbget
-
-- name: Configure nzbget user
-  community.general.sysrc:
-    name: nzbget_user
-    value: storage
-  notify: Restart nzbget
 
 - name: Deploy initial prowlarr config
   template:

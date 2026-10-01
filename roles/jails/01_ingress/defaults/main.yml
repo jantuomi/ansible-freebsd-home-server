@@ -49,6 +49,7 @@ jail_conf_options:
   - "allow.raw_sockets"
 
 pkg:
+  - FreeBSD-pf
   - pcre2
   - nginx
   - py312-certbot
@@ -80,13 +81,10 @@ sysctl:
   - name: net.inet.ip.forwarding
     value: "1"
 
-sysrc:
-  - name: gateway_enable
-    value: "YES"
-  - name: dhcp6c_interfaces
-    value: "epw1b"
-  - name: dhcp6c_conf
-    value: "/usr/local/etc/dhcp6c.conf"
+rc_conf: |
+  gateway_enable="YES"
+  dhcp6c_interfaces="epw1b"
+  dhcp6c_conf="/usr/local/etc/dhcp6c.conf"
 
 nginx_presets:
   websocket:

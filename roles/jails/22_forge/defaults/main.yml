@@ -27,12 +27,8 @@ services:
   - fcgiwrap
   - cron
 
-sysrc:
-  - name: fcgiwrap_socket_owner
-    value: "www"
-  - name: fcgiwrap_socket_group
-    value: "www"
-  - name: fcgiwrap_user
-    value: "www"
-  - name: fcgiwrap_group
-    value: "www"
+rc_conf: |
+  fcgiwrap_socket_owner="www"
+  fcgiwrap_socket_group="www"
+  fcgiwrap_user="www"
+  fcgiwrap_group="www"

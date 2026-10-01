@@ -60,3 +60,9 @@ services:
   - sonarr
   - radarr
   - lidarr
+
+rc_conf: |
+  transmission_user="storage"
+  transmission_download_dir="/mnt/storage/downloads/complete"
+  nzbget_conf="/usr/local/etc/nzbget.conf"
+  nzbget_user="storage"

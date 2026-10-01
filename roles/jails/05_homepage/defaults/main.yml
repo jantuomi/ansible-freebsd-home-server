@@ -33,18 +33,11 @@ services:
 dirs:
   - /var/log/agate
 
-sysrc:
-  - name: agate_hostname
-    value: "jan.systems"
-  - name: agate_content
-    value: "/var/gemini"
-  - name: agate_certs
-    value: "/usr/local/etc/agate/tls"
-  - name: agate_logfile
-    value: "/var/log/agate/agate.log"
-  - name: agate_addr
-    value: "0.0.0.0"
-  - name: agate_port
-    value: "1965"
-  - name: agate_env
-    value: "RUST_LOG=error"
+rc_conf: |
+  agate_hostname="jan.systems"
+  agate_content="/var/gemini"
+  agate_certs="/usr/local/etc/agate/tls"
+  agate_logfile="/var/log/agate/agate.log"
+  agate_addr="0.0.0.0"
+  agate_port="1965"
+  agate_env="RUST_LOG=error"
