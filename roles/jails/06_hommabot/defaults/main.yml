@@ -1,4 +1,4 @@
-userland: "15.1-RELEASE"
+userland: "15.1-minimal-jail"
 
 zfs:
   - name: hommabot_data
