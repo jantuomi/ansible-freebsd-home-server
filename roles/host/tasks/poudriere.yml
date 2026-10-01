@@ -23,8 +23,18 @@
   changed_when: false
   register: _poudriere_jail_exists
 
+# pkgbase method: -v must be the major version only (poudriere builds the pkg
+# ABI as FreeBSD:<version>:<arch>). The release repo is given explicitly, since
+# a bare "-m pkgbase" lets pkg guess the minor version as 0 and installs nothing.
 - name: Create poudriere jail
-  shell: poudriere jail -c -j poudriere_build -v {{ poudriere_freebsd_version }} -m tar=/usr/local/jails/media/{{ poudriere_freebsd_version }}-base.txz
+  shell: >
+    poudriere jail -c -j poudriere_build
+    -v {{ _major }}
+    -m pkgbase=base_release_{{ _minor }}
+    -U pkg+https://pkg.freebsd.org/
+  vars:
+    _major: "{{ poudriere_freebsd_version.split('.')[0] }}"
+    _minor: "{{ poudriere_freebsd_version.split('.')[1] | regex_replace('-.*$', '') }}"
   when: _poudriere_jail_exists.rc != 0
 
 - name: Check if poudriere quarterly ports tree is registered

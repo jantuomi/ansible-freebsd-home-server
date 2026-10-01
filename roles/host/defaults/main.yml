@@ -1,0 +1,3 @@
+# pkgbase package set used for the jail template. The template is named
+# <host major.minor>-<jail_pkg_set> and installs FreeBSD-set-<jail_pkg_set>.
+jail_pkg_set: minimal-jail

@@ -1,0 +1,100 @@
+# pkgbase jail template
+#
+# Builds zroot/jails/templates/<major.minor>-{{ jail_pkg_set }}@base from the
+# FreeBSD-set-{{ jail_pkg_set }} package set, using the host's pkg(8) and ABI.
+# Older download-based templates (e.g. 15.1-RELEASE) are left untouched.
+
+- name: Detect host userland version
+  shell: freebsd-version
+  register: _host_userland_result
+  changed_when: false
+
+- name: Set host release fact
+  set_fact:
+    host_release: "{{ _host_userland_result.stdout | regex_replace('^([0-9]+\\.[0-9]+).*$', '\\1') }}"
+
+- name: Set jail template name
+  set_fact:
+    jail_template: "{{ host_release }}-{{ jail_pkg_set }}"
+    jail_template_root: "/usr/local/jails/templates/{{ host_release }}-{{ jail_pkg_set }}"
+
+- name: "Check if {{ jail_template }} snapshot exists"
+  shell: zfs list -t snapshot -o name | grep -Fxq "zroot/jails/templates/{{ jail_template }}@base"
+  failed_when: false
+  changed_when: false
+  register: _jail_template_snap
+
+- name: "Set up {{ jail_template }} template"
+  when: _jail_template_snap.rc != 0
+  block:
+    - name: "Create template dataset for {{ jail_template }}"
+      community.general.zfs:
+        name: "zroot/jails/templates/{{ jail_template }}"
+        state: present
+
+    - name: Create pkg key and database directories
+      file:
+        path: "{{ jail_template_root }}{{ item }}"
+        state: directory
+        owner: root
+        group: wheel
+        mode: "0755"
+      loop:
+        - /usr/share/keys
+        - /var/db/pkg/repos
+
+    - name: Copy pkg keys into template
+      shell: "cp -Rn /usr/share/keys/pkg* {{ jail_template_root }}/usr/share/keys/"
+
+    - name: Mount tmpfs for pkg repository metadata cache
+      shell: "mount | grep -Fq ' on {{ jail_template_root }}/var/db/pkg/repos ' || mount -t tmpfs tmpfs {{ jail_template_root }}/var/db/pkg/repos"
+
+    - name: "Install FreeBSD-set-{{ jail_pkg_set }} package set"
+      shell: "pkg -r {{ jail_template_root }} install -y FreeBSD-set-{{ jail_pkg_set }}"
+      environment:
+        ASSUME_ALWAYS_YES: "yes"
+
+    - name: Verify template userland version
+      shell: "chroot {{ jail_template_root }} freebsd-version -u"
+      register: _jail_template_version
+      changed_when: false
+      failed_when: not _jail_template_version.stdout.startswith(host_release)
+
+    - name: Copy localtime
+      copy:
+        remote_src: true
+        src: /etc/localtime
+        dest: "{{ jail_template_root }}/etc/localtime"
+
+    - name: Deploy resolv.conf
+      template:
+        src: etc_resolv.conf.j2
+        dest: "{{ jail_template_root }}/etc/resolv.conf"
+        owner: root
+        group: wheel
+        mode: "0644"
+
+    - name: Disable resolvconf
+      lineinfile:
+        path: "{{ jail_template_root }}/etc/resolvconf.conf"
+        line: "resolvconf=NO"
+        create: true
+
+    - name: Disable syslogd
+      lineinfile:
+        path: "{{ jail_template_root }}/etc/rc.conf"
+        line: 'syslogd_enable="NO"'
+        create: true
+
+    # pkg itself is included so jails have a working pkg(8) without a network
+    # bootstrap on first use; python3 is needed by Ansible.
+    - name: Install packages in template
+      shell: "pkg -r {{ jail_template_root }} install -y pkg python3 bash"
+      environment:
+        ASSUME_ALWAYS_YES: "yes"
+
+    - name: Unmount pkg repository metadata cache
+      shell: "umount {{ jail_template_root }}/var/db/pkg/repos"
+
+    - name: Create snapshot
+      shell: "zfs snapshot zroot/jails/templates/{{ jail_template }}@base"
