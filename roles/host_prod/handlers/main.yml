@@ -1,5 +1,26 @@
-- name: Apply rc.conf
+# Both handlers listen on "Apply rc.conf": the prompt runs first, and
+# Ctrl+C aborts before the network is touched.
+- name: Confirm netif restart
+  pause:
+    prompt: |
+
+      ════════════════════════════════════════════════════════════════
+        NETWORK RESTART: {{ inventory_hostname }}
+      ════════════════════════════════════════════════════════════════
+        /etc/rc.conf changed. The next step runs:
+
+          service kld start; service netif restart && service routing restart
+
+        This briefly drops all network connections on the host,
+        including the jails' bridge.
+      ════════════════════════════════════════════════════════════════
+
+      Press Enter to continue or Ctrl+C to abort
+  listen: Apply rc.conf
+
+- name: Restart netif and routing
   shell: service kld start; service netif restart && service routing restart
+  listen: Apply rc.conf
 
 - name: Mount filesystems
   shell: mount -a
