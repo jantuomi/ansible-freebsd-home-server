@@ -2,9 +2,10 @@ Port 22
 AddressFamily any
 ListenAddress 0.0.0.0
 
-HostKey /etc/ssh/ssh_host_rsa_key
-HostKey /etc/ssh/ssh_host_ecdsa_key
-HostKey /etc/ssh/ssh_host_ed25519_key
+# Host keys are on the forge_ssh_hostkeys volume (persist across jail recreation)
+HostKey /var/db/ssh_hostkeys/ssh_host_rsa_key
+HostKey /var/db/ssh_hostkeys/ssh_host_ecdsa_key
+HostKey /var/db/ssh_hostkeys/ssh_host_ed25519_key
 
 PermitRootLogin no
 PubkeyAuthentication yes

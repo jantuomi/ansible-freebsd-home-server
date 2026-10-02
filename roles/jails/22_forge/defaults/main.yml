@@ -5,10 +5,19 @@ zfs:
     owner: "1000"
     group: "1000"
     mode: "0755"
+  # SSH host keys live on a volume so they survive jail recreation;
+  # otherwise every userland migration changes the server's identity.
+  - name: forge_ssh_hostkeys
+    mode: "0700"
 
 nullfs:
   - src: forge_repos
     dst: /var/db/repos
+  - src: forge_ssh_hostkeys
+    dst: /var/db/ssh_hostkeys
+
+dirs:
+  - /var/db/ssh_hostkeys
 
 pkg:
   - FreeBSD-ssh
