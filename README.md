@@ -6,7 +6,7 @@ The playbook is unlikely to work without modification for you.
 
 ## Manual installer setup
 
-1. Download a recent FreeBSD release. Tested with https://download.freebsd.org/releases/amd64/amd64/ISO-IMAGES/14.3/FreeBSD-14.3-RELEASE-amd64-memstick.img.
+1. Download a recent FreeBSD release.
 2. Run the installer off a USB drive. During installation, configure:
 
    - a Finnish keymap
@@ -17,6 +17,7 @@ The playbook is unlikely to work without modification for you.
    - root encrypted (GELI), GPT (BIOS+UEFI)
    - 8GB of non-mirrored, encrypted swap (times four for a total of 32GB)
    - install base, kernel, src, ports, handbook
+   - use pkgbase instead of legacy freebsd-update
    - set up static IPv4 (192.168.0.10/16) with DNS 192.168.0.1
    - services: sshd, ntpd, ntpd sync on start, powerd
 
@@ -45,4 +46,4 @@ See `site.yml` for available tags.
 
 ## Author
 
-Jan Tuomi, \<jan at jantuomi.fi\>.
+Jan Tuomi, \<jan at sydanviita.fi\>.
