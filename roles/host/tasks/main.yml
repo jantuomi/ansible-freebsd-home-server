@@ -96,6 +96,67 @@
 
 # Jail infrastructure
 
+- name: Ensure jail.conf.d exists
+  file:
+    path: /etc/jail.conf.d
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Find jail configuration files
+  find:
+    paths: /etc/jail.conf.d
+    patterns: "*.conf"
+    recurse: false
+  register: _jail_conf_files
+
+- name: Verify jail configuration scan succeeded
+  assert:
+    that: _jail_conf_files.skipped_paths | length == 0
+    fail_msg: "Could not scan /etc/jail.conf.d: {{ _jail_conf_files.skipped_paths }}"
+  when: not ansible_check_mode
+
+- name: Identify extra jail configuration files
+  set_fact:
+    _extra_jail_conf_files: >-
+      {{ _jail_conf_files.files | map(attribute='path') | list
+         | difference(jails | map(attribute='name')
+                      | map('regex_replace', '^(.*)$', '/etc/jail.conf.d/\1.conf') | list)
+         | sort }}
+
+- name: Review and remove extra jail configuration files
+  when: _extra_jail_conf_files | length > 0
+  block:
+    - name: Report extra jail configuration files in check mode
+      debug:
+        var: _extra_jail_conf_files
+      when: ansible_check_mode
+
+    - name: Confirm deletion of extra jail configuration files
+      pause:
+        prompt: |
+          These jail configuration files have no matching jail definition:
+          {{ _extra_jail_conf_files | join('\n') }}
+
+          Type yes to delete these files, or anything else to abort.
+          Running jails and their datasets will not be removed.
+      register: _jail_conf_cleanup_confirmation
+      when: not ansible_check_mode
+
+    - name: Require explicit confirmation for jail configuration cleanup
+      assert:
+        that: _jail_conf_cleanup_confirmation.user_input | default('') | trim | lower == 'yes'
+        fail_msg: "Jail configuration cleanup aborted; no extra files were deleted."
+      when: not ansible_check_mode
+
+    - name: Delete extra jail configuration files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop: "{{ _extra_jail_conf_files }}"
+      when: not ansible_check_mode
+
 # Ports tree management
 - name: Deploy update-ports script
   template:
