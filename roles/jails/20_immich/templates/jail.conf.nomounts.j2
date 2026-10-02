@@ -1,0 +1,25 @@
+{% set devfs_ruleset = 4 -%}
+{{ jail.name }} {
+  vnet;
+  exec.clean;
+  allow.raw_sockets;
+
+  mount.devfs;        # Mount /dev according to devfs_ruleset
+  devfs_ruleset = {{ devfs_ruleset }};
+
+  enforce_statfs = 1; # Let jail see own mounts
+
+  host.hostname = "${name}";
+  path = "/usr/local/jails/containers/${name}";
+
+  exec.start = "/bin/sh /etc/rc";
+  exec.stop  = "/bin/sh /etc/rc.shutdown";
+
+  # Networking
+  exec.prestart  += "jail_net prestart  ${name} {{ jail.num }} {{ jail.ip }}";
+  exec.poststart += "jail_net poststart ${name} {{ jail.num }} {{ jail.ip }}";
+  exec.prestop   += "jail_net prestop   ${name} {{ jail.num }} {{ jail.ip }}";
+  exec.poststop  += "jail_net poststop  ${name} {{ jail.num }} {{ jail.ip }}";
+
+  # no mounts during migration
+}

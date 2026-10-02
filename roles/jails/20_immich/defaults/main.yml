@@ -1,5 +1,9 @@
 userland: "15.1-minimal-jail"
-immich_version: "v3.1.0"
+immich_version: "v3.2.4"
+
+# Changing the image version recreates the jail (see jail role), so images are
+# only ever extracted into a fresh clone.
+jail_version: "{{ immich_version }}-deploy-2"
 
 dirs:
   - /usr/local/etc/rc.d

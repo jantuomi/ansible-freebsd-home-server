@@ -2,10 +2,25 @@
     name: jail
     tasks_from: jail_setup
 
-# Override jail.conf with immich-specific version
-- name: Deploy jail.conf.d/immich.conf
+# Images are extracted into /image/<name>, which must hold no mounts at that
+# point. Whenever an image is missing (fresh clone after a userland or image
+# version change), run the jail without mounts until extraction is done; the
+# full jail.conf is deployed and the jail restarted at the end of this file.
+- name: Check if images are extracted
+  stat:
+    path: "/image/{{ item.name }}{{ item.check_path }}"
+  loop: "{{ oci_images }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: _images_extracted
+
+- name: Determine whether images need extraction
+  set_fact:
+    _images_missing: "{{ _images_extracted.results | rejectattr('stat.exists') | list | length > 0 }}"
+
+- name: Deploy mount-free jail.conf.d/immich.conf for image extraction
   template:
-    src: "{{ jail_role_dir }}/templates/jail.conf.j2"
+    src: "{{ jail_role_dir }}/templates/jail.conf.nomounts.j2"
     dest: /etc/jail.conf.d/immich.conf
     owner: root
     group: wheel
@@ -15,16 +30,14 @@
       name: "{{ jail_name }}"
       num: "{{ jail_num }}"
       ip: "{{ jail_ips[jail_name] }}/{{ jail_lan_cidr | ipv4_prefixlen }}"
-      devfs_ruleset: "{{ devfs_ruleset | default(4) }}"
-      options: "{{ jail_conf_options | default([]) }}"
-      exec_prestart: "{{ exec_prestart | default([]) }}"
-      exec_start: "{{ exec_start | default([]) }}"
-      exec_poststart: "{{ exec_poststart | default([]) }}"
-      exec_prestop: "{{ exec_prestop | default([]) }}"
-      exec_stop: "{{ exec_stop | default([]) }}"
-      exec_poststop: "{{ exec_poststop | default([]) }}"
-      nullfs: "{{ nullfs | default([]) | normalize_nullfs }}"
+  when: _images_missing
   delegate_to: "{{ jail_delegate_host }}"
+
+- name: Restart jail without mounts
+  include_role:
+    name: jail
+    tasks_from: jail_restart
+  when: _images_missing
 
 # Fetch umoci Linux binary (statically linked, runs via Linux compat)
 - name: Check if umoci is installed
@@ -49,17 +62,15 @@
     mode: "0755"
 
 # Extract OCI images
-- name: Check if images are extracted
-  stat:
-    path: "/image/{{ item.name }}{{ item.check_path }}"
-  loop: "{{ oci_images }}"
-  loop_control:
-    label: "{{ item.name }}"
-  register: _images_extracted
-
 - name: Extract OCI images
   shell: |
     set -e
+    # Refuse to touch /image/<name> while anything is mounted under it.
+    if mount -p | awk '{print $2}' | grep -q "^/image/{{ item.item.name }}/"; then
+      echo "mounts present under /image/{{ item.item.name }}, aborting" >&2
+      mount -p | awk '$2 ~ "^/image/{{ item.item.name }}/"' >&2
+      exit 1
+    fi
     TMPDIR="/tmp/oci_extract_{{ item.item.name }}"
     rm -rf "$TMPDIR"
     mkdir -p "$TMPDIR"
@@ -67,7 +78,12 @@
     # manifest and umoci fails with "tag is not found: latest".
     skopeo copy --override-os linux "docker://{{ item.item.image }}" "oci:$TMPDIR/image:latest"
     umoci unpack --image "$TMPDIR/image:latest" "$TMPDIR/unpacked"
-    rm -rf "/image/{{ item.item.name }}"
+    # The jail runs without mounts here. Only the empty mount point
+    # directories from the generic jail setup may exist; rmdir refuses
+    # anything non-empty, so nothing with content is ever removed.
+    for d in $(find "/image/{{ item.item.name }}" -depth -type d 2>/dev/null); do
+      rmdir "$d"
+    done
     mv "$TMPDIR/unpacked/rootfs" "/image/{{ item.item.name }}"
     rm -rf "$TMPDIR"
   loop: "{{ _images_extracted.results }}"
@@ -75,9 +91,8 @@
     label: "{{ item.item.name }}"
   when: not item.stat.exists
 
-# Extraction replaces /image/<name> wholesale, which removes the nullfs mount
-# point directories the jail role created. Recreate them inside the rootfs.
-# dst is already the absolute path inside the jail (/image/<name>/...).
+# The rootfs replaces /image/<name>, so recreate the nullfs mount point
+# directories inside it. dst is the absolute path inside the jail.
 - name: Create volume mount points in image rootfs
   file:
     path: "{{ item.dst }}"
@@ -136,6 +151,30 @@
     group: wheel
     mode: "0600"
   notify: Restart immich services
+
+# Final jail.conf with all mounts (volumes plus devfs/linprocfs/linsysfs/tmpfs
+# for the chroots). Restart to apply it after a fresh clone or a config change.
+- name: Deploy jail.conf.d/immich.conf
+  template:
+    src: "{{ jail_role_dir }}/templates/jail.conf.j2"
+    dest: /etc/jail.conf.d/immich.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+  vars:
+    jail:
+      name: "{{ jail_name }}"
+      num: "{{ jail_num }}"
+      ip: "{{ jail_ips[jail_name] }}/{{ jail_lan_cidr | ipv4_prefixlen }}"
+      nullfs: "{{ nullfs | default([]) | normalize_nullfs }}"
+  register: _immich_jail_conf
+  delegate_to: "{{ jail_delegate_host }}"
+
+- name: Restart jail with mounts
+  include_role:
+    name: jail
+    tasks_from: jail_restart
+  when: _images_missing or _immich_jail_conf.changed
 
 - import_role:
     name: jail

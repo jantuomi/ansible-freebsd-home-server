@@ -20,61 +20,108 @@
   when: jail_exists.rc == 0
   delegate_to: "{{ jail_delegate_host }}"
 
-# Userland migration
-- name: "*** USERLAND MIGRATION REQUIRED: {{ jail_name }} ***"
+# Optional per-jail version marker. A jail definition may set `jail_version`
+# (e.g. to an OCI image version); it is recorded in the container after
+# cloning, and any mismatch (or a missing marker) forces a recreation, exactly
+# like a userland change.
+- name: "Check {{ jail_name }} version marker"
+  shell: "cat /usr/local/jails/containers/{{ jail_name }}/.jail_version"
+  register: jail_version_marker
+  failed_when: false
+  changed_when: false
+  when: jail_exists.rc == 0 and jail_version is defined
+  delegate_to: "{{ jail_delegate_host }}"
+
+- name: "Decide whether {{ jail_name }} must be recreated"
+  set_fact:
+    _userland_changed: "{{ jail_exists.rc == 0 and (userland + '@base') not in (jail_origin.stdout | default('')) }}"
+    _version_changed: >-
+      {{ jail_exists.rc == 0 and jail_version is defined
+         and (jail_version_marker.stdout | default('') | trim) != (jail_version | string | trim) }}
+
+- name: "Set recreation facts for {{ jail_name }}"
+  set_fact:
+    _migrate: "{{ _userland_changed | bool or _version_changed | bool }}"
+    _fresh_clone: "{{ jail_exists.rc != 0 or _userland_changed | bool or _version_changed | bool }}"
+
+# Jail recreation (userland or jail_version change)
+- name: "*** JAIL RECREATION REQUIRED: {{ jail_name }} ***"
   pause:
     prompt: |
 
       ════════════════════════════════════════════════════════════════
-        JAIL USERLAND MIGRATION: {{ jail_name }}
+        JAIL RECREATION: {{ jail_name }}
       ════════════════════════════════════════════════════════════════
-        Current: {{ jail_origin.stdout | trim }}
-        Target:  zroot/jails/templates/{{ userland }}@base
+      {% if _userland_changed | bool %}
+        Userland: {{ jail_origin.stdout | trim }}
+             ->   zroot/jails/templates/{{ userland }}@base
+      {% endif %}
+      {% if _version_changed | bool %}
+        Version:  {{ jail_version_marker.stdout | default('') | trim | default('(no marker)', true) }}
+             ->   {{ jail_version }}
+      {% endif %}
 
         This will:
-          1. Stop the jail
+          1. Stop the jail and wait until it is gone
           2. Rename existing dataset to *.old.<timestamp>
           3. Clone fresh from {{ userland }}
       ════════════════════════════════════════════════════════════════
 
       Press Enter to continue or Ctrl+C to abort
-  when:
-    - jail_exists.rc == 0
-    - jail_origin.stdout is defined
-    - "userland + '@base' not in jail_origin.stdout"
+  when: _migrate
 
-- name: "Stop {{ jail_name }} jail for userland migration"
+- name: "Stop {{ jail_name }} jail for recreation"
   shell: |
       service jail stop {{ jail_name }} || true
       sleep 3  # To avoid most common race conditions, sleep and re-stop
       service jail stop {{ jail_name }} || true
-  when:
-    - jail_exists.rc == 0
-    - jail_origin.stdout is defined
-    - "userland + '@base' not in jail_origin.stdout"
+  when: _migrate
   delegate_to: "{{ jail_delegate_host }}"
+
+# A VNET jail lingers in "dying" state until the kernel releases its network
+# stack. Starting the new jail before then fails with "already exists".
+- name: "Wait until {{ jail_name }} jail is gone"
+  shell: "jls -dj {{ jail_name }} jid"
+  register: _jail_dying
+  failed_when: false
+  changed_when: false
+  until: _jail_dying.rc != 0
+  retries: 15
+  delay: 2
+  when: _migrate
+  delegate_to: "{{ jail_delegate_host }}"
+
+- name: "Assert {{ jail_name }} jail is gone"
+  assert:
+    that: _jail_dying.rc != 0
+    fail_msg: "Jail {{ jail_name }} is still dying after 30s. Check 'jls -d' on the host."
+  when: _migrate
 
 - name: "Unmount any remaining mounts inside {{ jail_name }} container"
   shell: |
     mount | awk '$3 ~ "^/usr/local/jails/containers/{{ jail_name }}/" {print $3}' | sort -r | xargs -I{} umount -f {} 2>/dev/null || true
-  when:
-    - jail_exists.rc == 0
-    - jail_origin.stdout is defined
-    - "userland + '@base' not in jail_origin.stdout"
+  when: _migrate
   delegate_to: "{{ jail_delegate_host }}"
 
-- name: "Migrate {{ jail_name }} to {{ userland }}"
+- name: "Rename old {{ jail_name }} dataset"
   shell: |
     zfs rename zroot/jails/containers/{{ jail_name }} zroot/jails/containers/{{ jail_name }}.old.$(date +%s)
-  when:
-    - jail_exists.rc == 0
-    - jail_origin.stdout is defined
-    - "userland + '@base' not in jail_origin.stdout"
+  when: _migrate
   delegate_to: "{{ jail_delegate_host }}"
 
 - name: "Clone {{ jail_name }} from template"
   shell: "zfs clone zroot/jails/templates/{{ userland }}@base zroot/jails/containers/{{ jail_name }}"
-  when: jail_exists.rc != 0 or (jail_origin.stdout is defined and userland + '@base' not in jail_origin.stdout)
+  when: _fresh_clone
+  delegate_to: "{{ jail_delegate_host }}"
+
+- name: "Record {{ jail_name }} version marker"
+  copy:
+    content: "{{ jail_version }}\n"
+    dest: "/usr/local/jails/containers/{{ jail_name }}/.jail_version"
+    owner: root
+    group: wheel
+    mode: "0644"
+  when: jail_version is defined
   delegate_to: "{{ jail_delegate_host }}"
 
 # ZFS volume setup (for all volumes — existing, migrated, and new)
@@ -145,7 +192,7 @@
   loop: "{{ _nullfs }}"
   loop_control:
     label: "{{ item.dst }}"
-  when: jail_exists.rc != 0 or (jail_origin.stdout is defined and userland + '@base' not in jail_origin.stdout)
+  when: _fresh_clone
   delegate_to: "{{ jail_delegate_host }}"
 
 - name: "Deploy jail.conf.d/{{ jail_name }}.conf"
@@ -176,6 +223,15 @@
   register: jail_start
   failed_when: "jail_start.rc != 0 and 'already exists' not in jail_start.stdout"
   changed_when: "'already exists' not in jail_start.stdout"
+  delegate_to: "{{ jail_delegate_host }}"
+
+# "already exists" above is also what a dying jail reports, so confirm the
+# jail is actually running before provisioning inside it.
+- name: "Verify {{ jail_name }} jail is running"
+  shell: "jls -j {{ jail_name }} jid"
+  register: _jail_running
+  failed_when: _jail_running.rc != 0
+  changed_when: false
   delegate_to: "{{ jail_delegate_host }}"
 
 # In-jail provisioning
