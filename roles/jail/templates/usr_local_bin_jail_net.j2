@@ -85,7 +85,7 @@ _poststart() {
         jexec ${NAME} ifconfig epw${NUM}b inet6 -ifdisabled
 
         # dhcp6c must be started late after the epair has been set up
-        jexec ${NAME} service dhcp6c start
+        jexec ${NAME} service dhcp6c start || echo "dhcp6c not found! skipping"
 {% else %}
         jexec ${NAME} ifconfig epw${NUM}b inet {{ ingress_wan_static }}
         jexec ${NAME} route add default {{ lan_ipv4_gateway }}

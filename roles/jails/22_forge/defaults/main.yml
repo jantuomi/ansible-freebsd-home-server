@@ -11,6 +11,7 @@ nullfs:
     dst: /var/db/repos
 
 pkg:
+  - FreeBSD-ssh
   - git
   - cgit
   - fcgiwrap

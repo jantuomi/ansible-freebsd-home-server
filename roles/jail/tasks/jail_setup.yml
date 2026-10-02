@@ -44,7 +44,10 @@
     - "userland + '@base' not in jail_origin.stdout"
 
 - name: "Stop {{ jail_name }} jail for userland migration"
-  shell: "service jail stop {{ jail_name }} || true"
+  shell: |
+      service jail stop {{ jail_name }} || true
+      sleep 3  # To avoid most common race conditions, sleep and re-stop
+      service jail stop {{ jail_name }} || true
   when:
     - jail_exists.rc == 0
     - jail_origin.stdout is defined

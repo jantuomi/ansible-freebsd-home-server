@@ -7,6 +7,10 @@ nullfs:
   - src: irc_thelounge
     dst: /var/db/thelounge
 
+pkg:
+  # libexecinfo.so.1 needed by node
+  - FreeBSD-libexecinfo
+
 pkg_custom:
   - thelounge
 

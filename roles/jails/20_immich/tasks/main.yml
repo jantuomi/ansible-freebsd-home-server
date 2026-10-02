@@ -59,11 +59,14 @@
 
 - name: Extract OCI images
   shell: |
+    set -e
     TMPDIR="/tmp/oci_extract_{{ item.item.name }}"
     rm -rf "$TMPDIR"
     mkdir -p "$TMPDIR"
-    skopeo copy --override-os linux "docker://{{ item.item.image }}" "oci:$TMPDIR/image"
-    umoci unpack --image "$TMPDIR/image" "$TMPDIR/unpacked"
+    # Tag the OCI layout explicitly: without it skopeo writes an untagged
+    # manifest and umoci fails with "tag is not found: latest".
+    skopeo copy --override-os linux "docker://{{ item.item.image }}" "oci:$TMPDIR/image:latest"
+    umoci unpack --image "$TMPDIR/image:latest" "$TMPDIR/unpacked"
     rm -rf "/image/{{ item.item.name }}"
     mv "$TMPDIR/unpacked/rootfs" "/image/{{ item.item.name }}"
     rm -rf "$TMPDIR"
@@ -72,17 +75,20 @@
     label: "{{ item.item.name }}"
   when: not item.stat.exists
 
+# Extraction replaces /image/<name> wholesale, which removes the nullfs mount
+# point directories the jail role created. Recreate them inside the rootfs.
+# dst is already the absolute path inside the jail (/image/<name>/...).
 - name: Create volume mount points in image rootfs
   file:
-    path: "/image/{{ item[0].name }}{{ item[1].dst }}"
+    path: "{{ item.dst }}"
     state: directory
     owner: root
     group: wheel
     mode: "0755"
-  loop: "{{ oci_images | product(nullfs | default([]) | normalize_nullfs) | list }}"
+  loop: "{{ nullfs | default([]) | normalize_nullfs }}"
   loop_control:
-    label: "{{ item[0].name }}:{{ item[1].dst }}"
-  when: "item[1].dst.startswith('/image/' + item[0].name)"
+    label: "{{ item.dst }}"
+  when: item.dst.startswith('/image/')
 
 - name: Deploy resolv.conf into image rootfs
   copy:
