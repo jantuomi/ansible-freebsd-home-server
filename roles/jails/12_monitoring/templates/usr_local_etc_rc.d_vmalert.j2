@@ -1,0 +1,35 @@
+#!/bin/sh
+
+# PROVIDE: vmalert
+# REQUIRE: LOGIN victoria_metrics alertmanager
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name="vmalert"
+rcvar="vmalert_enable"
+load_rc_config "${name}"
+
+: ${vmalert_enable:="NO"}
+: ${vmalert_user:="victoria-metrics"}
+: ${vmalert_group:="victoria-metrics"}
+: ${vmalert_args:=""}
+
+pidfile="/var/run/vmalert.pid"
+required_files="/usr/local/etc/vmalert/rules.yml"
+procname="/usr/local/bin/vmalert"
+command="/usr/sbin/daemon"
+command_args="-f -p ${pidfile} -o /var/log/vmalert.log ${procname} ${vmalert_args}"
+start_precmd="vmalert_startprecmd"
+
+vmalert_startprecmd()
+{
+    if [ ! -e "${pidfile}" ]; then
+        install -o "${vmalert_user}" -g "${vmalert_group}" -m 0600 /dev/null "${pidfile}"
+    fi
+    if [ ! -e /var/log/vmalert.log ]; then
+        install -o "${vmalert_user}" -g "${vmalert_group}" -m 0640 /dev/null /var/log/vmalert.log
+    fi
+}
+
+run_rc_command "$1"

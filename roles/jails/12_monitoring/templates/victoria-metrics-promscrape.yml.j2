@@ -1,0 +1,8 @@
+scrape_configs:
+  - job_name: pursotin
+    scrape_interval: 15s
+    static_configs:
+      - targets:
+          - "{{ ansible_jail_host }}:9100"
+        labels:
+          instance: pursotin

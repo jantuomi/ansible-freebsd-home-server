@@ -323,6 +323,7 @@
       {{ svc }}_enable="YES"
       {% endfor %}
       {{ rc_conf | default('') }}
+  notify: Restart jail services
 
 - name: Set sysctl values
   sysctl:

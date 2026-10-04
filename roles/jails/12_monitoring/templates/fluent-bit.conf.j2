@@ -1,0 +1,62 @@
+[SERVICE]
+    Flush                     5
+    Log_Level                 info
+    Parsers_File              /usr/local/etc/fluent-bit/parsers.conf
+
+[INPUT]
+    Name              tail
+    Tag               nginx.access
+    Path              /mnt/ingress_logs/access.log
+    Parser            nginx_access
+    DB                /var/db/fluent-bit/access.db
+    DB.Sync           Normal
+    DB.Compare_Filename On
+    Read_from_Head    On
+    Refresh_Interval  5
+    Inotify_Watcher   Off
+    Rotate_Wait       30
+    Buffer_Max_Size   1M
+    Mem_Buf_Limit     20M
+    storage.type      memory
+
+[INPUT]
+    Name              tail
+    Tag               nginx.error
+    Path              /mnt/ingress_logs/error.log
+    Parser            nginx_error
+    DB                /var/db/fluent-bit/error.db
+    DB.Sync           Normal
+    DB.Compare_Filename On
+    Read_from_Head    On
+    Refresh_Interval  5
+    Inotify_Watcher   Off
+    Rotate_Wait       30
+    Buffer_Max_Size   1M
+    Mem_Buf_Limit     20M
+    storage.type      memory
+
+[FILTER]
+    Name  modify
+    Match nginx.*
+    Add   host pursotin
+    Add   service nginx
+
+[FILTER]
+    Name  modify
+    Match nginx.access
+    Add   log_type access
+
+[FILTER]
+    Name  modify
+    Match nginx.error
+    Add   log_type error
+
+[OUTPUT]
+    Name             http
+    Match            nginx.*
+    Host             {{ jail_ips[jail_name] }}
+    Port             9428
+    URI              /insert/jsonline?_stream_fields=host,service,log_type&_msg_field=log&_time_field=date
+    Format           json_lines
+    Json_date_format iso8601
+    Retry_Limit      False

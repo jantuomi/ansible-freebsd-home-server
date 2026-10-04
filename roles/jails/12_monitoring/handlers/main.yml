@@ -1,0 +1,6 @@
+- name: Restart monitoring services
+  listen: Restart jail services
+  service:
+    name: "{{ item }}"
+    state: restarted
+  loop: "{{ monitoring_services }}"

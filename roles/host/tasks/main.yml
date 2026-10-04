@@ -48,7 +48,7 @@
     - fastfetch
     - vim
     - age
-    - netdata
+    - node_exporter
     - fd-find
     - poudriere
   loop_control:
@@ -76,6 +76,11 @@
 - name: Start auditd
   service:
     name: auditd
+    state: started
+
+- name: Start node_exporter
+  service:
+    name: node_exporter
     state: started
 
 - name: Set up periodic.conf
@@ -187,7 +192,6 @@
     - { name: "zroot/jails/containers" }
     - { name: "zroot/jails/volumes", mountpoint: "/usr/local/jails/volumes" }
     - { name: "zroot/storage", mountpoint: "/usr/local/jails/volumes/storage" }
-    - { name: "zroot/netdata_db", mountpoint: "/var/db/netdata" }
     - { name: "zroot/ports", mountpoint: "/usr/ports" }
   loop_control:
     label: "{{ item.name }}"

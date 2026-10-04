@@ -1,0 +1,145 @@
+- name: Verify monitoring email settings
+  assert:
+    that:
+      - smtp_host | length > 0
+      - smtp_port | int > 0
+      - smtp_user | length > 0
+      - smtp_password | length > 0
+      - dma_mail_hostname | length > 0
+      - dma_to_address | length > 0
+    fail_msg: "Monitoring requires the existing SMTP and dma email settings."
+  no_log: true
+
+- import_role:
+    name: jail
+
+- name: Create monitoring volume mount points
+  file:
+    path: "{{ item.dst }}"
+    state: directory
+  loop: "{{ _nullfs }}"
+  loop_control:
+    label: "{{ item.dst }}"
+
+- name: Create Alertmanager configuration directory
+  file:
+    path: /usr/local/etc/alertmanager
+    state: directory
+    owner: root
+    group: alertmanager
+    mode: "0750"
+
+- name: Deploy Alertmanager SMTP password
+  copy:
+    content: "{{ smtp_password }}"
+    dest: /usr/local/etc/alertmanager/smtp-password
+    owner: root
+    group: alertmanager
+    mode: "0640"
+  no_log: true
+  diff: false
+  notify: Restart jail services
+
+- name: Deploy Alertmanager email configuration
+  template:
+    src: alertmanager.yml.j2
+    dest: /usr/local/etc/alertmanager/alertmanager.yml
+    owner: root
+    group: alertmanager
+    mode: "0640"
+    validate: /usr/local/bin/amtool check-config %s
+  no_log: true
+  diff: false
+  notify: Restart jail services
+
+- name: Validate vmalert rules
+  command:
+    argv:
+      - /usr/local/bin/vmalert
+      - -dryRun
+      - -rule=/usr/local/etc/vmalert/rules.yml
+      - "-datasource.url=http://{{ jail_ips[jail_name] }}:8428"
+      - "-notifier.url=http://{{ jail_ips[jail_name] }}:9093"
+  changed_when: false
+  when: not ansible_check_mode
+
+- name: Validate Fluent Bit configuration
+  command: /usr/local/bin/fluent-bit --dry-run --config /usr/local/etc/fluent-bit/fluent-bit.conf
+  changed_when: false
+  when: not ansible_check_mode
+
+- name: Read jail host mounts
+  command: mount -p
+  delegate_to: "{{ jail_delegate_host }}"
+  register: _monitoring_mount_table
+  changed_when: false
+  check_mode: false
+
+- name: Initialize missing monitoring mounts
+  set_fact:
+    _monitoring_missing_mounts: []
+
+- name: Identify monitoring mounts that need applying
+  set_fact:
+    _monitoring_missing_mounts: "{{ _monitoring_missing_mounts + [item.dst] }}"
+  vars:
+    _mount_pattern: >-
+      (?m)^{{ item.src | regex_escape }}\s+{{ ('/usr/local/jails/containers/' ~ jail_name ~ item.dst) | regex_escape }}\s+nullfs\s+{{ item.mode | default('rw') }}(?:,|\s)
+  loop: "{{ _nullfs }}"
+  loop_control:
+    label: "{{ item.dst }}"
+  when: not (_monitoring_mount_table.stdout is search(_mount_pattern))
+
+- name: Apply missing monitoring mounts
+  include_role:
+    name: jail
+    tasks_from: jail_restart
+  when:
+    - _monitoring_missing_mounts | length > 0
+    - not ansible_check_mode
+
+- name: Read applied monitoring mounts
+  command: mount -p
+  delegate_to: "{{ jail_delegate_host }}"
+  register: _monitoring_applied_mount_table
+  changed_when: false
+  when: not ansible_check_mode
+
+- name: Verify monitoring volumes are mounted with the expected permissions
+  assert:
+    that: _monitoring_applied_mount_table.stdout is search(_mount_pattern)
+    fail_msg: "Expected {{ item.src }} at {{ item.dst }} with {{ item.mode | default('rw') }} permissions."
+  vars:
+    _mount_pattern: >-
+      (?m)^{{ item.src | regex_escape }}\s+{{ ('/usr/local/jails/containers/' ~ jail_name ~ item.dst) | regex_escape }}\s+nullfs\s+{{ item.mode | default('rw') }}(?:,|\s)
+  loop: "{{ _nullfs }}"
+  loop_control:
+    label: "{{ item.dst }}"
+  when: not ansible_check_mode
+
+- name: Apply monitoring configuration changes
+  meta: flush_handlers
+
+- name: Start monitoring services
+  service:
+    name: "{{ item }}"
+    state: started
+  loop: "{{ monitoring_services }}"
+
+- name: Wait for monitoring HTTP endpoints
+  uri:
+    url: "http://{{ jail_ips[jail_name] }}:{{ item.port }}{{ item.path }}"
+    status_code: 200
+  delegate_to: "{{ jail_delegate_host }}"
+  register: _monitoring_health
+  until: _monitoring_health.status | default(0) == 200
+  retries: 10
+  delay: 2
+  loop:
+    - { name: VictoriaMetrics, port: 8428, path: /health }
+    - { name: VictoriaLogs, port: 9428, path: /health }
+    - { name: Alertmanager, port: 9093, path: /-/ready }
+    - { name: vmalert, port: 8880, path: /health }
+  loop_control:
+    label: "{{ item.name }}"
+  when: not ansible_check_mode

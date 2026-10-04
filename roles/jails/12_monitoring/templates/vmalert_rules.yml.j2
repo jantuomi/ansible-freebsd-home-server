@@ -1,0 +1,90 @@
+{% raw %}
+groups:
+  - name: pursotin
+    interval: 30s
+    rules:
+      - alert: HostExporterDown
+        expr: up{job="pursotin",instance="pursotin"} == 0 or absent(up{job="pursotin",instance="pursotin"})
+        for: 2m
+        labels:
+          severity: critical
+          resource: exporter
+        annotations:
+          summary: "Cannot scrape node_exporter on {{ $labels.instance }}"
+          description: "The host or its node_exporter has been unreachable for at least 2 minutes."
+
+      - alert: HostCollectorFailed
+        expr: node_scrape_collector_success{job="pursotin",collector=~"cpu|meminfo|filesystem"} == 0
+        for: 5m
+        labels:
+          severity: warning
+          resource: exporter
+        annotations:
+          summary: "Node exporter collector failed on {{ $labels.instance }}"
+          description: "The {{ $labels.collector }} collector has failed for at least 5 minutes; its metrics may be missing."
+
+      - alert: HostHighCPUUsage
+        expr: 1 - avg by (instance) (rate(node_cpu_seconds_total{job="pursotin",mode="idle"}[5m])) > 0.90
+        for: 10m
+        labels:
+          severity: warning
+          resource: cpu
+        annotations:
+          summary: "Sustained high CPU usage on {{ $labels.instance }}"
+          description: "Average CPU usage has exceeded 90% for at least 10 minutes."
+
+      - alert: HostLowAvailableMemory
+        # FreeBSD's wired memory includes ARC; count the ARC above its minimum as reclaimable.
+        expr: >-
+          (
+            node_memory_free_bytes{job="pursotin"}
+            + node_memory_inactive_bytes{job="pursotin"}
+            + node_memory_cache_bytes{job="pursotin"}
+            + (
+              clamp_min(
+                node_zfs_arcstats_size_bytes{job="pursotin"}
+                - node_zfs_arcstats_c_min_bytes{job="pursotin"}, 0
+              )
+              or on (job, instance) (0 * node_memory_size_bytes{job="pursotin"})
+            )
+          ) / node_memory_size_bytes{job="pursotin"} < 0.10
+        for: 10m
+        labels:
+          severity: warning
+          resource: memory
+        annotations:
+          summary: "Low available memory on {{ $labels.instance }}"
+          description: "Free, inactive, cached, and estimated reclaimable ARC memory have remained below 10% of physical memory for at least 10 minutes."
+
+      - alert: HostLowDiskSpace
+        expr: >-
+          (
+            node_filesystem_avail_bytes{job="pursotin",fstype=~"zfs|ufs"}
+            / node_filesystem_size_bytes{job="pursotin",fstype=~"zfs|ufs"} < 0.10
+          )
+          and on (instance, device, mountpoint)
+          (node_filesystem_readonly{job="pursotin"} == 0)
+        for: 15m
+        labels:
+          severity: warning
+          resource: filesystem
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}: {{ $labels.mountpoint }}"
+          description: "The writable filesystem has less than 10% available space for at least 15 minutes."
+
+      - alert: HostCriticalDiskSpace
+        expr: >-
+          (
+            node_filesystem_avail_bytes{job="pursotin",fstype=~"zfs|ufs"}
+            / node_filesystem_size_bytes{job="pursotin",fstype=~"zfs|ufs"} < 0.05
+          )
+          and on (instance, device, mountpoint)
+          (node_filesystem_readonly{job="pursotin"} == 0)
+        for: 5m
+        labels:
+          severity: critical
+          resource: filesystem
+        annotations:
+          summary: "Critically low disk space on {{ $labels.instance }}: {{ $labels.mountpoint }}"
+          description: "The writable filesystem has less than 5% available space for at least 5 minutes."
+{% endraw %}

@@ -1,0 +1,74 @@
+userland: "15.1-minimal-jail"
+
+zfs:
+  - name: vm_data
+    owner: "289"
+    group: "289"
+    mode: "0755"
+  - name: vl_data
+    owner: "363"
+    group: "363"
+    mode: "0750"
+  - name: alertmanager_data
+    owner: "479"
+    group: "479"
+    mode: "0750"
+  - name: fluent_bit_data
+    mode: "0750"
+
+nullfs:
+  - src: vm_data
+    dst: /var/db/victoria-metrics
+  - src: vl_data
+    dst: /var/db/victoria-logs
+  - src: alertmanager_data
+    dst: /var/db/alertmanager
+  - src: fluent_bit_data
+    dst: /var/db/fluent-bit
+  - src: ingress_logs
+    dst: /mnt/ingress_logs
+    mode: ro
+
+pkg:
+  - victoria-metrics
+  - victoria-logs
+  - vmutils
+  - alertmanager
+  - fluent-bit
+
+services: []
+
+monitoring_services:
+  - victoria-metrics
+  - victoria_logs
+  - alertmanager
+  - vmalert
+  - fluent-bit
+
+rc_conf: |
+  victoria_metrics_enable="YES"
+  victoria_metrics_args="-storageDataPath=/var/db/victoria-metrics -retentionPeriod=1 -httpListenAddr={{ jail_ips[jail_name] }}:8428 -promscrape.config=/usr/local/etc/victoria-metrics-promscrape.yml"
+  victoria_logs_enable="YES"
+  victoria_logs_args="-storageDataPath=/var/db/victoria-logs -retentionPeriod=31d -httpListenAddr={{ jail_ips[jail_name] }}:9428"
+  alertmanager_enable="YES"
+  alertmanager_args="--web.listen-address={{ jail_ips[jail_name] }}:9093 --web.external-url=http://{{ jail_ips[jail_name] }}:9093 --cluster.listen-address="
+  vmalert_enable="YES"
+  vmalert_args="-rule=/usr/local/etc/vmalert/rules.yml -datasource.url=http://{{ jail_ips[jail_name] }}:8428 -notifier.url=http://{{ jail_ips[jail_name] }}:9093 -remoteWrite.url=http://{{ jail_ips[jail_name] }}:8428 -remoteRead.url=http://{{ jail_ips[jail_name] }}:8428 -httpListenAddr={{ jail_ips[jail_name] }}:8880 -external.url=http://{{ jail_ips[jail_name] }}:8880"
+  fluent_bit_enable="YES"
+  fluent_bit_config="/usr/local/etc/fluent-bit/fluent-bit.conf"
+  fluent_bit_user="root"
+  fluent_bit_group="wheel"
+  fluent_bit_env="TZ=Europe/Helsinki"
+
+files:
+  - src: victoria-metrics-promscrape.yml.j2
+    dest: /usr/local/etc/victoria-metrics-promscrape.yml
+  - src: vmalert_rules.yml.j2
+    dest: /usr/local/etc/vmalert/rules.yml
+  - src: usr_local_etc_rc.d_vmalert.j2
+    dest: /usr/local/etc/rc.d/vmalert
+    mode: "0755"
+  - src: fluent-bit.conf.j2
+    dest: /usr/local/etc/fluent-bit/fluent-bit.conf
+  - src: fluent-bit-parsers.conf.j2
+    dest: /usr/local/etc/fluent-bit/parsers.conf
