@@ -975,7 +975,7 @@
                     "datasource": {
                       "kind": "PrometheusDatasource"
                     },
-                    "query": "rate(node_memory_swapped_in_pages_bytes_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
+                    "query": "rate(node_memory_swap_in_bytes_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
                     "seriesNameFormat": "Swap in"
                   }
                 }
@@ -990,7 +990,7 @@
                     "datasource": {
                       "kind": "PrometheusDatasource"
                     },
-                    "query": "rate(node_memory_swapped_out_pages_bytes_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
+                    "query": "rate(node_memory_swap_out_bytes_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
                     "seriesNameFormat": "Swap out"
                   }
                 }
