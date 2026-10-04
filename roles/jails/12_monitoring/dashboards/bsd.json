@@ -311,8 +311,8 @@
         "kind": "Panel",
         "spec": {
           "display": {
-            "name": "Root FS Used",
-            "description": "Used Root FS"
+            "name": "Root Pool Used",
+            "description": "Allocated percentage of the ZFS pool backing /. Includes all datasets and snapshots in that pool, not just the root dataset."
           },
           "plugin": {
             "kind": "GaugeChart",
@@ -347,7 +347,7 @@
                     "datasource": {
                       "kind": "PrometheusDatasource"
                     },
-                    "query": "(\n  (node_filesystem_size_bytes{instance=\"$node\", job=\"$job\", mountpoint=\"/\", fstype!=\"rootfs\"}\n   - node_filesystem_avail_bytes{instance=\"$node\", job=\"$job\", mountpoint=\"/\", fstype!=\"rootfs\"})\n  / node_filesystem_size_bytes{instance=\"$node\", job=\"$job\", mountpoint=\"/\", fstype!=\"rootfs\"}\n) * 100\n"
+                    "query": "(100 * zfs_pool_allocated_bytes{instance=\"$node\",job=\"zfs\"} / zfs_pool_size_bytes{instance=\"$node\",job=\"zfs\"}) and on(instance,pool) label_replace(node_filesystem_size_bytes{instance=\"$node\",job=\"$job\",mountpoint=\"/\",fstype=\"zfs\"}, \"pool\", \"$1\", \"device\", \"^([^/]+)(/.*)?$\")"
                   }
                 }
               }
@@ -508,8 +508,8 @@
         "kind": "Panel",
         "spec": {
           "display": {
-            "name": "RootFS Total",
-            "description": "Total RootFS"
+            "name": "Root Pool Total",
+            "description": "Capacity reported by ZFS for the pool backing /, not the root dataset's shared free-space view. Decimal byte units: 1 TB = 10^12 bytes."
           },
           "plugin": {
             "kind": "StatChart",
@@ -517,8 +517,9 @@
               "calculation": "last-number",
               "colorMode": "none",
               "format": {
-                "decimalPlaces": 0,
-                "unit": "bytes"
+                "decimalPlaces": 2,
+                "unit": "decbytes",
+                "shortValues": true
               },
               "mappings": [
                 {
@@ -546,7 +547,7 @@
                     "datasource": {
                       "kind": "PrometheusDatasource"
                     },
-                    "query": "node_filesystem_size_bytes{instance=\"$node\",job=\"$job\",mountpoint=\"/\"}"
+                    "query": "zfs_pool_size_bytes{instance=\"$node\",job=\"zfs\"} and on(instance,pool) label_replace(node_filesystem_size_bytes{instance=\"$node\",job=\"$job\",mountpoint=\"/\",fstype=\"zfs\"}, \"pool\", \"$1\", \"device\", \"^([^/]+)(/.*)?$\")"
                   }
                 }
               }
@@ -992,147 +993,6 @@
                     },
                     "query": "rate(node_memory_swap_out_bytes_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
                     "seriesNameFormat": "Swap out"
-                  }
-                }
-              }
-            }
-          ]
-        }
-      },
-      "1_4": {
-        "kind": "Panel",
-        "spec": {
-          "display": {
-            "name": "Disk Percentage Used",
-            "description": "Filesystem space used by percentage"
-          },
-          "plugin": {
-            "kind": "TimeSeriesChart",
-            "spec": {
-              "legend": {
-                "mode": "table",
-                "position": "bottom",
-                "values": [
-                  "min",
-                  "mean",
-                  "max"
-                ]
-              },
-              "visual": {
-                "areaOpacity": 0.4,
-                "connectNulls": false,
-                "display": "line",
-                "lineWidth": 1
-              },
-              "yAxis": {
-                "format": {
-                  "unit": "percent"
-                },
-                "max": 100,
-                "min": 0
-              }
-            }
-          },
-          "queries": [
-            {
-              "kind": "TimeSeriesQuery",
-              "spec": {
-                "plugin": {
-                  "kind": "PrometheusTimeSeriesQuery",
-                  "spec": {
-                    "datasource": {
-                      "kind": "PrometheusDatasource"
-                    },
-                    "query": "100 - ((node_filesystem_avail_bytes{instance=\"$node\",job=\"$job\"} * 100) / node_filesystem_size_bytes{instance=\"$node\",job=\"$job\"})",
-                    "seriesNameFormat": "{{device}} - {{mountpoint}}"
-                  }
-                }
-              }
-            }
-          ]
-        }
-      },
-      "1_5": {
-        "kind": "Panel",
-        "spec": {
-          "display": {
-            "name": "Disk Space Available / Used",
-            "description": "Disk space used, free, and available for user operations"
-          },
-          "plugin": {
-            "kind": "TimeSeriesChart",
-            "spec": {
-              "legend": {
-                "mode": "table",
-                "position": "bottom",
-                "values": [
-                  "min",
-                  "mean",
-                  "max"
-                ]
-              },
-              "querySettings": [
-                {
-                  "negativeY": true,
-                  "queryIndex": 0
-                }
-              ],
-              "visual": {
-                "areaOpacity": 0.4,
-                "connectNulls": false,
-                "display": "line",
-                "lineWidth": 1
-              },
-              "yAxis": {
-                "format": {
-                  "unit": "bytes"
-                },
-                "label": "used (-) / available (+)"
-              }
-            }
-          },
-          "queries": [
-            {
-              "kind": "TimeSeriesQuery",
-              "spec": {
-                "plugin": {
-                  "kind": "PrometheusTimeSeriesQuery",
-                  "spec": {
-                    "datasource": {
-                      "kind": "PrometheusDatasource"
-                    },
-                    "query": "node_filesystem_size_bytes{instance=\"$node\",job=\"$job\"} - node_filesystem_free_bytes{instance=\"$node\",job=\"$job\"}",
-                    "seriesNameFormat": "{{device}} - {{mountpoint}} - Used"
-                  }
-                }
-              }
-            },
-            {
-              "kind": "TimeSeriesQuery",
-              "spec": {
-                "plugin": {
-                  "kind": "PrometheusTimeSeriesQuery",
-                  "spec": {
-                    "datasource": {
-                      "kind": "PrometheusDatasource"
-                    },
-                    "query": "node_filesystem_free_bytes{instance=\"$node\",job=\"$job\"}",
-                    "seriesNameFormat": "{{device}} - {{mountpoint}} - Free"
-                  }
-                }
-              }
-            },
-            {
-              "kind": "TimeSeriesQuery",
-              "spec": {
-                "plugin": {
-                  "kind": "PrometheusTimeSeriesQuery",
-                  "spec": {
-                    "datasource": {
-                      "kind": "PrometheusDatasource"
-                    },
-                    "query": "node_filesystem_avail_bytes{instance=\"$node\",job=\"$job\"}",
-                    "seriesNameFormat": "{{device}} - {{mountpoint}} - Available"
                   }
                 }
               }
@@ -1931,332 +1791,6 @@
           ]
         }
       },
-      "4_0": {
-        "kind": "Panel",
-        "spec": {
-          "display": {
-            "name": "Disk Read/Write IOps",
-            "description": "Number of I/O operations completed per second"
-          },
-          "plugin": {
-            "kind": "TimeSeriesChart",
-            "spec": {
-              "legend": {
-                "mode": "table",
-                "position": "bottom",
-                "values": [
-                  "min",
-                  "mean",
-                  "max"
-                ]
-              },
-              "querySettings": [
-                {
-                  "negativeY": true,
-                  "queryIndex": 0
-                }
-              ],
-              "visual": {
-                "areaOpacity": 0.4,
-                "connectNulls": false,
-                "display": "line",
-                "lineWidth": 1
-              },
-              "yAxis": {
-                "label": "read (–) / write (+)"
-              }
-            }
-          },
-          "queries": [
-            {
-              "kind": "TimeSeriesQuery",
-              "spec": {
-                "plugin": {
-                  "kind": "PrometheusTimeSeriesQuery",
-                  "spec": {
-                    "datasource": {
-                      "kind": "PrometheusDatasource"
-                    },
-                    "query": "rate(node_disk_reads_completed_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
-                    "seriesNameFormat": "{{device}} - Read"
-                  }
-                }
-              }
-            },
-            {
-              "kind": "TimeSeriesQuery",
-              "spec": {
-                "plugin": {
-                  "kind": "PrometheusTimeSeriesQuery",
-                  "spec": {
-                    "datasource": {
-                      "kind": "PrometheusDatasource"
-                    },
-                    "query": "rate(node_disk_writes_completed_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
-                    "seriesNameFormat": "{{device}} - Write"
-                  }
-                }
-              }
-            }
-          ]
-        }
-      },
-      "4_1": {
-        "kind": "Panel",
-        "spec": {
-          "display": {
-            "name": "Disk Read/Write Data",
-            "description": "Number of bytes read from or written to the device per second"
-          },
-          "plugin": {
-            "kind": "TimeSeriesChart",
-            "spec": {
-              "legend": {
-                "mode": "table",
-                "position": "bottom",
-                "values": [
-                  "min",
-                  "mean",
-                  "max"
-                ]
-              },
-              "querySettings": [
-                {
-                  "negativeY": true,
-                  "queryIndex": 0
-                }
-              ],
-              "visual": {
-                "areaOpacity": 0.4,
-                "connectNulls": false,
-                "display": "line",
-                "lineWidth": 1
-              },
-              "yAxis": {
-                "format": {
-                  "unit": "bytes/sec"
-                },
-                "label": "read (–) / write (+)"
-              }
-            }
-          },
-          "queries": [
-            {
-              "kind": "TimeSeriesQuery",
-              "spec": {
-                "plugin": {
-                  "kind": "PrometheusTimeSeriesQuery",
-                  "spec": {
-                    "datasource": {
-                      "kind": "PrometheusDatasource"
-                    },
-                    "query": "rate(node_disk_read_bytes_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
-                    "seriesNameFormat": "{{device}} - Read"
-                  }
-                }
-              }
-            },
-            {
-              "kind": "TimeSeriesQuery",
-              "spec": {
-                "plugin": {
-                  "kind": "PrometheusTimeSeriesQuery",
-                  "spec": {
-                    "datasource": {
-                      "kind": "PrometheusDatasource"
-                    },
-                    "query": "rate(node_disk_written_bytes_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
-                    "seriesNameFormat": "{{device}} - Write"
-                  }
-                }
-              }
-            }
-          ]
-        }
-      },
-      "4_2": {
-        "kind": "Panel",
-        "spec": {
-          "display": {
-            "name": "Time Spent Doing I/Os",
-            "description": "Percentage of time the disk spent actively processing I/O operations"
-          },
-          "plugin": {
-            "kind": "TimeSeriesChart",
-            "spec": {
-              "legend": {
-                "mode": "table",
-                "position": "bottom",
-                "values": [
-                  "min",
-                  "mean",
-                  "max"
-                ]
-              },
-              "visual": {
-                "areaOpacity": 0.4,
-                "connectNulls": false,
-                "display": "line",
-                "lineWidth": 1
-              },
-              "yAxis": {
-                "format": {
-                  "unit": "percent-decimal"
-                }
-              }
-            }
-          },
-          "queries": [
-            {
-              "kind": "TimeSeriesQuery",
-              "spec": {
-                "plugin": {
-                  "kind": "PrometheusTimeSeriesQuery",
-                  "spec": {
-                    "datasource": {
-                      "kind": "PrometheusDatasource"
-                    },
-                    "query": "rate(node_disk_io_time_seconds_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
-                    "seriesNameFormat": "{{device}}"
-                  }
-                }
-              }
-            }
-          ]
-        }
-      },
-      "4_3": {
-        "kind": "Panel",
-        "spec": {
-          "display": {
-            "name": "File Nodes Free",
-            "description": "Number of free file nodes (inodes) available per mounted filesystem"
-          },
-          "plugin": {
-            "kind": "TimeSeriesChart",
-            "spec": {
-              "legend": {
-                "mode": "table",
-                "position": "bottom",
-                "values": [
-                  "min",
-                  "mean",
-                  "max"
-                ]
-              },
-              "visual": {
-                "areaOpacity": 0.4,
-                "connectNulls": false,
-                "display": "line",
-                "lineWidth": 1
-              },
-              "yAxis": {
-                "format": {
-                  "unit": "decimal"
-                }
-              }
-            }
-          },
-          "queries": [
-            {
-              "kind": "TimeSeriesQuery",
-              "spec": {
-                "plugin": {
-                  "kind": "PrometheusTimeSeriesQuery",
-                  "spec": {
-                    "datasource": {
-                      "kind": "PrometheusDatasource"
-                    },
-                    "query": "node_filesystem_files_free{instance=\"$node\",job=\"$job\"}",
-                    "seriesNameFormat": "{{device}} - {{mountpoint}} - Filenodes free"
-                  }
-                }
-              }
-            },
-            {
-              "kind": "TimeSeriesQuery",
-              "spec": {
-                "plugin": {
-                  "kind": "PrometheusTimeSeriesQuery",
-                  "spec": {
-                    "datasource": {
-                      "kind": "PrometheusDatasource"
-                    },
-                    "query": "node_filesystem_files{instance=\"$node\",job=\"$job\"}",
-                    "seriesNameFormat": "{{device}} - {{mountpoint}} - Filenodes total"
-                  }
-                }
-              }
-            }
-          ]
-        }
-      },
-      "4_4": {
-        "kind": "Panel",
-        "spec": {
-          "display": {
-            "name": "Filesystem in ReadOnly / Error",
-            "description": "Filesystems mounted in read-only mode or reporting device-level I/O errors"
-          },
-          "plugin": {
-            "kind": "TimeSeriesChart",
-            "spec": {
-              "legend": {
-                "mode": "table",
-                "position": "bottom",
-                "values": [
-                  "min",
-                  "mean",
-                  "max"
-                ]
-              },
-              "visual": {
-                "areaOpacity": 0.4,
-                "connectNulls": false,
-                "display": "line",
-                "lineWidth": 1,
-                "stack": "all"
-              },
-              "yAxis": {
-                "max": 1,
-                "min": 0
-              }
-            }
-          },
-          "queries": [
-            {
-              "kind": "TimeSeriesQuery",
-              "spec": {
-                "plugin": {
-                  "kind": "PrometheusTimeSeriesQuery",
-                  "spec": {
-                    "datasource": {
-                      "kind": "PrometheusDatasource"
-                    },
-                    "query": "node_filesystem_readonly{instance=\"$node\",job=\"$job\",device!~'rootfs'}",
-                    "seriesNameFormat": "{{device}} - {{mountpoint}} - ReadOnly"
-                  }
-                }
-              }
-            },
-            {
-              "kind": "TimeSeriesQuery",
-              "spec": {
-                "plugin": {
-                  "kind": "PrometheusTimeSeriesQuery",
-                  "spec": {
-                    "datasource": {
-                      "kind": "PrometheusDatasource"
-                    },
-                    "query": "node_filesystem_device_error{instance=\"$node\",job=\"$job\",device!~'rootfs'}",
-                    "seriesNameFormat": "{{device}} - {{mountpoint}} - Error"
-                  }
-                }
-              }
-            }
-          ]
-        }
-      },
       "5_0": {
         "kind": "Panel",
         "spec": {
@@ -2349,6 +1883,586 @@
                     },
                     "query": "1 - node_textfile_scrape_error{instance=\"$node\",job=\"$job\"}",
                     "seriesNameFormat": "textfile"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "zfsExporter": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "ZFS exporter",
+            "description": "Whether VictoriaMetrics can scrape the host's ZFS exporter. Collector failures are shown separately."
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last-number",
+              "mappings": [
+                {
+                  "kind": "Value",
+                  "spec": {
+                    "value": "0",
+                    "result": {
+                      "value": "DOWN"
+                    }
+                  }
+                },
+                {
+                  "kind": "Value",
+                  "spec": {
+                    "value": "1",
+                    "result": {
+                      "value": "UP"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "up{instance=\"$node\",job=\"zfs\"}",
+                    "seriesNameFormat": "ZFS exporter"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "zfsPoolHealth": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "ZFS pool health",
+            "description": "Health of each pool: ONLINE, DEGRADED, FAULTED, OFFLINE, UNAVAILABLE, REMOVED or SUSPENDED."
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last-number",
+              "mappings": [
+                {
+                  "kind": "Value",
+                  "spec": {
+                    "value": "0",
+                    "result": {
+                      "value": "ONLINE"
+                    }
+                  }
+                },
+                {
+                  "kind": "Value",
+                  "spec": {
+                    "value": "1",
+                    "result": {
+                      "value": "DEGRADED"
+                    }
+                  }
+                },
+                {
+                  "kind": "Value",
+                  "spec": {
+                    "value": "2",
+                    "result": {
+                      "value": "FAULTED"
+                    }
+                  }
+                },
+                {
+                  "kind": "Value",
+                  "spec": {
+                    "value": "3",
+                    "result": {
+                      "value": "OFFLINE"
+                    }
+                  }
+                },
+                {
+                  "kind": "Value",
+                  "spec": {
+                    "value": "4",
+                    "result": {
+                      "value": "UNAVAILABLE"
+                    }
+                  }
+                },
+                {
+                  "kind": "Value",
+                  "spec": {
+                    "value": "5",
+                    "result": {
+                      "value": "REMOVED"
+                    }
+                  }
+                },
+                {
+                  "kind": "Value",
+                  "spec": {
+                    "value": "6",
+                    "result": {
+                      "value": "SUSPENDED"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "zfs_pool_health{instance=\"$node\",job=\"zfs\"}",
+                    "seriesNameFormat": "{{pool}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "zfsFragmentation": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "ZFS pool fragmentation",
+            "description": "Free-space fragmentation per pool. This is not file fragmentation or the percentage of space used."
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last-number",
+              "format": {
+                "unit": "percent-decimal",
+                "decimalPlaces": 1
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "zfs_pool_fragmentation_ratio{instance=\"$node\",job=\"zfs\"}",
+                    "seriesNameFormat": "{{pool}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "zfsReadonly": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "ZFS pool access",
+            "description": "Whether each pool was imported read-only."
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last-number",
+              "mappings": [
+                {
+                  "kind": "Value",
+                  "spec": {
+                    "value": "0",
+                    "result": {
+                      "value": "READ-WRITE"
+                    }
+                  }
+                },
+                {
+                  "kind": "Value",
+                  "spec": {
+                    "value": "1",
+                    "result": {
+                      "value": "READ-ONLY"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "zfs_pool_readonly{instance=\"$node\",job=\"zfs\"}",
+                    "seriesNameFormat": "{{pool}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "zfsPoolUsage": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "ZFS pool capacity used",
+            "description": "Allocated pool bytes divided by total pool size. Pool-level accounting includes redundancy and differs from dataset accounting."
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "position": "bottom",
+                "mode": "list"
+              },
+              "yAxis": {
+                "min": 0,
+                "max": 100,
+                "format": {
+                  "unit": "percent",
+                  "decimalPlaces": 1
+                }
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "100 * zfs_pool_allocated_bytes{instance=\"$node\",job=\"zfs\"} / zfs_pool_size_bytes{instance=\"$node\",job=\"zfs\"}",
+                    "seriesNameFormat": "{{pool}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "zfsPoolSpace": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "ZFS pool allocated / free space",
+            "description": "Pool-level allocated and free bytes. Dataset available space may be lower because of reservations, quotas and ZFS overhead."
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "position": "bottom",
+                "mode": "list"
+              },
+              "yAxis": {
+                "min": 0,
+                "format": {
+                  "unit": "bytes",
+                  "shortValues": true
+                }
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "zfs_pool_allocated_bytes{instance=\"$node\",job=\"zfs\"}",
+                    "seriesNameFormat": "{{pool}} allocated"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "zfs_pool_free_bytes{instance=\"$node\",job=\"zfs\"}",
+                    "seriesNameFormat": "{{pool}} free"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "zfsDatasetUsage": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "ZFS space used by dataset",
+            "description": "Latest bytes used by each filesystem or volume itself, excluding children, snapshots and refreservations. Avoids double-counting parent datasets."
+          },
+          "plugin": {
+            "kind": "BarChart",
+            "spec": {
+              "calculation": "last-number",
+              "format": {
+                "unit": "bytes",
+                "shortValues": true
+              },
+              "sort": "desc",
+              "orientation": "horizontal"
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "zfs_dataset_used_by_dataset_bytes{instance=\"$node\",job=\"zfs\"}",
+                    "seriesNameFormat": "{{name}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "zfsSnapshotUsage": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "ZFS space retained by snapshots",
+            "description": "Latest usedbysnapshots bytes per filesystem or volume, not including child datasets. Zero means snapshots retain no additional space. Individual snapshot collection is not required."
+          },
+          "plugin": {
+            "kind": "BarChart",
+            "spec": {
+              "calculation": "last-number",
+              "format": {
+                "unit": "bytes",
+                "shortValues": true
+              },
+              "sort": "desc",
+              "orientation": "horizontal"
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "zfs_dataset_used_by_snapshot_bytes{instance=\"$node\",job=\"zfs\"}",
+                    "seriesNameFormat": "{{name}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "zfsDeviceIOPS": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Device read / write IOPS",
+            "description": "FreeBSD devstat read/write transfers per second for each reported device. These are device-level statistics, not ZFS pool-level I/O; do not sum physical and virtual device layers together."
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "position": "bottom",
+                "mode": "list"
+              },
+              "yAxis": {
+                "min": 0,
+                "format": {
+                  "unit": "ops/sec",
+                  "decimalPlaces": 1
+                }
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_devstat_transfers_total{instance=\"$node\",job=\"$job\",type=\"read\"}[$__rate_interval])",
+                    "seriesNameFormat": "{{device}} read"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_devstat_transfers_total{instance=\"$node\",job=\"$job\",type=\"write\"}[$__rate_interval])",
+                    "seriesNameFormat": "{{device}} write"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "zfsDeviceBandwidth": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Device read / write bandwidth",
+            "description": "FreeBSD devstat read/write bytes per second for each reported device. These are device-level statistics, not ZFS pool-level throughput."
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "position": "bottom",
+                "mode": "list"
+              },
+              "yAxis": {
+                "label": "Bytes / second",
+                "min": 0,
+                "format": {
+                  "unit": "bytes",
+                  "shortValues": true
+                }
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_devstat_bytes_total{instance=\"$node\",job=\"$job\",type=\"read\"}[$__rate_interval])",
+                    "seriesNameFormat": "{{device}} read"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_devstat_bytes_total{instance=\"$node\",job=\"$job\",type=\"write\"}[$__rate_interval])",
+                    "seriesNameFormat": "{{device}} write"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "zfsCollectors": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "ZFS collector status",
+            "description": "OK = successful collection; FAILED = failure or collection deadline exceeded. The exporter can still return cached pool and dataset values when collection fails."
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last-number",
+              "mappings": [
+                {
+                  "kind": "Value",
+                  "spec": {
+                    "value": "0",
+                    "result": {
+                      "value": "FAILED"
+                    }
+                  }
+                },
+                {
+                  "kind": "Value",
+                  "spec": {
+                    "value": "1",
+                    "result": {
+                      "value": "OK"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "zfs_scrape_collector_success{instance=\"$node\",job=\"zfs\"}",
+                    "seriesNameFormat": "{{collector}}"
                   }
                 }
               }
@@ -2522,7 +2636,7 @@
               "width": 12,
               "height": 11,
               "content": {
-                "$ref": "#/spec/panels/1_4"
+                "$ref": "#/spec/panels/zfsDeviceIOPS"
               }
             },
             {
@@ -2531,7 +2645,101 @@
               "width": 12,
               "height": 11,
               "content": {
-                "$ref": "#/spec/panels/1_5"
+                "$ref": "#/spec/panels/zfsDeviceBandwidth"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "ZFS",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 6,
+              "height": 4,
+              "content": {
+                "$ref": "#/spec/panels/zfsExporter"
+              }
+            },
+            {
+              "x": 6,
+              "y": 0,
+              "width": 6,
+              "height": 4,
+              "content": {
+                "$ref": "#/spec/panels/zfsPoolHealth"
+              }
+            },
+            {
+              "x": 12,
+              "y": 0,
+              "width": 6,
+              "height": 4,
+              "content": {
+                "$ref": "#/spec/panels/zfsFragmentation"
+              }
+            },
+            {
+              "x": 18,
+              "y": 0,
+              "width": 6,
+              "height": 4,
+              "content": {
+                "$ref": "#/spec/panels/zfsReadonly"
+              }
+            },
+            {
+              "x": 0,
+              "y": 4,
+              "width": 12,
+              "height": 8,
+              "content": {
+                "$ref": "#/spec/panels/zfsPoolUsage"
+              }
+            },
+            {
+              "x": 12,
+              "y": 4,
+              "width": 12,
+              "height": 8,
+              "content": {
+                "$ref": "#/spec/panels/zfsPoolSpace"
+              }
+            },
+            {
+              "x": 0,
+              "y": 12,
+              "width": 12,
+              "height": 12,
+              "content": {
+                "$ref": "#/spec/panels/zfsDatasetUsage"
+              }
+            },
+            {
+              "x": 12,
+              "y": 12,
+              "width": 12,
+              "height": 12,
+              "content": {
+                "$ref": "#/spec/panels/zfsSnapshotUsage"
+              }
+            },
+            {
+              "x": 0,
+              "y": 24,
+              "width": 24,
+              "height": 6,
+              "content": {
+                "$ref": "#/spec/panels/zfsCollectors"
               }
             }
           ]
@@ -2666,64 +2874,6 @@
               "height": 10,
               "content": {
                 "$ref": "#/spec/panels/3_5"
-              }
-            }
-          ]
-        }
-      },
-      {
-        "kind": "Grid",
-        "spec": {
-          "display": {
-            "title": "Disk Filesystem",
-            "collapse": {
-              "open": false
-            }
-          },
-          "items": [
-            {
-              "x": 0,
-              "y": 108,
-              "width": 12,
-              "height": 11,
-              "content": {
-                "$ref": "#/spec/panels/4_0"
-              }
-            },
-            {
-              "x": 12,
-              "y": 108,
-              "width": 12,
-              "height": 11,
-              "content": {
-                "$ref": "#/spec/panels/4_1"
-              }
-            },
-            {
-              "x": 0,
-              "y": 119,
-              "width": 12,
-              "height": 11,
-              "content": {
-                "$ref": "#/spec/panels/4_2"
-              }
-            },
-            {
-              "x": 12,
-              "y": 119,
-              "width": 12,
-              "height": 11,
-              "content": {
-                "$ref": "#/spec/panels/4_3"
-              }
-            },
-            {
-              "x": 0,
-              "y": 130,
-              "width": 12,
-              "height": 11,
-              "content": {
-                "$ref": "#/spec/panels/4_4"
               }
             }
           ]

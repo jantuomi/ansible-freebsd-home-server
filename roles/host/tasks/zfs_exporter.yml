@@ -1,0 +1,94 @@
+- name: Verify ZFS exporter release settings
+  assert:
+    that:
+      - zfs_exporter_version is match('^[0-9]+\.[0-9]+\.[0-9]+$')
+      - arch.split('/')[0] in ['amd64', 'aarch64', 'arm64']
+    fail_msg: "ZFS exporter requires a release version without v and a supported FreeBSD architecture."
+
+- name: Set ZFS exporter release paths
+  set_fact:
+    _zfs_exporter_archive: "zfs_exporter-{{ zfs_exporter_version }}.freebsd-{{ _release_arch }}.tar.gz"
+    _zfs_exporter_extract_dir: "/var/cache/zfs_exporter/{{ zfs_exporter_version }}_{{ _release_arch }}"
+  vars:
+    _release_arch: "{{ {'amd64': 'amd64', 'aarch64': 'arm64', 'arm64': 'arm64'}[arch.split('/')[0]] }}"
+
+- name: Create ZFS exporter installation directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0700"
+  loop:
+    - /var/cache/zfs_exporter
+    - "{{ _zfs_exporter_extract_dir }}"
+
+- name: Download native ZFS exporter release on the host
+  get_url:
+    url: "https://github.com/pdf/zfs_exporter/releases/download/v{{ zfs_exporter_version }}/{{ _zfs_exporter_archive }}"
+    dest: "/var/cache/zfs_exporter/{{ _zfs_exporter_archive }}"
+    checksum: "sha256:https://github.com/pdf/zfs_exporter/releases/download/v{{ zfs_exporter_version }}/sha256sums.txt"
+    owner: root
+    group: wheel
+    mode: "0600"
+  register: _zfs_exporter_download
+
+- name: Extract ZFS exporter release
+  command:
+    argv:
+      - /usr/bin/tar
+      - -xzf
+      - "/var/cache/zfs_exporter/{{ _zfs_exporter_archive }}"
+      - -C
+      - "{{ _zfs_exporter_extract_dir }}"
+      - --strip-components
+      - "1"
+    creates: "{{ omit if _zfs_exporter_download.changed else _zfs_exporter_extract_dir ~ '/zfs_exporter' }}"
+
+- name: Install ZFS exporter binary
+  copy:
+    src: "{{ _zfs_exporter_extract_dir }}/zfs_exporter"
+    dest: /usr/local/bin/zfs_exporter
+    remote_src: true
+    owner: root
+    group: wheel
+    mode: "0755"
+  notify: Restart zfs_exporter
+
+- name: Install ZFS exporter service
+  template:
+    src: usr_local_etc_rc.d_zfs_exporter.j2
+    dest: /usr/local/etc/rc.d/zfs_exporter
+    owner: root
+    group: wheel
+    mode: "0755"
+    validate: /bin/sh -n %s
+  notify: Restart zfs_exporter
+
+- name: Verify ZFS exporter executes
+  command: /usr/local/bin/zfs_exporter --version
+  changed_when: false
+  when: not ansible_check_mode
+
+- name: Apply ZFS exporter changes
+  meta: flush_handlers
+
+- name: Start ZFS exporter
+  service:
+    name: zfs_exporter
+    state: started
+
+- name: Verify ZFS exporter collectors
+  uri:
+    url: "http://{{ lan_ipv4_cidr | ipv4_host }}:9134/metrics"
+    return_content: true
+    status_code: 200
+    timeout: 15
+  register: _zfs_exporter_health
+  until:
+    - _zfs_exporter_health.status | default(0) == 200
+    - (_zfs_exporter_health.content | default('')) is search('(?m)^zfs_pool_health\{')
+    - (_zfs_exporter_health.content | default('') | regex_findall('(?m)^zfs_scrape_collector_success\{collector="(?:pool|dataset-filesystem|dataset-volume)"\} 1(?:\.0)?(?:\s|$)')) | length == 3
+  retries: 10
+  delay: 2
+  when: not ansible_check_mode

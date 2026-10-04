@@ -78,10 +78,49 @@
     name: auditd
     state: started
 
-- name: Start node_exporter
+- name: Verify node_exporter supports FreeBSD device statistics
+  command: /usr/local/bin/node_exporter --collector.devstat --help
+  changed_when: false
+  when: not ansible_check_mode
+
+- name: Start or restart node_exporter
   service:
     name: node_exporter
-    state: started
+    state: "{{ 'restarted' if _host_rc_conf is defined and _host_rc_conf.changed else 'started' }}"
+
+- name: Verify node_exporter device statistics
+  when: not ansible_check_mode
+  block:
+    - name: Check node_exporter devstat metrics
+      uri:
+        url: "http://{{ lan_ipv4_cidr | ipv4_host }}:9100/metrics"
+        return_content: true
+        status_code: 200
+      register: _node_exporter_devstat
+      until:
+        - _node_exporter_devstat.status | default(0) == 200
+        - (_node_exporter_devstat.content | default('')) is search('(?m)^node_scrape_collector_success\{collector="devstat"\} 1(?:\.0)?(?:\s|$)')
+        - (_node_exporter_devstat.content | default('')) is search('(?m)^node_devstat_transfers_total\{')
+      retries: 5
+      delay: 2
+      no_log: true
+  rescue:
+    - name: Report node_exporter device statistics failure
+      fail:
+        msg: >-
+          node_exporter devstat verification failed.
+          HTTP status: {{ _node_exporter_devstat.status | default('unavailable') }}.
+          Request result: {{ _node_exporter_devstat.msg | default('unavailable') }}.
+          Collector status: {{ (_node_exporter_devstat.content | default('') |
+          regex_findall('(?m)^node_scrape_collector_success\{collector="devstat"\}[^\n]*') |
+          first) | default('devstat is not enabled in the running exporter') }}.
+          Device transfer counters present: {{ (_node_exporter_devstat.content | default(''))
+          is search('(?m)^node_devstat_transfers_total\{') }}.
+          If devstat is absent, verify node_exporter_args in rc.conf and restart node_exporter;
+          if its collector status is 0, inspect the exporter logs for the collection error.
+
+- name: Set up ZFS exporter
+  include_tasks: zfs_exporter.yml
 
 - name: Set up periodic.conf
   template:

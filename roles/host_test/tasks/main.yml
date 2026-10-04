@@ -7,6 +7,7 @@
     mode: "0644"
   vars:
     is_prod: false
+  register: _host_rc_conf
   notify: Apply rc.conf
 
 - name: Flush handlers

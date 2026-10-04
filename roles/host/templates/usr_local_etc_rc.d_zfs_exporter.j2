@@ -1,0 +1,21 @@
+#!/bin/sh
+
+# PROVIDE: zfs_exporter
+# REQUIRE: LOGIN zfs
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name="zfs_exporter"
+rcvar="zfs_exporter_enable"
+load_rc_config "${name}"
+
+: ${zfs_exporter_enable:="NO"}
+: ${zfs_exporter_args:="--web.listen-address={{ lan_ipv4_cidr | ipv4_host }}:9134 --deadline=8s --no-collector.dataset-snapshot --properties.dataset-filesystem=available,logicalused,quota,referenced,used,usedbydataset,usedbysnapshots,written --properties.dataset-volume=available,logicalused,referenced,used,usedbydataset,usedbysnapshots,volsize,written"}
+
+pidfile="/var/run/zfs_exporter.pid"
+procname="/usr/local/bin/zfs_exporter"
+command="/usr/sbin/daemon"
+command_args="-f -p ${pidfile} -o /var/log/zfs_exporter.log ${procname} ${zfs_exporter_args}"
+
+run_rc_command "$1"

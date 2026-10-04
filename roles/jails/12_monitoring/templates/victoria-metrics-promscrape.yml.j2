@@ -6,3 +6,12 @@ scrape_configs:
           - "{{ ansible_jail_host }}:9100"
         labels:
           instance: pursotin
+
+  - job_name: zfs
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    static_configs:
+      - targets:
+          - "{{ ansible_jail_host }}:9134"
+        labels:
+          instance: pursotin

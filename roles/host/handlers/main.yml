@@ -7,3 +7,8 @@
   service:
     name: cron
     state: restarted
+
+- name: Restart zfs_exporter
+  service:
+    name: zfs_exporter
+    state: restarted
