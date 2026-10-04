@@ -1,0 +1,13 @@
+database:
+  file:
+    folder: /var/db/perses
+    extension: json
+
+plugin:
+  path: /usr/local/share/perses/{{ perses_version }}/plugins
+  archive_paths:
+    - /usr/local/share/perses/{{ perses_version }}/plugins-archive
+
+frontend:
+  explorer:
+    enable: true

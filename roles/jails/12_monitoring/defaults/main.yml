@@ -1,5 +1,7 @@
 userland: "15.1-minimal-jail"
 
+perses_version: "0.54.0"
+
 zfs:
   - name: vm_data
     owner: "289"
@@ -15,6 +17,10 @@ zfs:
     mode: "0750"
   - name: fluent_bit_data
     mode: "0750"
+  - name: perses_data
+    owner: "1002"
+    group: "1002"
+    mode: "0750"
 
 nullfs:
   - src: vm_data
@@ -25,6 +31,8 @@ nullfs:
     dst: /var/db/alertmanager
   - src: fluent_bit_data
     dst: /var/db/fluent-bit
+  - src: perses_data
+    dst: /var/db/perses
   - src: ingress_logs
     dst: /mnt/ingress_logs
     mode: ro
@@ -44,6 +52,7 @@ monitoring_services:
   - alertmanager
   - vmalert
   - fluent-bit
+  - perses
 
 rc_conf: |
   victoria_metrics_enable="YES"
@@ -59,6 +68,8 @@ rc_conf: |
   fluent_bit_user="root"
   fluent_bit_group="wheel"
   fluent_bit_env="TZ=Europe/Helsinki"
+  perses_enable="YES"
+  perses_args="--config=/usr/local/etc/perses/config.yaml --web.listen-address={{ jail_ips[jail_name] }}:8080"
 
 files:
   - src: victoria-metrics-promscrape.yml.j2
@@ -72,3 +83,8 @@ files:
     dest: /usr/local/etc/fluent-bit/fluent-bit.conf
   - src: fluent-bit-parsers.conf.j2
     dest: /usr/local/etc/fluent-bit/parsers.conf
+  - src: perses_config.yaml.j2
+    dest: /usr/local/etc/perses/config.yaml
+  - src: usr_local_etc_rc.d_perses.j2
+    dest: /usr/local/etc/rc.d/perses
+    mode: "0755"

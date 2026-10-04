@@ -1,0 +1,416 @@
+{
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "nginx-insights"
+  },
+  "spec": {
+    "display": {
+      "name": "NGINX insights",
+      "description": "NGINX access and error logs on pursotin, using the project's default VictoriaLogs datasource. Totals use step-aligned chart buckets, so boundary buckets may extend slightly beyond the selected time range. Rates adapt to the chart interval. Response sizes exclude HTTP headers. Request latency is unavailable in the current log format."
+    },
+    "duration": "1h",
+    "refreshInterval": "30s",
+    "panels": {
+      "requests": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Requests",
+            "description": "Total access-log entries across the selected chart buckets. Boundary buckets are rounded to the query step."
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "sum",
+              "format": { "unit": "decimal", "decimalPlaces": 0 }
+            }
+          },
+          "queries": [{
+            "kind": "TimeSeriesQuery",
+            "spec": {
+              "plugin": {
+                "kind": "VictoriaLogsTimeSeriesQuery",
+                "spec": {
+                  "query": "{host=\"pursotin\",service=\"nginx\",log_type=\"access\"} | stats count() as requests"
+                }
+              }
+            }
+          }]
+        }
+      },
+      "clientErrors": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "4xx responses",
+            "description": "Client-error responses across the selected chart buckets, including rejected requests and missing resources. Boundary buckets are rounded to the query step."
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "sum",
+              "format": { "unit": "decimal", "decimalPlaces": 0 }
+            }
+          },
+          "queries": [{
+            "kind": "TimeSeriesQuery",
+            "spec": {
+              "plugin": {
+                "kind": "VictoriaLogsTimeSeriesQuery",
+                "spec": {
+                  "query": "{host=\"pursotin\",service=\"nginx\",log_type=\"access\"} | stats count() if (status:>=400 status:<500) as client_errors"
+                }
+              }
+            }
+          }]
+        }
+      },
+      "serverErrors": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "5xx responses",
+            "description": "Server-error responses across the selected chart buckets, including upstream failures. Boundary buckets are rounded to the query step."
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "sum",
+              "format": { "unit": "decimal", "decimalPlaces": 0 }
+            }
+          },
+          "queries": [{
+            "kind": "TimeSeriesQuery",
+            "spec": {
+              "plugin": {
+                "kind": "VictoriaLogsTimeSeriesQuery",
+                "spec": {
+                  "query": "{host=\"pursotin\",service=\"nginx\",log_type=\"access\"} | stats count() if (status:>=500 status:<600) as server_errors"
+                }
+              }
+            }
+          }]
+        }
+      },
+      "responseBytes": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Response body bytes",
+            "description": "Total body_bytes_sent across the selected chart buckets. Boundary buckets are rounded to the query step. HTTP headers and inbound traffic are not included."
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "sum",
+              "format": { "unit": "bytes", "decimalPlaces": 2, "shortValues": true }
+            }
+          },
+          "queries": [{
+            "kind": "TimeSeriesQuery",
+            "spec": {
+              "plugin": {
+                "kind": "VictoriaLogsTimeSeriesQuery",
+                "spec": {
+                  "query": "{host=\"pursotin\",service=\"nginx\",log_type=\"access\"} | stats sum(body_bytes_sent) as response_bytes"
+                }
+              }
+            }
+          }]
+        }
+      },
+      "requestRate": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Request rate",
+            "description": "Requests per second, averaged within each chart interval."
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "yAxis": {
+                "show": true,
+                "min": 0,
+                "format": { "unit": "requests/sec", "decimalPlaces": 2 }
+              },
+              "visual": {
+                "display": "line",
+                "lineWidth": 1.5,
+                "areaOpacity": 0.15
+              }
+            }
+          },
+          "queries": [{
+            "kind": "TimeSeriesQuery",
+            "spec": {
+              "plugin": {
+                "kind": "VictoriaLogsTimeSeriesQuery",
+                "spec": {
+                  "query": "{host=\"pursotin\",service=\"nginx\",log_type=\"access\"} | stats rate() as requests_per_second"
+                }
+              }
+            }
+          }]
+        }
+      },
+      "responseBandwidth": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Response body bandwidth",
+            "description": "Response-body bytes per second, averaged within each chart interval. HTTP headers are excluded."
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "yAxis": {
+                "show": true,
+                "label": "Bytes / second",
+                "min": 0,
+                "format": { "unit": "bytes", "decimalPlaces": 2, "shortValues": true }
+              },
+              "visual": {
+                "display": "line",
+                "lineWidth": 1.5,
+                "areaOpacity": 0.15
+              }
+            }
+          },
+          "queries": [{
+            "kind": "TimeSeriesQuery",
+            "spec": {
+              "plugin": {
+                "kind": "VictoriaLogsTimeSeriesQuery",
+                "spec": {
+                  "query": "{host=\"pursotin\",service=\"nginx\",log_type=\"access\"} | stats rate_sum(body_bytes_sent) as bytes_per_second"
+                }
+              }
+            }
+          }]
+        }
+      },
+      "statusRates": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Traffic by HTTP status",
+            "description": "Requests per second split by HTTP status code."
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": { "position": "bottom", "mode": "list" },
+              "yAxis": {
+                "show": true,
+                "min": 0,
+                "format": { "unit": "requests/sec", "decimalPlaces": 2 }
+              },
+              "visual": {
+                "display": "line",
+                "lineWidth": 1.5,
+                "areaOpacity": 0.15,
+                "stack": "all"
+              }
+            }
+          },
+          "queries": [{
+            "kind": "TimeSeriesQuery",
+            "spec": {
+              "plugin": {
+                "kind": "VictoriaLogsTimeSeriesQuery",
+                "spec": {
+                  "query": "{host=\"pursotin\",service=\"nginx\",log_type=\"access\"} | stats by (status) rate() as requests_per_second"
+                }
+              }
+            }
+          }]
+        }
+      },
+      "serverErrorPercent": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "5xx response percentage",
+            "description": "Percentage of requests returning 5xx in each chart interval, not an average error percentage for the whole selected range."
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "yAxis": {
+                "show": true,
+                "min": 0,
+                "max": 100,
+                "format": { "unit": "percent", "decimalPlaces": 2 }
+              },
+              "visual": {
+                "display": "line",
+                "lineWidth": 1.5,
+                "areaOpacity": 0.1
+              },
+              "querySettings": [{
+                "queryIndex": 0,
+                "colorMode": "fixed",
+                "colorValue": "#e65252"
+              }]
+            }
+          },
+          "queries": [{
+            "kind": "TimeSeriesQuery",
+            "spec": {
+              "plugin": {
+                "kind": "VictoriaLogsTimeSeriesQuery",
+                "spec": {
+                  "query": "{host=\"pursotin\",service=\"nginx\",log_type=\"access\"} | stats count() as requests, count() if (status:>=500 status:<600) as errors | math 100 * errors / max(requests, 1) as error_percent | fields _time, error_percent"
+                }
+              }
+            }
+          }]
+        }
+      },
+      "virtualHosts": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Requests by virtual host",
+            "description": "Total requests by vhost across the selected chart buckets, sorted busiest first. Boundary buckets are rounded to the query step. The vhost includes the listening port."
+          },
+          "plugin": {
+            "kind": "BarChart",
+            "spec": {
+              "calculation": "sum",
+              "format": { "unit": "decimal", "decimalPlaces": 0 },
+              "sort": "desc",
+              "mode": "value",
+              "orientation": "horizontal",
+              "groupBy": ["vhost"],
+              "isStacked": true
+            }
+          },
+          "queries": [{
+            "kind": "TimeSeriesQuery",
+            "spec": {
+              "plugin": {
+                "kind": "VictoriaLogsTimeSeriesQuery",
+                "spec": {
+                  "query": "{host=\"pursotin\",service=\"nginx\",log_type=\"access\"} | stats by (vhost) count() as requests"
+                }
+              }
+            }
+          }]
+        }
+      },
+      "statusDistribution": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "HTTP status distribution",
+            "description": "Total requests by HTTP status code across the selected chart buckets. Boundary buckets are rounded to the query step."
+          },
+          "plugin": {
+            "kind": "BarChart",
+            "spec": {
+              "calculation": "sum",
+              "format": { "unit": "decimal", "decimalPlaces": 0 },
+              "sort": "desc",
+              "mode": "value",
+              "orientation": "horizontal",
+              "groupBy": ["status"],
+              "isStacked": true
+            }
+          },
+          "queries": [{
+            "kind": "TimeSeriesQuery",
+            "spec": {
+              "plugin": {
+                "kind": "VictoriaLogsTimeSeriesQuery",
+                "spec": {
+                  "query": "{host=\"pursotin\",service=\"nginx\",log_type=\"access\"} | stats by (status) count() as requests"
+                }
+              }
+            }
+          }]
+        }
+      },
+      "recentFailedRequests": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Recent 4xx / 5xx requests",
+            "description": "Latest 100 failed requests in the selected time range. Expand a row for vhost, status, client address, request and user agent."
+          },
+          "plugin": {
+            "kind": "LogsTable",
+            "spec": {
+              "allowWrap": true,
+              "enableDetails": true,
+              "showTime": true
+            }
+          },
+          "queries": [{
+            "kind": "LogQuery",
+            "spec": {
+              "plugin": {
+                "kind": "VictoriaLogsLogQuery",
+                "spec": {
+                  "query": "{host=\"pursotin\",service=\"nginx\",log_type=\"access\"} status:>=400 status:<600 | sort by (_time desc) limit 100"
+                }
+              }
+            }
+          }]
+        }
+      },
+      "recentErrorLogs": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Recent NGINX error-log entries",
+            "description": "Latest 100 error-log entries in the selected time range, including warnings and notices. An empty panel means no matching entries were ingested."
+          },
+          "plugin": {
+            "kind": "LogsTable",
+            "spec": {
+              "allowWrap": true,
+              "enableDetails": true,
+              "showTime": true
+            }
+          },
+          "queries": [{
+            "kind": "LogQuery",
+            "spec": {
+              "plugin": {
+                "kind": "VictoriaLogsLogQuery",
+                "spec": {
+                  "query": "{host=\"pursotin\",service=\"nginx\",log_type=\"error\"} | sort by (_time desc) limit 100"
+                }
+              }
+            }
+          }]
+        }
+      }
+    },
+    "layouts": [{
+      "kind": "Grid",
+      "spec": {
+        "display": {
+          "title": "NGINX on pursotin",
+          "collapse": { "open": true }
+        },
+        "items": [
+          { "x": 0, "y": 0, "width": 6, "height": 4, "content": { "$ref": "#/spec/panels/requests" } },
+          { "x": 6, "y": 0, "width": 6, "height": 4, "content": { "$ref": "#/spec/panels/clientErrors" } },
+          { "x": 12, "y": 0, "width": 6, "height": 4, "content": { "$ref": "#/spec/panels/serverErrors" } },
+          { "x": 18, "y": 0, "width": 6, "height": 4, "content": { "$ref": "#/spec/panels/responseBytes" } },
+          { "x": 0, "y": 4, "width": 12, "height": 8, "content": { "$ref": "#/spec/panels/requestRate" } },
+          { "x": 12, "y": 4, "width": 12, "height": 8, "content": { "$ref": "#/spec/panels/responseBandwidth" } },
+          { "x": 0, "y": 12, "width": 12, "height": 8, "content": { "$ref": "#/spec/panels/statusRates" } },
+          { "x": 12, "y": 12, "width": 12, "height": 8, "content": { "$ref": "#/spec/panels/serverErrorPercent" } },
+          { "x": 0, "y": 20, "width": 12, "height": 10, "content": { "$ref": "#/spec/panels/virtualHosts" } },
+          { "x": 12, "y": 20, "width": 12, "height": 10, "content": { "$ref": "#/spec/panels/statusDistribution" } },
+          { "x": 0, "y": 30, "width": 24, "height": 10, "content": { "$ref": "#/spec/panels/recentFailedRequests" } },
+          { "x": 0, "y": 40, "width": 24, "height": 10, "content": { "$ref": "#/spec/panels/recentErrorLogs" } }
+        ]
+      }
+    }]
+  }
+}

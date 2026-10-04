@@ -1,0 +1,107 @@
+- name: Verify Perses version
+  assert:
+    that: perses_version is match('^[0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?$')
+    fail_msg: "perses_version must be a release version without the leading v."
+
+- name: Detect Perses target architecture
+  command: uname -m
+  register: _perses_machine
+  changed_when: false
+  check_mode: false
+
+- name: Verify Perses target architecture
+  assert:
+    that: _perses_machine.stdout in ['amd64', 'aarch64']
+    fail_msg: "No configured Perses Linux release for {{ _perses_machine.stdout }}."
+
+- name: Set Perses release paths
+  set_fact:
+    _perses_archive: "perses_{{ perses_version }}_linux_{{ _linux_arch }}.tar.gz"
+    _perses_extract_dir: "/var/cache/perses/{{ perses_version }}_linux_{{ _linux_arch }}"
+  vars:
+    _linux_arch: "{{ {'amd64': 'amd64', 'aarch64': 'arm64'}[_perses_machine.stdout] }}"
+
+- name: Create Perses group
+  group:
+    name: perses
+    gid: 1002
+
+- name: Create Perses user
+  user:
+    name: perses
+    uid: 1002
+    group: perses
+    home: /var/db/perses
+    shell: /usr/sbin/nologin
+    create_home: false
+
+- name: Create Perses installation directories
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('wheel') }}"
+    mode: "{{ item.mode | default('0755') }}"
+  loop:
+    - { path: /var/cache/perses, mode: "0700" }
+    - { path: "{{ _perses_extract_dir }}", mode: "0700" }
+    - { path: /usr/local/bin }
+    - { path: "/usr/local/share/perses/{{ perses_version }}" }
+    - { path: "/usr/local/share/perses/{{ perses_version }}/plugins", owner: perses, group: perses }
+    - { path: /usr/local/share/doc/perses }
+    - { path: /var/db/perses, owner: perses, group: perses, mode: "0750" }
+  loop_control:
+    label: "{{ item.path }}"
+
+- name: Download Perses Linux release inside the jail
+  get_url:
+    url: "https://github.com/perses/perses/releases/download/v{{ perses_version }}/{{ _perses_archive }}"
+    dest: "/var/cache/perses/{{ _perses_archive }}"
+    checksum: "sha256:https://github.com/perses/perses/releases/download/v{{ perses_version }}/perses_{{ perses_version }}_checksums.txt"
+    owner: root
+    group: wheel
+    mode: "0600"
+  register: _perses_download
+
+- name: Extract Perses Linux release
+  command:
+    argv:
+      - /usr/bin/tar
+      - -xzf
+      - "/var/cache/perses/{{ _perses_archive }}"
+      - -C
+      - "{{ _perses_extract_dir }}"
+    creates: "{{ omit if _perses_download.changed else _perses_extract_dir ~ '/perses' }}"
+
+- name: Install Perses binaries and documentation
+  copy:
+    src: "{{ _perses_extract_dir }}/{{ item.name }}"
+    dest: "{{ item.dest }}"
+    remote_src: true
+    owner: root
+    group: wheel
+    mode: "{{ item.mode }}"
+  loop:
+    - { name: perses, dest: /usr/local/bin/perses, mode: "0755" }
+    - { name: percli, dest: /usr/local/bin/percli, mode: "0755" }
+    - { name: LICENSE, dest: /usr/local/share/doc/perses/LICENSE, mode: "0644" }
+    - { name: README.md, dest: /usr/local/share/doc/perses/README.md, mode: "0644" }
+    - { name: CHANGELOG.md, dest: /usr/local/share/doc/perses/CHANGELOG.md, mode: "0644" }
+  loop_control:
+    label: "{{ item.dest }}"
+  notify: Restart jail services
+
+- name: Install bundled Perses plugin archives
+  copy:
+    src: "{{ _perses_extract_dir }}/plugins-archive/"
+    dest: "/usr/local/share/perses/{{ perses_version }}/plugins-archive/"
+    remote_src: true
+    owner: root
+    group: wheel
+    mode: preserve
+  notify: Restart jail services
+
+- name: Verify Perses executes under Linux emulation
+  command: /usr/local/bin/perses --help
+  changed_when: false
+  when: not ansible_check_mode

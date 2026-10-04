@@ -1,0 +1,35 @@
+#!/bin/sh
+
+# PROVIDE: perses
+# REQUIRE: LOGIN linux
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name="perses"
+rcvar="perses_enable"
+load_rc_config "${name}"
+
+: ${perses_enable:="NO"}
+: ${perses_user:="perses"}
+: ${perses_group:="perses"}
+: ${perses_args:="--config=/usr/local/etc/perses/config.yaml"}
+
+pidfile="/var/run/perses.pid"
+required_files="/usr/local/etc/perses/config.yaml"
+procname="/usr/local/bin/perses"
+command="/usr/sbin/daemon"
+command_args="-f -p ${pidfile} -o /var/log/perses.log ${procname} ${perses_args}"
+start_precmd="perses_startprecmd"
+
+perses_startprecmd()
+{
+    if [ ! -e "${pidfile}" ]; then
+        install -o "${perses_user}" -g "${perses_group}" -m 0600 /dev/null "${pidfile}"
+    fi
+    if [ ! -e /var/log/perses.log ]; then
+        install -o "${perses_user}" -g "${perses_group}" -m 0640 /dev/null /var/log/perses.log
+    fi
+}
+
+run_rc_command "$1"

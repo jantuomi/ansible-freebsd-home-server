@@ -13,6 +13,9 @@
 - import_role:
     name: jail
 
+- name: Install Perses release
+  include_tasks: perses.yml
+
 - name: Create monitoring volume mount points
   file:
     path: "{{ item.dst }}"
@@ -140,6 +143,7 @@
     - { name: VictoriaLogs, port: 9428, path: /health }
     - { name: Alertmanager, port: 9093, path: /-/ready }
     - { name: vmalert, port: 8880, path: /health }
+    - { name: Perses, port: 8080, path: /api/v1/health }
   loop_control:
     label: "{{ item.name }}"
   when: not ansible_check_mode
