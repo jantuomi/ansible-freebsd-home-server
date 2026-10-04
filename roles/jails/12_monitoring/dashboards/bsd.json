@@ -1,0 +1,2842 @@
+{
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "bsd",
+    "createdAt": "2026-10-04T16:05:25.752195898Z",
+    "updatedAt": "2026-10-04T16:05:25.752195898Z",
+    "version": 0,
+    "tags": [
+      "freebsd"
+    ],
+    "project": "default"
+  },
+  "spec": {
+    "display": {
+      "name": "Node Exporter BSD"
+    },
+    "panels": {
+      "0_0": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "CPU Busy",
+            "description": "Busy state of all CPU cores together"
+          },
+          "plugin": {
+            "kind": "GaugeChart",
+            "spec": {
+              "calculation": "last-number",
+              "format": {
+                "decimalPlaces": 1,
+                "unit": "percent"
+              },
+              "max": 100,
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "rgba(237, 129, 40, 0.89)",
+                    "value": 85
+                  },
+                  {
+                    "color": "rgba(245, 54, 54, 0.9)",
+                    "value": 95
+                  }
+                ]
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "100 * (1 - avg(rate(node_cpu_seconds_total{mode=\"idle\",instance=\"$node\",job=\"$job\"}[$__rate_interval])))",
+                    "seriesNameFormat": ""
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "0_1": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Sys Load (5m avg)",
+            "description": "Busy state of all CPU cores together (5 min average)"
+          },
+          "plugin": {
+            "kind": "GaugeChart",
+            "spec": {
+              "calculation": "last-number",
+              "format": {
+                "decimalPlaces": 1,
+                "unit": "percent"
+              },
+              "max": 100,
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "rgba(237, 129, 40, 0.89)",
+                    "value": 85
+                  },
+                  {
+                    "color": "rgba(245, 54, 54, 0.9)",
+                    "value": 95
+                  }
+                ]
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "scalar(node_load5{instance=\"$node\",job=\"$job\"}) * 100 / count(count(node_cpu_seconds_total{instance=\"$node\",job=\"$job\"}) by (cpu))"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "0_10": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Uptime",
+            "description": "System uptime"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last-number",
+              "colorMode": "none",
+              "format": {
+                "decimalPlaces": 1,
+                "unit": "seconds"
+              },
+              "mappings": [
+                {
+                  "kind": "Misc",
+                  "spec": {
+                    "result": {
+                      "value": "N/A"
+                    },
+                    "value": "null"
+                  }
+                }
+              ],
+              "thresholds": {
+                "steps": []
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "node_time_seconds{instance=\"$node\",job=\"$job\"} - node_boot_time_seconds{instance=\"$node\",job=\"$job\"}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "0_2": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Sys Load (15m avg)",
+            "description": "Busy state of all CPU cores together (15 min average)"
+          },
+          "plugin": {
+            "kind": "GaugeChart",
+            "spec": {
+              "calculation": "last-number",
+              "format": {
+                "decimalPlaces": 1,
+                "unit": "percent"
+              },
+              "max": 100,
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "rgba(237, 129, 40, 0.89)",
+                    "value": 85
+                  },
+                  {
+                    "color": "rgba(245, 54, 54, 0.9)",
+                    "value": 95
+                  }
+                ]
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "scalar(node_load15{instance=\"$node\",job=\"$job\"}) * 100 / count(count(node_cpu_seconds_total{instance=\"$node\",job=\"$job\"}) by (cpu))"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "0_3": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "RAM Used",
+            "description": "Non available RAM memory"
+          },
+          "plugin": {
+            "kind": "GaugeChart",
+            "spec": {
+              "calculation": "last-number",
+              "format": {
+                "decimalPlaces": 1,
+                "unit": "percent"
+              },
+              "max": 100,
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "rgba(237, 129, 40, 0.89)",
+                    "value": 80
+                  },
+                  {
+                    "color": "rgba(245, 54, 54, 0.9)",
+                    "value": 90
+                  }
+                ]
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "( 1 - ( (node_memory_free_bytes{instance=\"$node\",job=\"$job\"} + node_memory_cache_bytes{instance=\"$node\",job=\"$job\"} + node_memory_inactive_bytes{instance=\"$node\",job=\"$job\"}) / node_memory_size_bytes{instance=\"$node\",job=\"$job\"} ) ) * 100\n"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "0_4": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "SWAP Used",
+            "description": "Percentage of swap space currently used by the system"
+          },
+          "plugin": {
+            "kind": "GaugeChart",
+            "spec": {
+              "calculation": "last-number",
+              "format": {
+                "decimalPlaces": 1,
+                "unit": "percent"
+              },
+              "max": 100,
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "rgba(237, 129, 40, 0.89)",
+                    "value": 10
+                  },
+                  {
+                    "color": "rgba(245, 54, 54, 0.9)",
+                    "value": 25
+                  }
+                ]
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "(node_memory_swap_size_bytes{instance=\"$node\",job=\"$job\"} > bool 0) * ((node_memory_swap_used_bytes{instance=\"$node\",job=\"$job\"} / node_memory_swap_size_bytes{instance=\"$node\",job=\"$job\"}) * 100)"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "0_5": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Root FS Used",
+            "description": "Used Root FS"
+          },
+          "plugin": {
+            "kind": "GaugeChart",
+            "spec": {
+              "calculation": "last-number",
+              "format": {
+                "decimalPlaces": 1,
+                "unit": "percent"
+              },
+              "max": 100,
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "rgba(237, 129, 40, 0.89)",
+                    "value": 80
+                  },
+                  {
+                    "color": "rgba(245, 54, 54, 0.9)",
+                    "value": 90
+                  }
+                ]
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "(\n  (node_filesystem_size_bytes{instance=\"$node\", job=\"$job\", mountpoint=\"/\", fstype!=\"rootfs\"}\n   - node_filesystem_avail_bytes{instance=\"$node\", job=\"$job\", mountpoint=\"/\", fstype!=\"rootfs\"})\n  / node_filesystem_size_bytes{instance=\"$node\", job=\"$job\", mountpoint=\"/\", fstype!=\"rootfs\"}\n) * 100\n"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "0_6": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "CPU Cores",
+            "description": "Total number of CPU cores"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last-number",
+              "colorMode": "none",
+              "format": {
+                "unit": "decimal"
+              },
+              "mappings": [
+                {
+                  "kind": "Misc",
+                  "spec": {
+                    "result": {
+                      "value": "N/A"
+                    },
+                    "value": "null"
+                  }
+                }
+              ],
+              "thresholds": {
+                "steps": []
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "count(count(node_cpu_seconds_total{instance=\"$node\",job=\"$job\"}) by (cpu))"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "0_7": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "RAM Total",
+            "description": "Total RAM"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last-number",
+              "colorMode": "none",
+              "format": {
+                "decimalPlaces": 0,
+                "unit": "bytes"
+              },
+              "mappings": [
+                {
+                  "kind": "Misc",
+                  "spec": {
+                    "result": {
+                      "value": "N/A"
+                    },
+                    "value": "null"
+                  }
+                }
+              ],
+              "thresholds": {
+                "steps": []
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "node_memory_size_bytes{instance=\"$node\",job=\"$job\"}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "0_8": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "SWAP Total",
+            "description": "Total SWAP"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last-number",
+              "colorMode": "none",
+              "format": {
+                "decimalPlaces": 0,
+                "unit": "bytes"
+              },
+              "mappings": [
+                {
+                  "kind": "Misc",
+                  "spec": {
+                    "result": {
+                      "value": "N/A"
+                    },
+                    "value": "null"
+                  }
+                }
+              ],
+              "thresholds": {
+                "steps": []
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "node_memory_swap_size_bytes{instance=\"$node\",job=\"$job\"}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "0_9": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "RootFS Total",
+            "description": "Total RootFS"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last-number",
+              "colorMode": "none",
+              "format": {
+                "decimalPlaces": 0,
+                "unit": "bytes"
+              },
+              "mappings": [
+                {
+                  "kind": "Misc",
+                  "spec": {
+                    "result": {
+                      "value": "N/A"
+                    },
+                    "value": "null"
+                  }
+                }
+              ],
+              "thresholds": {
+                "steps": []
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "node_filesystem_size_bytes{instance=\"$node\",job=\"$job\",mountpoint=\"/\"}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "1_0": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "CPU",
+            "description": "CPU time usage split by state, normalized across all CPU cores"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "min",
+                  "mean",
+                  "max"
+                ]
+              },
+              "querySettings": [
+                {
+                  "colorMode": "fixed",
+                  "colorValue": "#508642",
+                  "queryIndex": 0
+                },
+                {
+                  "colorMode": "fixed",
+                  "colorValue": "#5195CE",
+                  "queryIndex": 1
+                },
+                {
+                  "colorMode": "fixed",
+                  "colorValue": "#052B51",
+                  "queryIndex": 2
+                },
+                {
+                  "colorMode": "fixed",
+                  "colorValue": "#E24D42",
+                  "queryIndex": 3
+                },
+                {
+                  "colorMode": "fixed",
+                  "colorValue": "#C15C17",
+                  "queryIndex": 4
+                }
+              ],
+              "visual": {
+                "areaOpacity": 0.4,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1,
+                "stack": "all"
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "percent-decimal"
+                }
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "avg(rate(node_cpu_seconds_total{instance=\"$node\",job=\"$job\", mode=\"system\"}[$__rate_interval]))",
+                    "seriesNameFormat": "System - Processes executing in kernel mode"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "avg(rate(node_cpu_seconds_total{instance=\"$node\",job=\"$job\", mode=\"user\"}[$__rate_interval]))",
+                    "seriesNameFormat": "User - Normal processes executing in user mode"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "avg(rate(node_cpu_seconds_total{instance=\"$node\",job=\"$job\", mode=\"idle\"}[$__rate_interval]))",
+                    "seriesNameFormat": "Idle - Waiting for something to happen"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "avg(rate(node_cpu_seconds_total{instance=\"$node\",job=\"$job\", mode=\"interrupt\"}[$__rate_interval]))",
+                    "seriesNameFormat": "Interrupt - Servicing interrupts"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "avg(rate(node_cpu_seconds_total{instance=\"$node\",job=\"$job\", mode=\"nice\"}[$__rate_interval]))",
+                    "seriesNameFormat": "Nice - Niced processes executing in user mode"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "1_1": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Memory",
+            "description": "Memory usage breakdown"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "min",
+                  "mean",
+                  "max"
+                ]
+              },
+              "querySettings": [
+                {
+                  "colorMode": "fixed",
+                  "colorValue": "#f2495c",
+                  "queryIndex": 0
+                },
+                {
+                  "colorMode": "fixed",
+                  "colorValue": "#73bf69",
+                  "queryIndex": 1
+                },
+                {
+                  "colorMode": "fixed",
+                  "colorValue": "#b877d9",
+                  "queryIndex": 2
+                },
+                {
+                  "colorMode": "fixed",
+                  "colorValue": "#ff9830",
+                  "queryIndex": 3
+                },
+                {
+                  "colorMode": "fixed",
+                  "colorValue": "#8f3bb8",
+                  "queryIndex": 4
+                },
+                {
+                  "colorMode": "fixed",
+                  "colorValue": "#13366c",
+                  "queryIndex": 5
+                }
+              ],
+              "visual": {
+                "areaOpacity": 0.4,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1,
+                "stack": "all"
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "bytes"
+                },
+                "min": 0
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "node_memory_inactive_bytes{instance=\"$node\",job=\"$job\"}",
+                    "seriesNameFormat": "Inactive - Memory not recently accessed, can be reclaimed"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "node_memory_active_bytes{instance=\"$node\",job=\"$job\"}",
+                    "seriesNameFormat": "Active - Memory currently being used by a process"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "node_memory_buffer_bytes{instance=\"$node\",job=\"$job\"}",
+                    "seriesNameFormat": "Buffers - Disk cache"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "node_memory_cache_bytes{instance=\"$node\",job=\"$job\"}",
+                    "seriesNameFormat": "Cache - Memory being used to cache data, can be freed immediately if required"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "node_memory_wired_bytes{instance=\"$node\",job=\"$job\"}",
+                    "seriesNameFormat": "Wired - Memory in use by the Kernel"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "node_memory_free_bytes{instance=\"$node\",job=\"$job\"}",
+                    "seriesNameFormat": "Free - Completely unused memory available for allocation"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "1_2": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Network Traffic",
+            "description": "Incoming and outgoing network traffic per interface"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "min",
+                  "mean",
+                  "max"
+                ]
+              },
+              "querySettings": [
+                {
+                  "negativeY": true,
+                  "queryIndex": 1
+                }
+              ],
+              "visual": {
+                "areaOpacity": 0.4,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "bits/sec"
+                },
+                "label": "out (-) / in (+)"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "(rate(node_network_receive_bytes_total{instance=\"$node\",job=\"$job\"}[$__rate_interval]))*8",
+                    "seriesNameFormat": "{{device}} - Rx in"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "(rate(node_network_transmit_bytes_total{instance=\"$node\",job=\"$job\"}[$__rate_interval]))*8",
+                    "seriesNameFormat": "{{device}} - Tx out"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "1_3": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Memory Swap In / Out",
+            "description": "Rate of swap memory bytes moved in and out per second"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "min",
+                  "mean",
+                  "max"
+                ]
+              },
+              "querySettings": [
+                {
+                  "negativeY": true,
+                  "queryIndex": 1
+                }
+              ],
+              "visual": {
+                "areaOpacity": 0.4,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "bytes/sec"
+                },
+                "label": "out (-) / in (+)"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_memory_swapped_in_pages_bytes_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
+                    "seriesNameFormat": "Swap in"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_memory_swapped_out_pages_bytes_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
+                    "seriesNameFormat": "Swap out"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "1_4": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Disk Percentage Used",
+            "description": "Filesystem space used by percentage"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "min",
+                  "mean",
+                  "max"
+                ]
+              },
+              "visual": {
+                "areaOpacity": 0.4,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "percent"
+                },
+                "max": 100,
+                "min": 0
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "100 - ((node_filesystem_avail_bytes{instance=\"$node\",job=\"$job\"} * 100) / node_filesystem_size_bytes{instance=\"$node\",job=\"$job\"})",
+                    "seriesNameFormat": "{{device}} - {{mountpoint}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "1_5": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Disk Space Available / Used",
+            "description": "Disk space used, free, and available for user operations"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "min",
+                  "mean",
+                  "max"
+                ]
+              },
+              "querySettings": [
+                {
+                  "negativeY": true,
+                  "queryIndex": 0
+                }
+              ],
+              "visual": {
+                "areaOpacity": 0.4,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "bytes"
+                },
+                "label": "used (-) / available (+)"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "node_filesystem_size_bytes{instance=\"$node\",job=\"$job\"} - node_filesystem_free_bytes{instance=\"$node\",job=\"$job\"}",
+                    "seriesNameFormat": "{{device}} - {{mountpoint}} - Used"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "node_filesystem_free_bytes{instance=\"$node\",job=\"$job\"}",
+                    "seriesNameFormat": "{{device}} - {{mountpoint}} - Free"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "node_filesystem_avail_bytes{instance=\"$node\",job=\"$job\"}",
+                    "seriesNameFormat": "{{device}} - {{mountpoint}} - Available"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "2_0": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Network Traffic Packets",
+            "description": "Rate of network packets transmitted and received per second"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "min",
+                  "mean",
+                  "max"
+                ]
+              },
+              "querySettings": [
+                {
+                  "negativeY": true,
+                  "queryIndex": 0
+                }
+              ],
+              "visual": {
+                "areaOpacity": 0.4,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "packets/sec"
+                },
+                "label": "out (-) / in (+)"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_network_transmit_packets_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
+                    "seriesNameFormat": "{{device}} - Tx out"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_network_receive_packets_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
+                    "seriesNameFormat": "{{device}} - Rx in"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "2_1": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Network Traffic Drops",
+            "description": "Rate of dropped network packets during transmission and reception per second"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "min",
+                  "mean",
+                  "max"
+                ]
+              },
+              "querySettings": [
+                {
+                  "negativeY": true,
+                  "queryIndex": 1
+                }
+              ],
+              "visual": {
+                "areaOpacity": 0.4,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "packets/sec"
+                },
+                "label": "out (-) / in (+)"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_network_receive_drop_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
+                    "seriesNameFormat": "{{device}} - Rx in"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_network_transmit_drop_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
+                    "seriesNameFormat": "{{device}} - Tx out"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "2_2": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Network Traffic Errors",
+            "description": "Rate of network transmission and reception errors per second"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "min",
+                  "mean",
+                  "max"
+                ]
+              },
+              "querySettings": [
+                {
+                  "negativeY": true,
+                  "queryIndex": 0
+                }
+              ],
+              "visual": {
+                "areaOpacity": 0.4,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "packets/sec"
+                },
+                "label": "out (-) / in (+)"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_network_transmit_errs_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
+                    "seriesNameFormat": "{{device}} - Tx out"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_network_receive_errs_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
+                    "seriesNameFormat": "{{device}} - Rx in"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "2_3": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Network Traffic Multicast",
+            "description": "Rate of multicast packets transmitted and received per second"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "min",
+                  "mean",
+                  "max"
+                ]
+              },
+              "querySettings": [
+                {
+                  "negativeY": true,
+                  "queryIndex": 0
+                }
+              ],
+              "visual": {
+                "areaOpacity": 0.4,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "packets/sec"
+                },
+                "label": "out (-) / in (+)"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_network_transmit_multicast_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
+                    "seriesNameFormat": "{{device}} - Tx out"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_network_receive_multicast_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
+                    "seriesNameFormat": "{{device}} - Rx in"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "2_4": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Network Traffic No Proto",
+            "description": "Rate of network packets received without a recognized protocol per second"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "min",
+                  "mean",
+                  "max"
+                ]
+              },
+              "visual": {
+                "areaOpacity": 0.4,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "packets/sec"
+                }
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_network_noproto_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
+                    "seriesNameFormat": "{{device}} - Rx in"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "2_5": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Network Traffic Collisions",
+            "description": "Rate of packet collisions detected during transmission"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "min",
+                  "mean",
+                  "max"
+                ]
+              },
+              "visual": {
+                "areaOpacity": 0.4,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "packets/sec"
+                }
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_network_transmit_colls_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
+                    "seriesNameFormat": "{{device}} - Tx out"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "3_0": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Context Switches",
+            "description": "Per-second rate of context switches"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "min",
+                  "mean",
+                  "max"
+                ]
+              },
+              "visual": {
+                "areaOpacity": 0.2,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "ops/sec"
+                },
+                "min": 0
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_exec_context_switches_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
+                    "seriesNameFormat": "Context switches"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "3_1": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Interrupts",
+            "description": "Per-second rate of hardware and software interrupts"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "min",
+                  "mean",
+                  "max"
+                ]
+              },
+              "visual": {
+                "areaOpacity": 0.2,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "ops/sec"
+                },
+                "min": 0
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_exec_device_interrupts_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
+                    "seriesNameFormat": "Device"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_exec_software_interrupts_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
+                    "seriesNameFormat": "Software"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "3_2": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "System Load",
+            "description": "System load average over 1, 5, and 15 minutes. Reflects the number of active or waiting processes"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "min",
+                  "mean",
+                  "max"
+                ]
+              },
+              "querySettings": [
+                {
+                  "areaOpacity": 0,
+                  "colorMode": "fixed",
+                  "colorValue": "#c4162a",
+                  "lineStyle": "dashed",
+                  "queryIndex": 3
+                }
+              ],
+              "visual": {
+                "areaOpacity": 0.2,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "decimal"
+                },
+                "min": 0
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "node_load1{instance=\"$node\",job=\"$job\"}",
+                    "seriesNameFormat": "Load 1m"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "node_load5{instance=\"$node\",job=\"$job\"}",
+                    "seriesNameFormat": "Load 5m"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "node_load15{instance=\"$node\",job=\"$job\"}",
+                    "seriesNameFormat": "Load 15m"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "count(count(node_cpu_seconds_total{instance=\"$node\",job=\"$job\"}) by (cpu))",
+                    "seriesNameFormat": "CPU Core Count"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "3_3": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "System Calls",
+            "description": "Rate of system calls executed per second"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "min",
+                  "mean",
+                  "max"
+                ]
+              },
+              "visual": {
+                "areaOpacity": 0.2,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "ops/sec"
+                },
+                "min": 0
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_exec_system_calls_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
+                    "seriesNameFormat": "System calls"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "3_4": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Processes Forks / Traps",
+            "description": "Rate of process forks and processor traps handled per second"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "min",
+                  "mean",
+                  "max"
+                ]
+              },
+              "visual": {
+                "areaOpacity": 0.2,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "ops/sec"
+                },
+                "min": 0
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_exec_forks_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
+                    "seriesNameFormat": "Forks"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_exec_traps_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
+                    "seriesNameFormat": "Traps"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "3_5": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "System Time Variation",
+            "description": "Rate of change in system-reported time per second"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "min",
+                  "mean",
+                  "max"
+                ]
+              },
+              "visual": {
+                "areaOpacity": 0.2,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "seconds"
+                },
+                "min": 0
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "rate(node_time_seconds{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
+                    "seriesNameFormat": "Time Drift/sec"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "4_0": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Disk Read/Write IOps",
+            "description": "Number of I/O operations completed per second"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "min",
+                  "mean",
+                  "max"
+                ]
+              },
+              "querySettings": [
+                {
+                  "negativeY": true,
+                  "queryIndex": 0
+                }
+              ],
+              "visual": {
+                "areaOpacity": 0.4,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1
+              },
+              "yAxis": {
+                "label": "read (–) / write (+)"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_disk_reads_completed_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
+                    "seriesNameFormat": "{{device}} - Read"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_disk_writes_completed_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
+                    "seriesNameFormat": "{{device}} - Write"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "4_1": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Disk Read/Write Data",
+            "description": "Number of bytes read from or written to the device per second"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "min",
+                  "mean",
+                  "max"
+                ]
+              },
+              "querySettings": [
+                {
+                  "negativeY": true,
+                  "queryIndex": 0
+                }
+              ],
+              "visual": {
+                "areaOpacity": 0.4,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "bytes/sec"
+                },
+                "label": "read (–) / write (+)"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_disk_read_bytes_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
+                    "seriesNameFormat": "{{device}} - Read"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_disk_written_bytes_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
+                    "seriesNameFormat": "{{device}} - Write"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "4_2": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Time Spent Doing I/Os",
+            "description": "Percentage of time the disk spent actively processing I/O operations"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "min",
+                  "mean",
+                  "max"
+                ]
+              },
+              "visual": {
+                "areaOpacity": 0.4,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "percent-decimal"
+                }
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "rate(node_disk_io_time_seconds_total{instance=\"$node\",job=\"$job\"}[$__rate_interval])",
+                    "seriesNameFormat": "{{device}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "4_3": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "File Nodes Free",
+            "description": "Number of free file nodes (inodes) available per mounted filesystem"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "min",
+                  "mean",
+                  "max"
+                ]
+              },
+              "visual": {
+                "areaOpacity": 0.4,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "decimal"
+                }
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "node_filesystem_files_free{instance=\"$node\",job=\"$job\"}",
+                    "seriesNameFormat": "{{device}} - {{mountpoint}} - Filenodes free"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "node_filesystem_files{instance=\"$node\",job=\"$job\"}",
+                    "seriesNameFormat": "{{device}} - {{mountpoint}} - Filenodes total"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "4_4": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Filesystem in ReadOnly / Error",
+            "description": "Filesystems mounted in read-only mode or reporting device-level I/O errors"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "min",
+                  "mean",
+                  "max"
+                ]
+              },
+              "visual": {
+                "areaOpacity": 0.4,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1,
+                "stack": "all"
+              },
+              "yAxis": {
+                "max": 1,
+                "min": 0
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "node_filesystem_readonly{instance=\"$node\",job=\"$job\",device!~'rootfs'}",
+                    "seriesNameFormat": "{{device}} - {{mountpoint}} - ReadOnly"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "node_filesystem_device_error{instance=\"$node\",job=\"$job\",device!~'rootfs'}",
+                    "seriesNameFormat": "{{device}} - {{mountpoint}} - Error"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "5_0": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Node Exporter Scrape Time",
+            "description": "Duration of each individual collector executed during a Node Exporter scrape"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "min",
+                  "mean",
+                  "max"
+                ]
+              },
+              "visual": {
+                "areaOpacity": 0.2,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1,
+                "stack": "all"
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "seconds"
+                }
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "node_scrape_collector_duration_seconds{instance=\"$node\",job=\"$job\"}",
+                    "seriesNameFormat": "{{collector}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "5_1": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Node Exporter Scrape",
+            "description": "Shows whether each Node Exporter collector scraped successfully (1 = success, 0 = failure), and whether the textfile collector returned an error."
+          },
+          "plugin": {
+            "kind": "BarChart",
+            "spec": {
+              "calculation": "last-number"
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "node_scrape_collector_success{instance=\"$node\",job=\"$job\"}",
+                    "seriesNameFormat": "{{collector}}"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "query": "1 - node_textfile_scrape_error{instance=\"$node\",job=\"$job\"}",
+                    "seriesNameFormat": "textfile"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "layouts": [
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Quick CPU / Mem / Disk",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 3,
+              "height": 4,
+              "content": {
+                "$ref": "#/spec/panels/0_0"
+              }
+            },
+            {
+              "x": 3,
+              "y": 0,
+              "width": 3,
+              "height": 4,
+              "content": {
+                "$ref": "#/spec/panels/0_1"
+              }
+            },
+            {
+              "x": 6,
+              "y": 0,
+              "width": 3,
+              "height": 4,
+              "content": {
+                "$ref": "#/spec/panels/0_2"
+              }
+            },
+            {
+              "x": 9,
+              "y": 0,
+              "width": 3,
+              "height": 4,
+              "content": {
+                "$ref": "#/spec/panels/0_3"
+              }
+            },
+            {
+              "x": 12,
+              "y": 0,
+              "width": 3,
+              "height": 4,
+              "content": {
+                "$ref": "#/spec/panels/0_4"
+              }
+            },
+            {
+              "x": 15,
+              "y": 0,
+              "width": 3,
+              "height": 4,
+              "content": {
+                "$ref": "#/spec/panels/0_5"
+              }
+            },
+            {
+              "x": 18,
+              "y": 0,
+              "width": 2,
+              "height": 2,
+              "content": {
+                "$ref": "#/spec/panels/0_6"
+              }
+            },
+            {
+              "x": 20,
+              "y": 0,
+              "width": 2,
+              "height": 2,
+              "content": {
+                "$ref": "#/spec/panels/0_7"
+              }
+            },
+            {
+              "x": 22,
+              "y": 0,
+              "width": 2,
+              "height": 2,
+              "content": {
+                "$ref": "#/spec/panels/0_8"
+              }
+            },
+            {
+              "x": 18,
+              "y": 2,
+              "width": 2,
+              "height": 2,
+              "content": {
+                "$ref": "#/spec/panels/0_9"
+              }
+            },
+            {
+              "x": 20,
+              "y": 2,
+              "width": 4,
+              "height": 2,
+              "content": {
+                "$ref": "#/spec/panels/0_10"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Basic CPU / Mem / Net / Disk",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 11,
+              "content": {
+                "$ref": "#/spec/panels/1_0"
+              }
+            },
+            {
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 11,
+              "content": {
+                "$ref": "#/spec/panels/1_1"
+              }
+            },
+            {
+              "x": 0,
+              "y": 11,
+              "width": 12,
+              "height": 11,
+              "content": {
+                "$ref": "#/spec/panels/1_2"
+              }
+            },
+            {
+              "x": 12,
+              "y": 11,
+              "width": 12,
+              "height": 11,
+              "content": {
+                "$ref": "#/spec/panels/1_3"
+              }
+            },
+            {
+              "x": 0,
+              "y": 22,
+              "width": 12,
+              "height": 11,
+              "content": {
+                "$ref": "#/spec/panels/1_4"
+              }
+            },
+            {
+              "x": 12,
+              "y": 22,
+              "width": 12,
+              "height": 11,
+              "content": {
+                "$ref": "#/spec/panels/1_5"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Network Traffic",
+            "collapse": {
+              "open": false
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 40,
+              "width": 12,
+              "height": 12,
+              "content": {
+                "$ref": "#/spec/panels/2_0"
+              }
+            },
+            {
+              "x": 12,
+              "y": 40,
+              "width": 12,
+              "height": 12,
+              "content": {
+                "$ref": "#/spec/panels/2_1"
+              }
+            },
+            {
+              "x": 0,
+              "y": 52,
+              "width": 12,
+              "height": 12,
+              "content": {
+                "$ref": "#/spec/panels/2_2"
+              }
+            },
+            {
+              "x": 12,
+              "y": 52,
+              "width": 12,
+              "height": 12,
+              "content": {
+                "$ref": "#/spec/panels/2_3"
+              }
+            },
+            {
+              "x": 0,
+              "y": 64,
+              "width": 12,
+              "height": 12,
+              "content": {
+                "$ref": "#/spec/panels/2_4"
+              }
+            },
+            {
+              "x": 12,
+              "y": 64,
+              "width": 12,
+              "height": 12,
+              "content": {
+                "$ref": "#/spec/panels/2_5"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "System",
+            "collapse": {
+              "open": false
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 77,
+              "width": 12,
+              "height": 10,
+              "content": {
+                "$ref": "#/spec/panels/3_0"
+              }
+            },
+            {
+              "x": 12,
+              "y": 77,
+              "width": 12,
+              "height": 10,
+              "content": {
+                "$ref": "#/spec/panels/3_1"
+              }
+            },
+            {
+              "x": 0,
+              "y": 87,
+              "width": 12,
+              "height": 10,
+              "content": {
+                "$ref": "#/spec/panels/3_2"
+              }
+            },
+            {
+              "x": 12,
+              "y": 87,
+              "width": 12,
+              "height": 10,
+              "content": {
+                "$ref": "#/spec/panels/3_3"
+              }
+            },
+            {
+              "x": 0,
+              "y": 97,
+              "width": 12,
+              "height": 10,
+              "content": {
+                "$ref": "#/spec/panels/3_4"
+              }
+            },
+            {
+              "x": 12,
+              "y": 97,
+              "width": 12,
+              "height": 10,
+              "content": {
+                "$ref": "#/spec/panels/3_5"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Disk Filesystem",
+            "collapse": {
+              "open": false
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 108,
+              "width": 12,
+              "height": 11,
+              "content": {
+                "$ref": "#/spec/panels/4_0"
+              }
+            },
+            {
+              "x": 12,
+              "y": 108,
+              "width": 12,
+              "height": 11,
+              "content": {
+                "$ref": "#/spec/panels/4_1"
+              }
+            },
+            {
+              "x": 0,
+              "y": 119,
+              "width": 12,
+              "height": 11,
+              "content": {
+                "$ref": "#/spec/panels/4_2"
+              }
+            },
+            {
+              "x": 12,
+              "y": 119,
+              "width": 12,
+              "height": 11,
+              "content": {
+                "$ref": "#/spec/panels/4_3"
+              }
+            },
+            {
+              "x": 0,
+              "y": 130,
+              "width": 12,
+              "height": 11,
+              "content": {
+                "$ref": "#/spec/panels/4_4"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Node Exporter",
+            "collapse": {
+              "open": false
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 279,
+              "width": 12,
+              "height": 10,
+              "content": {
+                "$ref": "#/spec/panels/5_0"
+              }
+            },
+            {
+              "x": 12,
+              "y": 279,
+              "width": 12,
+              "height": 10,
+              "content": {
+                "$ref": "#/spec/panels/5_1"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "variables": [
+      {
+        "kind": "ListVariable",
+        "spec": {
+          "display": {
+            "name": "datasource",
+            "hidden": false
+          },
+          "allowAllValue": false,
+          "allowMultiple": false,
+          "plugin": {
+            "kind": "DatasourceVariable",
+            "spec": {
+              "datasourcePluginKind": "PrometheusDatasource"
+            }
+          },
+          "name": "ds_prometheus"
+        }
+      },
+      {
+        "kind": "ListVariable",
+        "spec": {
+          "display": {
+            "name": "job",
+            "hidden": false
+          },
+          "allowAllValue": false,
+          "allowMultiple": false,
+          "plugin": {
+            "kind": "PrometheusLabelValuesVariable",
+            "spec": {
+              "labelName": "job",
+              "matchers": [
+                "node_uname_info"
+              ]
+            }
+          },
+          "name": "job"
+        }
+      },
+      {
+        "kind": "ListVariable",
+        "spec": {
+          "display": {
+            "name": "Host:",
+            "hidden": false
+          },
+          "allowAllValue": false,
+          "allowMultiple": false,
+          "plugin": {
+            "kind": "PrometheusLabelValuesVariable",
+            "spec": {
+              "labelName": "instance",
+              "matchers": [
+                "node_uname_info{job=\"$job\"}"
+              ]
+            }
+          },
+          "name": "node"
+        }
+      }
+    ],
+    "annotations": [],
+    "duration": "1h",
+    "refreshInterval": "0s",
+    "links": [
+      {
+        "name": "GitHub",
+        "url": "https://github.com/rfmoz/grafana-dashboards",
+        "targetBlank": true
+      },
+      {
+        "name": "Grafana",
+        "url": "https://grafana.com/grafana/dashboards/4260",
+        "targetBlank": true
+      }
+    ]
+  }
+}

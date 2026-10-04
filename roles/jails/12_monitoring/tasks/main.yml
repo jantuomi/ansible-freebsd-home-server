@@ -120,6 +120,16 @@
     label: "{{ item.dst }}"
   when: not ansible_check_mode
 
+- name: Deploy Perses dashboards
+  copy:
+    src: "{{ role_path }}/dashboards/"
+    dest: /var/db/perses/dashboards/default/
+    owner: perses
+    group: perses
+    mode: "0600"
+    directory_mode: "0750"
+    force: true
+
 - name: Apply monitoring configuration changes
   meta: flush_handlers
 

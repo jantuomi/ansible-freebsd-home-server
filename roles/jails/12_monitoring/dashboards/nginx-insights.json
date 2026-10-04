@@ -1,7 +1,8 @@
 {
   "kind": "Dashboard",
   "metadata": {
-    "name": "nginx-insights"
+    "name": "nginx-insights",
+    "project": "default"
   },
   "spec": {
     "display": {
@@ -10,6 +11,7 @@
     },
     "duration": "1h",
     "refreshInterval": "30s",
+    "variables": [],
     "panels": {
       "requests": {
         "kind": "Panel",
@@ -280,7 +282,7 @@
             "spec": {
               "calculation": "sum",
               "format": { "unit": "decimal", "decimalPlaces": 0 },
-              "sort": "desc",
+              "sort": "asc",
               "mode": "value",
               "orientation": "horizontal",
               "groupBy": ["vhost"],
@@ -312,7 +314,7 @@
             "spec": {
               "calculation": "sum",
               "format": { "unit": "decimal", "decimalPlaces": 0 },
-              "sort": "desc",
+              "sort": "asc",
               "mode": "value",
               "orientation": "horizontal",
               "groupBy": ["status"],
@@ -326,6 +328,34 @@
                 "kind": "VictoriaLogsTimeSeriesQuery",
                 "spec": {
                   "query": "{host=\"pursotin\",service=\"nginx\",log_type=\"access\"} | stats by (status) count() as requests"
+                }
+              }
+            }
+          }]
+        }
+      },
+      "mostRequestedPaths": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Most requested paths",
+            "description": "Top 20 vhost/path pairs by total requests in the selected time range. Query strings are excluded and HTTP methods combined. Rows are displayed most recently seen first; expand for structured vhost, path and request-count fields."
+          },
+          "plugin": {
+            "kind": "LogsTable",
+            "spec": {
+              "allowWrap": true,
+              "enableDetails": true,
+              "showTime": false
+            }
+          },
+          "queries": [{
+            "kind": "LogQuery",
+            "spec": {
+              "plugin": {
+                "kind": "VictoriaLogsLogQuery",
+                "spec": {
+                  "query": "{host=\"pursotin\",service=\"nginx\",log_type=\"access\"} | extract_regexp \"^[^ ]+ (?P<path>/[^? ]*)\" from request | filter path:* vhost:* | stats by (vhost, path) count() as requests, field_max(_time, _time) as _time | sort by (requests desc, vhost, path) limit 20 | format \"<requests> requests | <vhost> | <path>\" as _msg"
                 }
               }
             }
@@ -407,8 +437,9 @@
           { "x": 12, "y": 12, "width": 12, "height": 8, "content": { "$ref": "#/spec/panels/serverErrorPercent" } },
           { "x": 0, "y": 20, "width": 12, "height": 10, "content": { "$ref": "#/spec/panels/virtualHosts" } },
           { "x": 12, "y": 20, "width": 12, "height": 10, "content": { "$ref": "#/spec/panels/statusDistribution" } },
-          { "x": 0, "y": 30, "width": 24, "height": 10, "content": { "$ref": "#/spec/panels/recentFailedRequests" } },
-          { "x": 0, "y": 40, "width": 24, "height": 10, "content": { "$ref": "#/spec/panels/recentErrorLogs" } }
+          { "x": 0, "y": 30, "width": 24, "height": 12, "content": { "$ref": "#/spec/panels/mostRequestedPaths" } },
+          { "x": 0, "y": 42, "width": 24, "height": 10, "content": { "$ref": "#/spec/panels/recentFailedRequests" } },
+          { "x": 0, "y": 52, "width": 24, "height": 10, "content": { "$ref": "#/spec/panels/recentErrorLogs" } }
         ]
       }
     }]
