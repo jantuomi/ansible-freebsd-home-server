@@ -270,6 +270,134 @@
           }]
         }
       },
+      "trafficClasses": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Requests by bot category",
+            "description": "User-agent estimates across the selected chart buckets: AI bots take precedence over search bots, then other crawlers. Categories are mutually exclusive. Unclassified includes browsers, unidentified bots, and missing user agents; it does not mean human. User agents can be spoofed. Boundary buckets are rounded to the query step."
+          },
+          "plugin": {
+            "kind": "BarChart",
+            "spec": {
+              "calculation": "sum",
+              "format": { "unit": "decimal", "decimalPlaces": 0 },
+              "sort": "asc",
+              "mode": "value",
+              "orientation": "horizontal",
+              "groupBy": ["traffic_class"],
+              "isStacked": true
+            }
+          },
+          "queries": [{
+            "kind": "TimeSeriesQuery",
+            "spec": {
+              "plugin": {
+                "kind": "VictoriaLogsTimeSeriesQuery",
+                "spec": {
+                  "query": "{host=\"pursotin\",service=\"nginx\",log_type=\"access\"} | format \"Unclassified\" as traffic_class | format if (http_user_agent:~\"(?i)bot|crawler|spider|slurp|scrapy|facebookexternalhit|facebot|ia_archiver|archive.org_bot\") \"Other crawlers\" as traffic_class | format if (http_user_agent:~\"(?i)googlebot|googleother|bingbot|bingpreview|adidxbot|duckduckbot|yandexbot|yandeximages|baiduspider|applebot|petalbot|sogou|slurp\") \"Search bots\" as traffic_class | format if (http_user_agent:~\"(?i)gptbot|chatgpt-user|oai-searchbot|claudebot|claude-user|claude-searchbot|anthropic-ai|cohere-ai|cohere-training-data-crawler|perplexitybot|perplexity-user|bytespider|amazonbot|meta-externalagent|meta-externalfetcher|google-extended|applebot-extended|ccbot|ai2bot|diffbot|omgilibot|omgili\") \"AI bots\" as traffic_class | stats by (traffic_class) count() as requests"
+                }
+              }
+            }
+          }]
+        }
+      },
+      "botTrafficShare": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Traffic share by bot category",
+            "description": "Percentage of requests in each chart interval, not an average for the whole selected range. User-agent heuristics with precedence AI > search > other crawlers; unclassified is not necessarily human. AI includes known AI retrieval, training, and dataset crawlers. Declared identities are not verified; robots.txt-only tokens such as Google-Extended cannot identify traffic when absent from the user agent."
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": { "position": "bottom", "mode": "list" },
+              "yAxis": {
+                "show": true,
+                "min": 0,
+                "max": 100,
+                "format": { "unit": "percent", "decimalPlaces": 2 }
+              },
+              "visual": {
+                "display": "line",
+                "lineWidth": 1.5,
+                "areaOpacity": 0.2,
+                "stack": "all"
+              }
+            }
+          },
+          "queries": [{
+            "kind": "TimeSeriesQuery",
+            "spec": {
+              "plugin": {
+                "kind": "VictoriaLogsTimeSeriesQuery",
+                "spec": {
+                  "query": "{host=\"pursotin\",service=\"nginx\",log_type=\"access\"} | format \"Unclassified\" as traffic_class | format if (http_user_agent:~\"(?i)bot|crawler|spider|slurp|scrapy|facebookexternalhit|facebot|ia_archiver|archive.org_bot\") \"Other crawlers\" as traffic_class | format if (http_user_agent:~\"(?i)googlebot|googleother|bingbot|bingpreview|adidxbot|duckduckbot|yandexbot|yandeximages|baiduspider|applebot|petalbot|sogou|slurp\") \"Search bots\" as traffic_class | format if (http_user_agent:~\"(?i)gptbot|chatgpt-user|oai-searchbot|claudebot|claude-user|claude-searchbot|anthropic-ai|cohere-ai|cohere-training-data-crawler|perplexitybot|perplexity-user|bytespider|amazonbot|meta-externalagent|meta-externalfetcher|google-extended|applebot-extended|ccbot|ai2bot|diffbot|omgilibot|omgili\") \"AI bots\" as traffic_class | stats count() as requests, count() if (traffic_class:=\"AI bots\") as bots | math 100 * bots / max(requests, 1) as percent | format \"AI bots\" as traffic_class | fields _time, traffic_class, percent"
+                }
+              }
+            }
+          }, {
+            "kind": "TimeSeriesQuery",
+            "spec": {
+              "plugin": {
+                "kind": "VictoriaLogsTimeSeriesQuery",
+                "spec": {
+                  "query": "{host=\"pursotin\",service=\"nginx\",log_type=\"access\"} | format \"Unclassified\" as traffic_class | format if (http_user_agent:~\"(?i)bot|crawler|spider|slurp|scrapy|facebookexternalhit|facebot|ia_archiver|archive.org_bot\") \"Other crawlers\" as traffic_class | format if (http_user_agent:~\"(?i)googlebot|googleother|bingbot|bingpreview|adidxbot|duckduckbot|yandexbot|yandeximages|baiduspider|applebot|petalbot|sogou|slurp\") \"Search bots\" as traffic_class | format if (http_user_agent:~\"(?i)gptbot|chatgpt-user|oai-searchbot|claudebot|claude-user|claude-searchbot|anthropic-ai|cohere-ai|cohere-training-data-crawler|perplexitybot|perplexity-user|bytespider|amazonbot|meta-externalagent|meta-externalfetcher|google-extended|applebot-extended|ccbot|ai2bot|diffbot|omgilibot|omgili\") \"AI bots\" as traffic_class | stats count() as requests, count() if (traffic_class:=\"Search bots\") as bots | math 100 * bots / max(requests, 1) as percent | format \"Search bots\" as traffic_class | fields _time, traffic_class, percent"
+                }
+              }
+            }
+          }, {
+            "kind": "TimeSeriesQuery",
+            "spec": {
+              "plugin": {
+                "kind": "VictoriaLogsTimeSeriesQuery",
+                "spec": {
+                  "query": "{host=\"pursotin\",service=\"nginx\",log_type=\"access\"} | format \"Unclassified\" as traffic_class | format if (http_user_agent:~\"(?i)bot|crawler|spider|slurp|scrapy|facebookexternalhit|facebot|ia_archiver|archive.org_bot\") \"Other crawlers\" as traffic_class | format if (http_user_agent:~\"(?i)googlebot|googleother|bingbot|bingpreview|adidxbot|duckduckbot|yandexbot|yandeximages|baiduspider|applebot|petalbot|sogou|slurp\") \"Search bots\" as traffic_class | format if (http_user_agent:~\"(?i)gptbot|chatgpt-user|oai-searchbot|claudebot|claude-user|claude-searchbot|anthropic-ai|cohere-ai|cohere-training-data-crawler|perplexitybot|perplexity-user|bytespider|amazonbot|meta-externalagent|meta-externalfetcher|google-extended|applebot-extended|ccbot|ai2bot|diffbot|omgilibot|omgili\") \"AI bots\" as traffic_class | stats count() as requests, count() if (traffic_class:=\"Other crawlers\") as bots | math 100 * bots / max(requests, 1) as percent | format \"Other crawlers\" as traffic_class | fields _time, traffic_class, percent"
+                }
+              }
+            }
+          }, {
+            "kind": "TimeSeriesQuery",
+            "spec": {
+              "plugin": {
+                "kind": "VictoriaLogsTimeSeriesQuery",
+                "spec": {
+                  "query": "{host=\"pursotin\",service=\"nginx\",log_type=\"access\"} | format \"Unclassified\" as traffic_class | format if (http_user_agent:~\"(?i)bot|crawler|spider|slurp|scrapy|facebookexternalhit|facebot|ia_archiver|archive.org_bot\") \"Other crawlers\" as traffic_class | format if (http_user_agent:~\"(?i)googlebot|googleother|bingbot|bingpreview|adidxbot|duckduckbot|yandexbot|yandeximages|baiduspider|applebot|petalbot|sogou|slurp\") \"Search bots\" as traffic_class | format if (http_user_agent:~\"(?i)gptbot|chatgpt-user|oai-searchbot|claudebot|claude-user|claude-searchbot|anthropic-ai|cohere-ai|cohere-training-data-crawler|perplexitybot|perplexity-user|bytespider|amazonbot|meta-externalagent|meta-externalfetcher|google-extended|applebot-extended|ccbot|ai2bot|diffbot|omgilibot|omgili\") \"AI bots\" as traffic_class | stats count() as requests, count() if (traffic_class:=\"Unclassified\") as bots | math 100 * bots / max(requests, 1) as percent | format \"Unclassified\" as traffic_class | fields _time, traffic_class, percent"
+                }
+              }
+            }
+          }]
+        }
+      },
+      "topBotUserAgents": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Top crawler and bot user agents",
+            "description": "Top 20 recognized bot user agents by request count over the selected time range. Expand rows for category, user agent, and request count. Classification is heuristic; unknown or disguised bots are excluded. Rows are displayed most recently seen first."
+          },
+          "plugin": {
+            "kind": "LogsTable",
+            "spec": {
+              "allowWrap": true,
+              "enableDetails": true,
+              "showTime": false
+            }
+          },
+          "queries": [{
+            "kind": "LogQuery",
+            "spec": {
+              "plugin": {
+                "kind": "VictoriaLogsLogQuery",
+                "spec": {
+                  "query": "{host=\"pursotin\",service=\"nginx\",log_type=\"access\"} | format \"Unclassified\" as traffic_class | format if (http_user_agent:~\"(?i)bot|crawler|spider|slurp|scrapy|facebookexternalhit|facebot|ia_archiver|archive.org_bot\") \"Other crawlers\" as traffic_class | format if (http_user_agent:~\"(?i)googlebot|googleother|bingbot|bingpreview|adidxbot|duckduckbot|yandexbot|yandeximages|baiduspider|applebot|petalbot|sogou|slurp\") \"Search bots\" as traffic_class | format if (http_user_agent:~\"(?i)gptbot|chatgpt-user|oai-searchbot|claudebot|claude-user|claude-searchbot|anthropic-ai|cohere-ai|cohere-training-data-crawler|perplexitybot|perplexity-user|bytespider|amazonbot|meta-externalagent|meta-externalfetcher|google-extended|applebot-extended|ccbot|ai2bot|diffbot|omgilibot|omgili\") \"AI bots\" as traffic_class | filter NOT traffic_class:=\"Unclassified\" | stats by (traffic_class, http_user_agent) count() as requests, field_max(_time, _time) as _time | sort by (requests desc, traffic_class, http_user_agent) limit 20 | format \"<requests> requests | <traffic_class> | <http_user_agent>\" as _msg"
+                }
+              }
+            }
+          }]
+        }
+      },
       "virtualHosts": {
         "kind": "Panel",
         "spec": {
@@ -440,6 +568,19 @@
           { "x": 0, "y": 30, "width": 24, "height": 12, "content": { "$ref": "#/spec/panels/mostRequestedPaths" } },
           { "x": 0, "y": 42, "width": 24, "height": 10, "content": { "$ref": "#/spec/panels/recentFailedRequests" } },
           { "x": 0, "y": 52, "width": 24, "height": 10, "content": { "$ref": "#/spec/panels/recentErrorLogs" } }
+        ]
+      }
+    }, {
+      "kind": "Grid",
+      "spec": {
+        "display": {
+          "title": "Bot & crawler traffic",
+          "collapse": { "open": true }
+        },
+        "items": [
+          { "x": 0, "y": 0, "width": 12, "height": 10, "content": { "$ref": "#/spec/panels/trafficClasses" } },
+          { "x": 12, "y": 0, "width": 12, "height": 10, "content": { "$ref": "#/spec/panels/botTrafficShare" } },
+          { "x": 0, "y": 10, "width": 24, "height": 10, "content": { "$ref": "#/spec/panels/topBotUserAgents" } }
         ]
       }
     }]
