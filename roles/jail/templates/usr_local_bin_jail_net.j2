@@ -10,7 +10,8 @@ NUM="$3"
 IP="$4"
 
 BRIDGE="brlan0"
-DEFAULT_ROUTE="{{ jail_ips.ingress }}"
+DEFAULT_ROUTE="default {{ jail_ips.ingress }}"
+WG_ROUTE="{{ router_wg_network }} {{ lan_ipv4_gateway }}"
 
 # --- Cleanup functions ---
 
@@ -69,9 +70,14 @@ _poststart() {
     ifconfig epl${NUM}a up
     jexec ${NAME} ifconfig epl${NUM}b up
     jexec ${NAME} ifconfig epl${NUM}b ${IP}
+
+    # Set up wireguard return route to router
+    jexec ${NAME} route delete ${WG_ROUTE} || true
+    jexec ${NAME} route add ${WG_ROUTE}
+
     jexec ${NAME} route delete default || true
     if [ "$NUM" -ne 1 ]; then
-        jexec ${NAME} route add default ${DEFAULT_ROUTE} || true
+        jexec ${NAME} route add ${DEFAULT_ROUTE}
     fi
 
     if [ "$NUM" -eq 1 ]; then
@@ -79,8 +85,8 @@ _poststart() {
         ifconfig epw${NUM}a up
         jexec ${NAME} ifconfig epw${NUM}b up
 {% if is_prod %}
+        # default route set up by dhcp
         jexec ${NAME} dhclient epw${NUM}b
-        jexec ${NAME} route add {{ router_wg_network }} {{ lan_ipv4_gateway }} || true
         jexec ${NAME} ifconfig epw${NUM}b inet6 auto_linklocal accept_rtadv
         jexec ${NAME} ifconfig epw${NUM}b inet6 -ifdisabled
 
@@ -88,7 +94,7 @@ _poststart() {
         jexec ${NAME} service dhcp6c start || echo "dhcp6c not found! skipping"
 {% else %}
         jexec ${NAME} ifconfig epw${NUM}b inet {{ ingress_wan_static }}
-        jexec ${NAME} route add default {{ lan_ipv4_gateway }}
+        jexec ${NAME} route add ${DEFAULT_ROUTE}
 {% endif %}
     fi
 
