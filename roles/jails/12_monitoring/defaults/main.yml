@@ -51,6 +51,7 @@ monitoring_services:
   - victoria_logs
   - alertmanager
   - vmalert
+  - vmalert_logs
   - fluent-bit
   - perses
 
@@ -63,6 +64,8 @@ rc_conf: |
   alertmanager_args="--web.listen-address={{ jail_ips[jail_name] }}:9093 --web.external-url=http://{{ jail_ips[jail_name] }}:9093 --cluster.listen-address="
   vmalert_enable="YES"
   vmalert_args="-rule=/usr/local/etc/vmalert/rules.yml -datasource.url=http://{{ jail_ips[jail_name] }}:8428 -notifier.url=http://{{ jail_ips[jail_name] }}:9093 -remoteWrite.url=http://{{ jail_ips[jail_name] }}:8428 -remoteRead.url=http://{{ jail_ips[jail_name] }}:8428 -httpListenAddr={{ jail_ips[jail_name] }}:8880 -external.url=http://{{ jail_ips[jail_name] }}:8880"
+  vmalert_logs_enable="YES"
+  vmalert_logs_args="-rule=/usr/local/etc/vmalert/log-rules.yml -rule.evalDelay=5s -datasource.url=http://{{ jail_ips[jail_name] }}:9428 -notifier.url=http://{{ jail_ips[jail_name] }}:9093 -remoteWrite.url=http://{{ jail_ips[jail_name] }}:8428 -remoteRead.url=http://{{ jail_ips[jail_name] }}:8428 -httpListenAddr={{ jail_ips[jail_name] }}:8881 -external.url=http://{{ jail_ips[jail_name] }}:8881"
   fluent_bit_enable="YES"
   fluent_bit_config="/usr/local/etc/fluent-bit/fluent-bit.conf"
   fluent_bit_user="root"
@@ -78,6 +81,11 @@ files:
     dest: /usr/local/etc/vmalert/rules.yml
   - src: usr_local_etc_rc.d_vmalert.j2
     dest: /usr/local/etc/rc.d/vmalert
+    mode: "0755"
+  - src: vmalert_log_rules.yml.j2
+    dest: /usr/local/etc/vmalert/log-rules.yml
+  - src: usr_local_etc_rc.d_vmalert_logs.j2
+    dest: /usr/local/etc/rc.d/vmalert_logs
     mode: "0755"
   - src: fluent-bit.conf.j2
     dest: /usr/local/etc/fluent-bit/fluent-bit.conf

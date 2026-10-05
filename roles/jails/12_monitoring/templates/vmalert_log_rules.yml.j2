@@ -1,0 +1,19 @@
+{% raw %}
+groups:
+  - name: nginx
+    type: vlogs
+    interval: 30s
+    rules:
+      - alert: Nginx5xxResponse
+        expr: >-
+          _time:5m {host="pursotin",service="nginx",log_type="access"}
+          | stats by (vhost) count() if (status:>=500 status:<600) as errors
+          | filter errors:>0
+        labels:
+          severity: warning
+          instance: pursotin
+          resource: nginx
+        annotations:
+          summary: "NGINX returned 5xx on {{ $labels.vhost }}"
+          description: "{{ $value }} server-error responses in the last 5 minutes."
+{% endraw %}

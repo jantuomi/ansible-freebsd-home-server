@@ -66,6 +66,17 @@
   changed_when: false
   when: not ansible_check_mode
 
+- name: Validate vmalert log rules
+  command:
+    argv:
+      - /usr/local/bin/vmalert
+      - -dryRun
+      - -rule=/usr/local/etc/vmalert/log-rules.yml
+      - "-datasource.url=http://{{ jail_ips[jail_name] }}:9428"
+      - "-notifier.url=http://{{ jail_ips[jail_name] }}:9093"
+  changed_when: false
+  when: not ansible_check_mode
+
 - name: Validate Fluent Bit configuration
   command: /usr/local/bin/fluent-bit --dry-run --config /usr/local/etc/fluent-bit/fluent-bit.conf
   changed_when: false
@@ -153,6 +164,7 @@
     - { name: VictoriaLogs, port: 9428, path: /health }
     - { name: Alertmanager, port: 9093, path: /-/ready }
     - { name: vmalert, port: 8880, path: /health }
+    - { name: vmalert_logs, port: 8881, path: /health }
     - { name: Perses, port: 8080, path: /api/v1/health }
   loop_control:
     label: "{{ item.name }}"
