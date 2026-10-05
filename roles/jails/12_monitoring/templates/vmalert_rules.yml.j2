@@ -3,7 +3,7 @@ groups:
   - name: pursotin
     interval: 30s
     rules:
-      - alert: HostExporterDown
+      - alert: NodeExporterDown
         expr: up{job="pursotin",instance="pursotin"} == 0 or absent(up{job="pursotin",instance="pursotin"})
         for: 2m
         labels:
@@ -12,6 +12,16 @@ groups:
         annotations:
           summary: "Cannot scrape node_exporter on {{ $labels.instance }}"
           description: "The host or its node_exporter has been unreachable for at least 2 minutes."
+
+      - alert: ZfsExporterDown
+        expr: up{job="zfs",instance="pursotin"} == 0 or absent(up{job="zfs",instance="pursotin"})
+        for: 2m
+        labels:
+          severity: critical
+          resource: exporter
+        annotations:
+          summary: "Cannot scrape zfs exporter on {{ $labels.instance }}"
+          description: "The host or its zfs exporter has been unreachable for at least 2 minutes."
 
       - alert: HostCollectorFailed
         expr: node_scrape_collector_success{job="pursotin",collector=~"cpu|meminfo|filesystem"} == 0
