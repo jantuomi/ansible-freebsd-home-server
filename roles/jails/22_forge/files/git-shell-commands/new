@@ -25,7 +25,7 @@ else
 fi
 
 echo "Created repository $REPO"
-echo "Clone: git@forge.jan.systems:$REPO.git"
+echo "Clone: git@forge.internal:$REPO.git"
 if [ "${REPO#.}" = "$REPO" ]; then
     echo "Web:   https://forge.jan.systems/$REPO.git"
 fi
