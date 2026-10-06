@@ -216,7 +216,7 @@
         "spec": {
           "display": {
             "name": "RAM Used",
-            "description": "Non available RAM memory"
+            "description": "Estimated non-reclaimable RAM. Free, cached, inactive, and ZFS ARC memory above its minimum are considered available. Falls back to excluding only free, cached, and inactive memory when ARC metrics are unavailable."
           },
           "plugin": {
             "kind": "GaugeChart",
@@ -251,7 +251,7 @@
                     "datasource": {
                       "kind": "PrometheusDatasource"
                     },
-                    "query": "( 1 - ( (node_memory_free_bytes{instance=\"$node\",job=\"$job\"} + node_memory_cache_bytes{instance=\"$node\",job=\"$job\"} + node_memory_inactive_bytes{instance=\"$node\",job=\"$job\"}) / node_memory_size_bytes{instance=\"$node\",job=\"$job\"} ) ) * 100\n"
+                    "query": "clamp_max(clamp_min((1 - ((node_memory_free_bytes{instance=\"$node\",job=\"$job\"} + node_memory_cache_bytes{instance=\"$node\",job=\"$job\"} + node_memory_inactive_bytes{instance=\"$node\",job=\"$job\"} + (clamp_min(node_zfs_arcstats_size_bytes{instance=\"$node\",job=\"$job\"} - node_zfs_arcstats_c_min_bytes{instance=\"$node\",job=\"$job\"}, 0) or on (job, instance) (0 * node_memory_size_bytes{instance=\"$node\",job=\"$job\"}))) / node_memory_size_bytes{instance=\"$node\",job=\"$job\"})) * 100, 0), 100)"
                   }
                 }
               }
