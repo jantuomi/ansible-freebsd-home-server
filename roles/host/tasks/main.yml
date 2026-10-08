@@ -51,6 +51,9 @@
     - node_exporter
     - fd-find
     - poudriere
+    - sanoid
+    - py312-borgbackup
+    - py312-borgmatic
   loop_control:
     loop_var: pkg_name
 
