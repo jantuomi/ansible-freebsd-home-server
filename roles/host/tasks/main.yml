@@ -228,6 +228,7 @@
     extra_zfs_properties:
       mountpoint: "{{ item.mountpoint | default(omit) }}"
   loop:
+    - { name: "zroot/var/cache" }
     - { name: "zroot/jails", mountpoint: "/usr/local/jails" }
     - { name: "zroot/jails/media" }
     - { name: "zroot/jails/templates" }
