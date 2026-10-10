@@ -1,0 +1,23 @@
+# Managed by Ansible. Do not edit by hand.
+#
+# Note: /usr/local/bin/borg-daily-backup uses the latest daily snapshots for remote backups.
+
+[zroot]
+	use_template = local
+	recursive = zfs
+
+[template_local]
+	autosnap = yes
+	autoprune = yes
+
+	frequently = 432
+	frequent_period = 10
+
+	hourly = 0
+	daily = 14
+	weekly = 0
+	monthly = 0
+	yearly = 0
+
+	daily_hour = 23
+	daily_min = 59

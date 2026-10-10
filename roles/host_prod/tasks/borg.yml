@@ -1,0 +1,36 @@
+- name: Deploy per-dataset snapshot backup wrapper
+  copy:
+    src: "{{ jail_role_dir }}/files/usr_local_bin_borg_daily_backup.sh"
+    dest: /usr/local/bin/borg-daily-backup
+    owner: root
+    group: wheel
+    mode: "0755"
+    validate: /usr/local/bin/bash -n %s
+
+- name: Check whether the borg repository is already initialized
+  environment:
+    BORG_CONFIG_DIR: /usr/local/etc/borg
+    BORG_CACHE_DIR: /var/cache/borg
+  command: >-
+    borg info
+    --remote-path=borg-1.4
+    --rsh "ssh -F /root/.ssh/config -i /root/.ssh/backup"
+    "ssh://backup/./borg"
+  register: _borg_repo_info
+  changed_when: false
+  failed_when: false
+  no_log: true
+
+- name: Initialize the borg repository (keyfile encryption)
+  environment:
+    BORG_CONFIG_DIR: /usr/local/etc/borg
+    BORG_CACHE_DIR: /var/cache/borg
+  command: >-
+    borg init
+    --encryption keyfile
+    --make-parent-dirs
+    --remote-path=borg-1.4
+    --rsh "ssh -F /root/.ssh/config -i /root/.ssh/backup"
+    "ssh://backup/./borg"
+  when: _borg_repo_info.rc != 0
+  no_log: true

@@ -227,15 +227,18 @@
     state: present
     extra_zfs_properties:
       mountpoint: "{{ item.mountpoint | default(omit) }}"
+      "com.borg:backup": "{{ item.backup | default(omit) }}"
   loop:
+    - { name: "zroot", mountpoint: "/zroot", backup: true }
     - { name: "zroot/var/cache" }
     - { name: "zroot/jails", mountpoint: "/usr/local/jails" }
     - { name: "zroot/jails/media" }
     - { name: "zroot/jails/templates" }
     - { name: "zroot/jails/containers" }
     - { name: "zroot/jails/volumes", mountpoint: "/usr/local/jails/volumes" }
-    - { name: "zroot/storage", mountpoint: "/usr/local/jails/volumes/storage" }
     - { name: "zroot/ports", mountpoint: "/usr/ports" }
+    - { name: "zroot/borg/config", mountpoint: "/usr/local/etc/borg", backup: false }
+    - { name: "zroot/storage", mountpoint: "/usr/local/jails/volumes/storage", backup: false }
   loop_control:
     label: "{{ item.name }}"
 

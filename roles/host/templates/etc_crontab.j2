@@ -3,6 +3,7 @@
 #
 SHELL=/bin/sh
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+BORG_CONFIG_DIR=/usr/local/etc/borg
 #
 #minute hour    mday    month   wday    who     command
 #
@@ -21,16 +22,19 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 # UTC time.  See adjkerntz(8) for details.
 1,31    0-5     *       *       *       root    adjkerntz -a
 
-# Take snapshots every day at 3:05 AM
-5       3       *       *       *       root    /usr/local/bin/backup snapshot prune-local >>/var/log/backup 2>&1
-# Send backup snapshots to remote every Monday at 4:05 AM
-5       4       *       *       1       root    /usr/local/bin/backup send-to-remote prune-remote notify >>/var/log/backup 2>&1
+{% if is_prod | default(false) %}
+# Run sanoid every minute to take/prune frequent (10 min) and daily ZFS snapshots
+*       *       *       *       *       root    sanoid --cron >>/var/log/sanoid.log 2>&1
+
+# Back up latest daily snapshots to remote nightly
+0       3       *       *       *       root    lockf -k -t 0 /var/run/borg-daily-backup.lock borg-daily-backup >>/var/log/borg 2>&1
+{% endif %}
 
 # Run pylogsentinel
 */10    *       *       *       *       root    python -m pylogsentinel
 # Run pylogsentinel batch job every Monday
-5       6       *       *       1       root    /usr/local/bin/pylogsentinel-batch-email.sh
+5       6       *       *       1       root    pylogsentinel-batch-email.sh
 
 # Update ports trees nightly
-0       2       *       *       *       root    /usr/local/bin/update-ports quarterly >>/var/log/update-ports.log 2>&1
-5       2       *       *       *       root    /usr/local/bin/update-ports custom >>/var/log/update-ports.log 2>&1
+0       2       *       *       *       root    update-ports quarterly >>/var/log/update-ports.log 2>&1
+5       2       *       *       *       root    update-ports custom >>/var/log/update-ports.log 2>&1

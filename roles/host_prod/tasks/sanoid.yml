@@ -1,0 +1,15 @@
+- name: Create sanoid config directory
+  file:
+    path: /usr/local/etc/sanoid
+    state: directory
+    owner: root
+    group: wheel
+    mode: "0755"
+
+- name: Deploy sanoid.conf
+  template:
+    src: usr_local_etc_sanoid_sanoid.conf.j2
+    dest: /usr/local/etc/sanoid/sanoid.conf
+    owner: root
+    group: wheel
+    mode: "0644"
