@@ -27,7 +27,7 @@ BORG_CONFIG_DIR=/usr/local/etc/borg
 *       *       *       *       *       root    sanoid --cron >>/var/log/sanoid.log 2>&1
 
 # Back up latest daily snapshots to remote nightly
-0       3       *       *       *       root    lockf -k -t 0 /var/run/borg-daily-backup.lock borg-daily-backup >>/var/log/borg 2>&1
+0       3       *       *       *       root    lockf -k -t 0 /var/run/borg-daily-backup.lock borg-daily-backup 2>&1 | ts >>/var/log/borg
 {% endif %}
 
 # Run pylogsentinel

@@ -11,6 +11,7 @@ export BORG_CACHE_DIR=/var/cache/borg
 export BORG_REMOTE_PATH=borg-1.4
 export BORG_RSH="ssh -F /root/.ssh/config -i /root/.ssh/backup"
 export BORG_PASSPHRASE=""
+
 unset BORG_PASSCOMMAND BORG_PASSPHRASE_FD
 
 DRY=""
@@ -117,6 +118,19 @@ for DS in $DATASETS; do
     # Destroy the clone and unmount
     $DRY zfs destroy "$CLONE_NAME"
     CLONE_ACTIVE=""
+done
+
+# Remove backups of datasets that no longer exist
+echo "Removing orphaned backups..."
+ALL_DATASETS=$(zfs list -H -o name)
+ARCHIVES=$(echo "$ALL_DATASETS" | tr '/' '+')
+REMOTE_ARCHIVES=$(borg list --format '{archive}{NL}' "$BORG_REPO")
+for ARCHIVE in $REMOTE_ARCHIVES; do
+    DS_ARCHIVE="${ARCHIVE%@old}"
+    if ! grep -Fx "$DS_ARCHIVE" <<< "$ARCHIVES" >/dev/null; then
+        echo "Removing backup $ARCHIVE..."
+        $DRY borg delete "$BORG_REPO::$ARCHIVE"
+    fi
 done
 
 echo "Compacting repository..."
