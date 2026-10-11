@@ -8,7 +8,7 @@
 
 - name: Deploy sanoid.conf
   template:
-    src: usr_local_etc_sanoid_sanoid.conf.j2
+    src: "{{ playbook_dir }}/roles/host_prod/templates/usr_local_etc_sanoid_sanoid.conf.j2"
     dest: /usr/local/etc/sanoid/sanoid.conf
     owner: root
     group: wheel

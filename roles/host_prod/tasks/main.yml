@@ -46,12 +46,6 @@
     group: wheel
     mode: "0644"
 
-- name: Set up sanoid
-  include_tasks: sanoid.yml
-
-- name: Set up borg
-  include_tasks: borg.yml
-
 - name: Create dma config directory
   file:
     path: /etc/dma

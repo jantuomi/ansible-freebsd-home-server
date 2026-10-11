@@ -4,7 +4,13 @@
 
 [zroot]
 	use_template = local
-	recursive = zfs
+	# Per-dataset recursion allows excluding the temporary Borg clone.
+	recursive = yes
+
+[zroot/borg-work]
+	autosnap = no
+	autoprune = no
+	monitor = no
 
 [template_local]
 	autosnap = yes

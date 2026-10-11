@@ -5,10 +5,13 @@ BACKUP_PROP=com.borg:backup
 CLONE_NAME=zroot/borg-work
 CLONE_MOUNTPOINT_BASE=/mnt/borg-work
 BORG_REPO="ssh://backup/./borg"
-BORG_OPTS="--remote-path=borg-1.4 --rsh 'ssh -F /root/.ssh/config -i /root/.ssh/backup'"
 
 export BORG_CONFIG_DIR=/usr/local/etc/borg
 export BORG_CACHE_DIR=/var/cache/borg
+export BORG_REMOTE_PATH=borg-1.4
+export BORG_RSH="ssh -F /root/.ssh/config -i /root/.ssh/backup"
+export BORG_PASSPHRASE=""
+unset BORG_PASSCOMMAND BORG_PASSPHRASE_FD
 
 DRY=""
 for arg in "$@"; do
@@ -31,14 +34,18 @@ cleanup() {
 trap cleanup EXIT
 
 # Find all datasets with backup enabled
-DATASETS=$(zfs list -H -o name,$BACKUP_PROP | awk '$2 == "true" {print $1}')
+DATASETS=$(zfs list -H -o name,$BACKUP_PROP | awk '$2 == "on" {print $1}')
+if [ -z "$DATASETS" ]; then
+    echo "No datasets have $BACKUP_PROP=on; refusing an empty backup run" >&2
+    exit 1
+fi
 
 WARNINGS=0
 
 echo "Starting borg run..."
 
 exists() {
-    borg info $BORG_OPTS "$1" >/dev/null 2>&1
+    borg info "$1" >/dev/null 2>&1
 }
 
 for DS in $DATASETS; do
@@ -68,7 +75,7 @@ for DS in $DATASETS; do
 
     # Clone and mount to stable location
     [ -z "$DRY" ] && CLONE_ACTIVE=1
-    $DRY zfs clone -o readonly=on -o atime=off -o "mountpoint=$MOUNTPOINT" "$SNAP" "$CLONE_NAME"
+    $DRY zfs clone -o readonly=on -o atime=off -o "$BACKUP_PROP=off" -o "mountpoint=$MOUNTPOINT" "$SNAP" "$CLONE_NAME"
 
     # Make sure it really is mounted, or we would back up an empty directory
     if [ -z "$DRY" ] && [ "$(zfs get -H -o value mounted "$CLONE_NAME")" != "yes" ]; then
@@ -85,15 +92,15 @@ for DS in $DATASETS; do
         # before cleanup. The main archive is complete, so @old is stale and
         # would otherwise make the rename fail forever.
         if exists "$BORG_REPO::$ARCHIVE@old"; then
-            $DRY borg delete $BORG_OPTS "$BORG_REPO::$ARCHIVE@old"
+            $DRY borg delete "$BORG_REPO::$ARCHIVE@old"
         fi
-        $DRY borg rename $BORG_OPTS "$BORG_REPO::$ARCHIVE" "$ARCHIVE@old"
+        $DRY borg rename "$BORG_REPO::$ARCHIVE" "$ARCHIVE@old"
     fi
 
     # Store the archive. Exit code 1 means "completed with warnings" and the
     # archive was still created, so it must not abort the script.
     RC=0
-    $DRY borg create --stats $BORG_OPTS "$BORG_REPO::$ARCHIVE" "$MOUNTPOINT" || RC=$?
+    $DRY borg create --stats "$BORG_REPO::$ARCHIVE" "$MOUNTPOINT" || RC=$?
     if [ "$RC" -eq 1 ]; then
         echo "borg create finished with warnings for $DS" >&2
         WARNINGS=1
@@ -104,7 +111,7 @@ for DS in $DATASETS; do
 
     # Destroy the @old archive
     if exists "$BORG_REPO::$ARCHIVE@old"; then
-        $DRY borg delete $BORG_OPTS "$BORG_REPO::$ARCHIVE@old"
+        $DRY borg delete "$BORG_REPO::$ARCHIVE@old"
     fi
 
     # Destroy the clone and unmount
@@ -113,7 +120,7 @@ for DS in $DATASETS; do
 done
 
 echo "Compacting repository..."
-$DRY borg compact $BORG_OPTS "$BORG_REPO"
+$DRY borg compact "$BORG_REPO"
 
 echo "Finished borg run"
 exit "$WARNINGS"
