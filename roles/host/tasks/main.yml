@@ -237,7 +237,7 @@
     - { name: "zroot/jails/containers" }
     - { name: "zroot/jails/volumes", mountpoint: "/usr/local/jails/volumes" }
     - { name: "zroot/ports", mountpoint: "/usr/ports" }
-    - { name: "zroot/borg/config", mountpoint: "/usr/local/etc/borg", backup: "off" }
+    - { name: "zroot/borg", mountpoint: "/usr/local/etc/borg", backup: "off" }
     - { name: "zroot/storage", mountpoint: "/usr/local/jails/volumes/storage", backup: "off" }
   loop_control:
     label: "{{ item.name }}"
