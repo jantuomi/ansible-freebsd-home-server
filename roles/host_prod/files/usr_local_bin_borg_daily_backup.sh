@@ -15,6 +15,32 @@ export BORG_PASSPHRASE=""
 unset BORG_PASSCOMMAND BORG_PASSPHRASE_FD
 
 DRY=""
+
+# Destroy our clone if the script dies while it exists, so a failure can't
+# leave a mounted clone that blocks every later run.
+CLONE_ACTIVE=""
+cleanup() {
+    local STATUS=$?
+    if [ -n "$CLONE_ACTIVE" ] && zfs list -H -o name "$CLONE_NAME" >/dev/null 2>&1; then
+        echo "Cleaning up clone $CLONE_NAME" >&2
+        if ! zfs destroy "$CLONE_NAME"; then
+            echo "WARNING: could not destroy $CLONE_NAME" >&2
+            [ "$STATUS" -ne 0 ] || STATUS=1
+        fi
+    fi
+    if [ "$STATUS" -ne 0 ] && [ -z "$DRY" ]; then
+        mail -s "Borg backup failed on $(hostname)" root <<EOF || \
+            echo "WARNING: could not send backup failure email" >&2
+borg-daily-backup exited with status $STATUS.
+Dataset: ${DS:-not selected}
+Repository: $BORG_REPO
+See /var/log/borg for details.
+EOF
+    fi
+    exit "$STATUS"
+}
+trap cleanup EXIT
+
 for arg in "$@"; do
     case "$arg" in
         --dry) DRY="echo DRY: " ;;
@@ -22,17 +48,6 @@ for arg in "$@"; do
         *) echo "Unknown argument: $arg" >&2; exit 2 ;;
     esac
 done
-
-# Destroy our clone if the script dies while it exists, so a failure can't
-# leave a mounted clone that blocks every later run.
-CLONE_ACTIVE=""
-cleanup() {
-    if [ -n "$CLONE_ACTIVE" ] && zfs list -H -o name "$CLONE_NAME" >/dev/null 2>&1; then
-        echo "Cleaning up clone $CLONE_NAME" >&2
-        zfs destroy "$CLONE_NAME" || echo "WARNING: could not destroy $CLONE_NAME" >&2
-    fi
-}
-trap cleanup EXIT
 
 # Find all datasets with backup enabled
 DATASETS=$(zfs list -H -o name,$BACKUP_PROP | awk '$2 == "on" {print $1}')
