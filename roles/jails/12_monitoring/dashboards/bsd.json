@@ -26,6 +26,9 @@
             "kind": "GaugeChart",
             "spec": {
               "calculation": "last-number",
+              "legend": {
+                "show": false
+              },
               "format": {
                 "decimalPlaces": 1,
                 "unit": "percent"
@@ -76,6 +79,9 @@
             "kind": "GaugeChart",
             "spec": {
               "calculation": "last-number",
+              "legend": {
+                "show": false
+              },
               "format": {
                 "decimalPlaces": 1,
                 "unit": "percent"
@@ -174,6 +180,9 @@
             "kind": "GaugeChart",
             "spec": {
               "calculation": "last-number",
+              "legend": {
+                "show": false
+              },
               "format": {
                 "decimalPlaces": 1,
                 "unit": "percent"
@@ -222,6 +231,9 @@
             "kind": "GaugeChart",
             "spec": {
               "calculation": "last-number",
+              "legend": {
+                "show": false
+              },
               "format": {
                 "decimalPlaces": 1,
                 "unit": "percent"
@@ -270,6 +282,9 @@
             "kind": "GaugeChart",
             "spec": {
               "calculation": "last-number",
+              "legend": {
+                "show": false
+              },
               "format": {
                 "decimalPlaces": 1,
                 "unit": "percent"
@@ -318,6 +333,9 @@
             "kind": "GaugeChart",
             "spec": {
               "calculation": "last-number",
+              "legend": {
+                "show": false
+              },
               "format": {
                 "decimalPlaces": 1,
                 "unit": "percent"
