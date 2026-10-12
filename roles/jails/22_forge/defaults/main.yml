@@ -1,5 +1,8 @@
 userland: "15.1-minimal-jail"
 
+forge_page_rate: "5r/s"
+forge_page_burst: 50
+
 zfs:
   - name: forge_repos
     owner: "1000"
@@ -9,15 +12,22 @@ zfs:
   # otherwise every userland migration changes the server's identity.
   - name: forge_ssh_hostkeys
     mode: "0700"
+  - name: forge_iocaine
+    owner: "1001"
+    group: "1001"
+    mode: "0700"
 
 nullfs:
   - src: forge_repos
     dst: /var/db/repos
   - src: forge_ssh_hostkeys
     dst: /var/db/ssh_hostkeys
+  - src: forge_iocaine
+    dst: /var/db/iocaine
 
 dirs:
   - /var/db/ssh_hostkeys
+  - /var/db/iocaine
 
 pkg:
   - FreeBSD-ssh
@@ -25,6 +35,7 @@ pkg:
   - cgit
   - fcgiwrap
   - nginx
+  - iocaine
   - highlight
   - py312-docutils
   - py312-markdown
@@ -33,6 +44,7 @@ pkg:
 
 services:
   - sshd
+  - iocaine
   - nginx
   - fcgiwrap
   - cron
@@ -42,3 +54,5 @@ rc_conf: |
   fcgiwrap_socket_group="www"
   fcgiwrap_user="www"
   fcgiwrap_group="www"
+  iocaine_user="iocaine"
+  iocaine_group="iocaine"

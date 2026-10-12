@@ -1,20 +1,35 @@
 worker_processes 1;
+error_log /var/log/nginx/error.log warn;
 
 events {
     worker_connections 1024;
 }
 
 http {
-    include       mime.types;
+    include       /usr/local/etc/nginx/mime.types;
     default_type  application/octet-stream;
     sendfile      on;
     keepalive_timeout 65;
+
+    # Only ingress may supply the client address; never trust arbitrary XFF.
+    set_real_ip_from {{ jail_ips.ingress }};
+    real_ip_header X-Real-IP;
+
+    map $request_method $forge_page_key {
+        default "";
+        GET     $binary_remote_addr;
+        HEAD    $binary_remote_addr;
+    }
+    limit_req_zone $forge_page_key zone=forge_pages:10m rate={{ forge_page_rate }};
+    limit_req_status 429;
+    limit_req_log_level warn;
 
     server {
         listen 80;
         server_name _;
 
         root /usr/local/www/cgit;
+        recursive_error_pages on;
 
         # Block HTTP access to private (dot-prefixed) repos
         location ~ ^/\..+ {
@@ -23,7 +38,7 @@ http {
 
         # Anonymous git HTTP clone
         location ~ ^/(.+\.git)/(info/refs|git-upload-pack)$ {
-            include fastcgi_params;
+            include /usr/local/etc/nginx/fastcgi_params;
             fastcgi_param SCRIPT_FILENAME /usr/local/libexec/git-core/git-http-backend;
             fastcgi_param GIT_HTTP_EXPORT_ALL 1;
             fastcgi_param GIT_PROJECT_ROOT /var/db/repos;
@@ -32,12 +47,45 @@ http {
             fastcgi_pass unix:/var/run/fcgiwrap/fcgiwrap.sock;
         }
 
+        location = /cgit.css {
+            try_files $uri =404;
+        }
+
+        location = /cgit.png {
+            try_files $uri =404;
+        }
+
+        location = /favicon.ico {
+            try_files $uri =404;
+        }
+
         location / {
+            limit_req zone=forge_pages burst={{ forge_page_burst }} nodelay;
+            error_page 418 = @forge_content;
+            error_page 421 = @forge_content;
+
+            # A return-only if safely bypasses Iocaine for non-read methods.
+            if ($request_method !~ ^(GET|HEAD)$) {
+                return 418;
+            }
+
+            proxy_cache off;
+            proxy_intercept_errors on;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $remote_addr;
+            proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+            proxy_connect_timeout 1s;
+            proxy_read_timeout 10s;
+            proxy_pass http://{{ jail_ips.forge }}:42069;
+        }
+
+        location @forge_content {
             try_files $uri @cgit;
         }
 
         location @cgit {
-            include fastcgi_params;
+            include /usr/local/etc/nginx/fastcgi_params;
             fastcgi_param SCRIPT_FILENAME /usr/local/www/cgit/cgit.cgi;
             fastcgi_param PATH_INFO $uri;
             fastcgi_param QUERY_STRING $query_string;

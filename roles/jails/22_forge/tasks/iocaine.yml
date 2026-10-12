@@ -1,0 +1,57 @@
+- name: Create Iocaine group
+  group:
+    name: iocaine
+    gid: 1001
+
+- name: Create Iocaine user
+  user:
+    name: iocaine
+    uid: 1001
+    group: iocaine
+    home: /var/db/iocaine
+    shell: /usr/sbin/nologin
+    create_home: false
+
+- name: Create Iocaine directories
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('wheel') }}"
+    mode: "{{ item.mode | default('0755') }}"
+  loop:
+    - { path: /usr/local/etc/iocaine }
+    - { path: /usr/local/share/iocaine }
+    - { path: /var/db/iocaine, owner: iocaine, group: iocaine, mode: "0700" }
+    - { path: /var/run/iocaine, owner: iocaine, group: iocaine, mode: "0750" }
+
+- name: Update Iocaine crawler list
+  get_url:
+    url: https://raw.githubusercontent.com/ai-robots-txt/ai.robots.txt/refs/heads/main/robots.json
+    dest: /usr/local/share/iocaine/robots.json
+    force: true
+    owner: root
+    group: wheel
+    mode: "0644"
+  notify: Restart Iocaine
+
+- name: Validate Iocaine crawler list
+  command:
+    argv:
+      - /usr/local/bin/python3
+      - -m
+      - json.tool
+      - /usr/local/share/iocaine/robots.json
+      - /dev/null
+  changed_when: false
+  when: not ansible_check_mode
+
+- name: Deploy Iocaine configuration
+  template:
+    src: "{{ jail_role_dir }}/templates/usr_local_etc_iocaine_config.kdl.j2"
+    dest: /usr/local/etc/iocaine/config.kdl
+    owner: root
+    group: wheel
+    mode: "0644"
+    validate: /usr/local/bin/iocaine -c %s show config
+  notify: Restart Iocaine

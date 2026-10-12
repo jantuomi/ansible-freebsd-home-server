@@ -130,6 +130,9 @@
 
 # --- cgit/www config ---
 
+- name: Configure Iocaine
+  import_tasks: iocaine.yml
+
 - name: Create /usr/local/etc/git directory
   file:
     path: /usr/local/etc/git
@@ -211,6 +214,7 @@
     owner: root
     group: wheel
     mode: "0644"
+    validate: /usr/local/sbin/nginx -t -c %s
   notify: Reload nginx
 
 - name: Deploy cgitrc
@@ -233,3 +237,42 @@
 - import_role:
     name: jail
     tasks_from: jail_launch
+
+- name: Apply forge service changes before health checks
+  meta: flush_handlers
+
+- name: Verify Iocaine permits ordinary requests
+  uri:
+    url: "http://{{ jail_ips.forge }}:42069/"
+    method: HEAD
+    http_agent: curl
+    status_code: 421
+    use_proxy: false
+  when: not ansible_check_mode
+
+- name: Verify Iocaine traps AI crawlers
+  uri:
+    url: "http://{{ jail_ips.forge }}:42069/"
+    method: HEAD
+    http_agent: ClaudeBot
+    status_code: 200
+    use_proxy: false
+  when: not ansible_check_mode
+
+- name: Verify Iocaine metrics
+  uri:
+    url: "http://{{ jail_ips.forge }}:42042/metrics"
+    status_code: 200
+    use_proxy: false
+  when: not ansible_check_mode
+
+- name: Verify forge nginx fallback
+  uri:
+    url: http://127.0.0.1/
+    method: HEAD
+    http_agent: curl
+    headers:
+      Host: forge.jan.systems
+    status_code: 200
+    use_proxy: false
+  when: not ansible_check_mode

@@ -7,3 +7,8 @@
   service:
     name: nginx
     state: reloaded
+
+- name: Restart Iocaine
+  service:
+    name: iocaine
+    state: restarted
