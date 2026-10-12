@@ -4,12 +4,17 @@
 
 [zroot]
 	use_template = local
-	# Per-dataset recursion allows excluding the temporary Borg clone.
+	# Per-dataset recursion allows excluding specific datasets (below)
 	recursive = yes
+
+[zroot/var/cache]
+	autosnap = no
+	autoprune = yes
+	monitor = no
 
 [zroot/borg-work]
 	autosnap = no
-	autoprune = no
+	autoprune = yes
 	monitor = no
 
 [template_local]
