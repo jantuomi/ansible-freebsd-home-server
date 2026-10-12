@@ -15,3 +15,13 @@ scrape_configs:
           - "{{ hostvars[ansible_jail_host].lan_ipv4_cidr | ipv4_host }}:9134"
         labels:
           instance: pursotin
+
+  - job_name: iocaine
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - "{{ jail_ips.forge }}:42042"
+        labels:
+          instance: forge

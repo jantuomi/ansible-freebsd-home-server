@@ -1,0 +1,392 @@
+{
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "forge-iocaine",
+    "project": "default"
+  },
+  "spec": {
+    "display": {
+      "name": "Forge Iocaine",
+      "description": "Iocaine in the forge jail, using the project's default Prometheus datasource backed by VictoriaMetrics. Includes direct requests and health checks, split by host where available. Git HTTP, static assets and nginx rate-limit rejections bypass Iocaine and are not counted. Totals are the latest counter values, not counts within the selected time range; persisted counters may reset if state is cleared."
+    },
+    "duration": "1h",
+    "refreshInterval": "30s",
+    "variables": [],
+    "panels": {
+      "scrapeHealth": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Scrape health",
+            "description": "Latest scrape result: OK means reachable, FAILED means the scrape failed. NO DATA means no scrape result is available."
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last-number",
+              "format": { "unit": "decimal", "decimalPlaces": 0 },
+              "mappings": [
+                {
+                  "kind": "Value",
+                  "spec": {
+                    "value": "1",
+                    "result": { "value": "OK" }
+                  }
+                },
+                {
+                  "kind": "Value",
+                  "spec": {
+                    "value": "0",
+                    "result": { "value": "FAILED" }
+                  }
+                },
+                {
+                  "kind": "Misc",
+                  "spec": {
+                    "value": "null",
+                    "result": { "value": "NO DATA" }
+                  }
+                }
+              ]
+            }
+          },
+          "queries": [{
+            "kind": "TimeSeriesQuery",
+            "spec": {
+              "plugin": {
+                "kind": "PrometheusTimeSeriesQuery",
+                "spec": {
+                  "datasource": { "kind": "PrometheusDatasource" },
+                  "query": "up{job=\"iocaine\",instance=\"forge\"}"
+                }
+              }
+            }
+          }]
+        }
+      },
+      "requests": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Requests handled",
+            "description": "Latest request counter total across all hosts, including direct health checks."
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last-number",
+              "format": { "unit": "decimal", "decimalPlaces": 0 }
+            }
+          },
+          "queries": [{
+            "kind": "TimeSeriesQuery",
+            "spec": {
+              "plugin": {
+                "kind": "PrometheusTimeSeriesQuery",
+                "spec": {
+                  "datasource": { "kind": "PrometheusDatasource" },
+                  "query": "sum(qmk_requests{job=\"iocaine\",instance=\"forge\"})"
+                }
+              }
+            }
+          }]
+        }
+      },
+      "trappedRequests": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Requests sent to the maze",
+            "description": "Latest garbage-decision counter total across all rulesets. These are classifier decisions, not unique bots."
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last-number",
+              "format": { "unit": "decimal", "decimalPlaces": 0 }
+            }
+          },
+          "queries": [{
+            "kind": "TimeSeriesQuery",
+            "spec": {
+              "plugin": {
+                "kind": "PrometheusTimeSeriesQuery",
+                "spec": {
+                  "datasource": { "kind": "PrometheusDatasource" },
+                  "query": "sum(qmk_ruleset_hits{job=\"iocaine\",instance=\"forge\",outcome=\"garbage\"})"
+                }
+              }
+            }
+          }]
+        }
+      },
+      "garbageBytes": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Garbage generated",
+            "description": "Latest generated-byte counter total across all hosts. This is generated content, not measured network traffic."
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last-number",
+              "format": { "unit": "bytes", "decimalPlaces": 2, "shortValues": true }
+            }
+          },
+          "queries": [{
+            "kind": "TimeSeriesQuery",
+            "spec": {
+              "plugin": {
+                "kind": "PrometheusTimeSeriesQuery",
+                "spec": {
+                  "datasource": { "kind": "PrometheusDatasource" },
+                  "query": "sum(qmk_garbage_generated{job=\"iocaine\",instance=\"forge\"})"
+                }
+              }
+            }
+          }]
+        }
+      },
+      "requestRate": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Request rate by host",
+            "description": "Requests per second, split between the public forge hostname and direct requests to the jail address."
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": { "position": "bottom", "mode": "list" },
+              "yAxis": {
+                "show": true,
+                "min": 0,
+                "format": { "unit": "requests/sec", "decimalPlaces": 2 }
+              },
+              "visual": { "display": "line", "lineWidth": 1.5, "areaOpacity": 0.15 }
+            }
+          },
+          "queries": [{
+            "kind": "TimeSeriesQuery",
+            "spec": {
+              "plugin": {
+                "kind": "PrometheusTimeSeriesQuery",
+                "spec": {
+                  "datasource": { "kind": "PrometheusDatasource" },
+                  "query": "sum by (host) (rate(qmk_requests{job=\"iocaine\",instance=\"forge\"}[$__rate_interval]))",
+                  "seriesNameFormat": "{{host}}"
+                }
+              }
+            }
+          }]
+        }
+      },
+      "decisionRate": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Maze versus passthrough",
+            "description": "Classifier decisions per second: garbage sends requests to the maze; default permits normal content. Ruleset metrics have no host label, so this includes direct health checks."
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": { "position": "bottom", "mode": "list" },
+              "yAxis": {
+                "show": true,
+                "min": 0,
+                "format": { "unit": "requests/sec", "decimalPlaces": 2 }
+              },
+              "visual": { "display": "line", "lineWidth": 1.5, "areaOpacity": 0.15, "stack": "all" }
+            }
+          },
+          "queries": [{
+            "kind": "TimeSeriesQuery",
+            "spec": {
+              "plugin": {
+                "kind": "PrometheusTimeSeriesQuery",
+                "spec": {
+                  "datasource": { "kind": "PrometheusDatasource" },
+                  "query": "sum by (outcome) (rate(qmk_ruleset_hits{job=\"iocaine\",instance=\"forge\"}[$__rate_interval]))",
+                  "seriesNameFormat": "{{outcome}}"
+                }
+              }
+            }
+          }]
+        }
+      },
+      "rulesetRate": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Decisions by ruleset",
+            "description": "Decisions per second by ruleset and outcome, including ai.robots.txt, major-browsers and default."
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": { "position": "bottom", "mode": "list" },
+              "yAxis": {
+                "show": true,
+                "min": 0,
+                "format": { "unit": "requests/sec", "decimalPlaces": 2 }
+              },
+              "visual": { "display": "line", "lineWidth": 1.5, "areaOpacity": 0.15 }
+            }
+          },
+          "queries": [{
+            "kind": "TimeSeriesQuery",
+            "spec": {
+              "plugin": {
+                "kind": "PrometheusTimeSeriesQuery",
+                "spec": {
+                  "datasource": { "kind": "PrometheusDatasource" },
+                  "query": "sum by (ruleset, outcome) (rate(qmk_ruleset_hits{job=\"iocaine\",instance=\"forge\"}[$__rate_interval]))",
+                  "seriesNameFormat": "{{ruleset}} / {{outcome}}"
+                }
+              }
+            }
+          }]
+        }
+      },
+      "garbageRate": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Garbage generation rate",
+            "description": "Generated bytes per second by host, with counter resets handled by rate(). This is not measured network bandwidth."
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": { "position": "bottom", "mode": "list" },
+              "yAxis": {
+                "show": true,
+                "label": "Bytes / second",
+                "min": 0,
+                "format": { "unit": "bytes", "decimalPlaces": 2, "shortValues": true }
+              },
+              "visual": { "display": "line", "lineWidth": 1.5, "areaOpacity": 0.15 }
+            }
+          },
+          "queries": [{
+            "kind": "TimeSeriesQuery",
+            "spec": {
+              "plugin": {
+                "kind": "PrometheusTimeSeriesQuery",
+                "spec": {
+                  "datasource": { "kind": "PrometheusDatasource" },
+                  "query": "sum by (host) (rate(qmk_garbage_generated{job=\"iocaine\",instance=\"forge\"}[$__rate_interval]))",
+                  "seriesNameFormat": "{{host}}"
+                }
+              }
+            }
+          }]
+        }
+      },
+      "garbageShare": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Requests sent to the maze (%)",
+            "description": "Percentage of recent classifier decisions producing garbage, weighted by request rate. Zero when traffic is allowed but no garbage series exists; no data when there are no recent decisions."
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "yAxis": {
+                "show": true,
+                "min": 0,
+                "max": 100,
+                "format": { "unit": "percent", "decimalPlaces": 1 }
+              },
+              "visual": { "display": "line", "lineWidth": 1.5, "areaOpacity": 0.15 }
+            }
+          },
+          "queries": [{
+            "kind": "TimeSeriesQuery",
+            "spec": {
+              "plugin": {
+                "kind": "PrometheusTimeSeriesQuery",
+                "spec": {
+                  "datasource": { "kind": "PrometheusDatasource" },
+                  "query": "100 * (sum(rate(qmk_ruleset_hits{job=\"iocaine\",instance=\"forge\",outcome=\"garbage\"}[$__rate_interval])) or (0 * sum(rate(qmk_ruleset_hits{job=\"iocaine\",instance=\"forge\"}[$__rate_interval])))) / (sum(rate(qmk_ruleset_hits{job=\"iocaine\",instance=\"forge\"}[$__rate_interval])) > 0)",
+                  "seriesNameFormat": "Maze decisions"
+                }
+              }
+            }
+          }]
+        }
+      },
+      "availability": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Availability and version",
+            "description": "Scrape availability over time (1 reachable, 0 failed). The version-labelled series is present while Iocaine metrics are available."
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": { "position": "bottom", "mode": "list" },
+              "yAxis": {
+                "show": true,
+                "min": 0,
+                "max": 1,
+                "format": { "unit": "decimal", "decimalPlaces": 0 }
+              },
+              "visual": { "display": "line", "lineWidth": 1.5 }
+            }
+          },
+          "queries": [{
+            "kind": "TimeSeriesQuery",
+            "spec": {
+              "plugin": {
+                "kind": "PrometheusTimeSeriesQuery",
+                "spec": {
+                  "datasource": { "kind": "PrometheusDatasource" },
+                  "query": "up{job=\"iocaine\",instance=\"forge\"}",
+                  "seriesNameFormat": "Scrape availability"
+                }
+              }
+            }
+          }, {
+            "kind": "TimeSeriesQuery",
+            "spec": {
+              "plugin": {
+                "kind": "PrometheusTimeSeriesQuery",
+                "spec": {
+                  "datasource": { "kind": "PrometheusDatasource" },
+                  "query": "iocaine_version{job=\"iocaine\",instance=\"forge\"}",
+                  "seriesNameFormat": "Iocaine v{{version}}"
+                }
+              }
+            }
+          }]
+        }
+      }
+    },
+    "layouts": [{
+      "kind": "Grid",
+      "spec": {
+        "display": {
+          "title": "Forge crawler protection",
+          "collapse": { "open": true }
+        },
+        "items": [
+          { "x": 0, "y": 0, "width": 6, "height": 4, "content": { "$ref": "#/spec/panels/scrapeHealth" } },
+          { "x": 6, "y": 0, "width": 6, "height": 4, "content": { "$ref": "#/spec/panels/requests" } },
+          { "x": 12, "y": 0, "width": 6, "height": 4, "content": { "$ref": "#/spec/panels/trappedRequests" } },
+          { "x": 18, "y": 0, "width": 6, "height": 4, "content": { "$ref": "#/spec/panels/garbageBytes" } },
+          { "x": 0, "y": 4, "width": 12, "height": 8, "content": { "$ref": "#/spec/panels/requestRate" } },
+          { "x": 12, "y": 4, "width": 12, "height": 8, "content": { "$ref": "#/spec/panels/decisionRate" } },
+          { "x": 0, "y": 12, "width": 12, "height": 8, "content": { "$ref": "#/spec/panels/rulesetRate" } },
+          { "x": 12, "y": 12, "width": 12, "height": 8, "content": { "$ref": "#/spec/panels/garbageRate" } },
+          { "x": 0, "y": 20, "width": 12, "height": 8, "content": { "$ref": "#/spec/panels/garbageShare" } },
+          { "x": 12, "y": 20, "width": 12, "height": 8, "content": { "$ref": "#/spec/panels/availability" } }
+        ]
+      }
+    }]
+  }
+}
