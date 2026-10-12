@@ -1,5 +1,8 @@
 export BORG_CONFIG_DIR=/usr/local/etc/borg
 export BORG_CACHE_DIR=/var/cache/borg
+export BORG_PASSPHRASE=''
+export BORG_REMOTE_PATH=borg-1.4
+export BORG_RSH='ssh -F /root/.ssh/config -i /root/.ssh/backup'
 
 HISTCONTROL=ignoredups:erasedups  # no duplicate entries
 HISTSIZE=100000                   # big big history
