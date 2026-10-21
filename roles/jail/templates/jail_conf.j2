@@ -2,6 +2,7 @@
   vnet;
   exec.clean;
   allow.raw_sockets;
+  allow.chflags;
 
   mount.devfs;        # Mount /dev according to devfs_ruleset
   devfs_ruleset = {{ jail.devfs_ruleset }};

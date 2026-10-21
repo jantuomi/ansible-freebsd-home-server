@@ -12,9 +12,7 @@ nullfs:
     dst: /var/db/postgres
 
 jail_conf_options:
-  - "allow.raw_sockets"
   - "allow.sysvipc"
-  - "allow.chflags"
 
 pkg:
   - postgresql18-server

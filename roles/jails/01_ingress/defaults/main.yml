@@ -45,9 +45,6 @@ cert_domains:
 cert_name: "{{ cert_domains[0] }}"
 contact_email: jan@sydanviita.fi
 
-jail_conf_options:
-  - "allow.raw_sockets"
-
 pkg:
   - FreeBSD-pf
   - pcre2

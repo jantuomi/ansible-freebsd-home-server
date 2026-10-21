@@ -2,9 +2,7 @@ userland: "15.1-minimal-jail"
 devfs_ruleset: 4
 
 jail_conf_options:
-  - "allow.raw_sockets"
   - "allow.mlock"
-  - "allow.chflags"
 
 zfs:
   - name: dl_sonarr
