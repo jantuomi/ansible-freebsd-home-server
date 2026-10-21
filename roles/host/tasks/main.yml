@@ -55,6 +55,13 @@
   loop_control:
     loop_var: pkg_name
 
+- name: Upgrade packages
+  command: pkg upgrade -y
+  environment:
+    ASSUME_ALWAYS_YES: "yes"
+  register: pkg_upgrade_result
+  changed_when: "pkg_upgrade_result.stdout is search('Number of packages to be (installed|upgraded|reinstalled|downgraded|removed): [1-9][0-9]*')"
+
 - name: Set up sshd
   template:
     src: etc_ssh_sshd_config.j2
@@ -383,6 +390,11 @@
   shell: "pkg install -y -r poudriere pylogsentinel"
   register: _custom_pkg
   changed_when: "'Number of packages to be installed' in _custom_pkg.stdout"
+
+- name: Upgrade packages from poudriere
+  command: pkg upgrade -y -r poudriere
+  register: pkg_custom_upgrade_result
+  changed_when: "pkg_custom_upgrade_result.stdout is search('Number of packages to be (installed|upgraded|reinstalled|downgraded|removed): [1-9][0-9]*')"
 
 - name: Deploy pylogsentinel.conf
   template:
