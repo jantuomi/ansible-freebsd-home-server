@@ -282,6 +282,19 @@
   register: pkg_custom_result
   changed_when: "'Installing' in pkg_custom_result.stdout"
 
+- name: Upgrade packages
+  command: pkg upgrade -y
+  environment:
+    ASSUME_ALWAYS_YES: "yes"
+  register: pkg_upgrade_result
+  changed_when: "pkg_upgrade_result.stdout is search('Number of packages to be (installed|upgraded|reinstalled|downgraded|removed): [1-9][0-9]*')"
+
+- name: Upgrade packages from poudriere
+  command: pkg upgrade -y -r poudriere
+  when: pkg_custom is defined and pkg_custom | length > 0
+  register: pkg_custom_upgrade_result
+  changed_when: "pkg_custom_upgrade_result.stdout is search('Number of packages to be (installed|upgraded|reinstalled|downgraded|removed): [1-9][0-9]*')"
+
 - name: Create parent directories for files
   file:
     path: "{{ item.dest | dirname }}"
