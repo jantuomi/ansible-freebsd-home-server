@@ -279,9 +279,9 @@
     group: "1001"
     mode: "{{ item.mode }}"
   loop:
-    - { name: media, mode: "0777" }
+    - { name: media, mode: "0775" }
     - { name: docs, mode: "0775" }
-    - { name: downloads, mode: "0777" }
+    - { name: downloads, mode: "0775" }
     - { name: projects-ableton, mode: "0755" }
     - { name: vault, mode: "0755" }
     - { name: jan-systems-2025-content, mode: "0755" }
