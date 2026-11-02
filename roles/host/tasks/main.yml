@@ -39,7 +39,6 @@
   loop:
     - rsync
     - dma
-    - jq
     - curl
     - bash
     - git
