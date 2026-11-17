@@ -4,16 +4,65 @@ groups:
     type: vlogs
     interval: 30s
     rules:
+      # Application errors (500) and uncommon 5xx must not be hidden by
+      # the higher threshold for expected forge bot traffic.
       - alert: Nginx5xxResponse
         expr: >-
           _time:5m {host="pursotin",service="nginx",log_type="access"}
-          | stats by (vhost) count() if (status:>=500 status:<600) as errors
+          status:>=500 status:<600 NOT status:in(502, 503, 504)
+          | stats by (vhost, status) count() as errors
           | filter errors:>0
         labels:
           severity: warning
           instance: pursotin
           resource: nginx
         annotations:
-          summary: "NGINX returned 5xx on {{ $labels.vhost }}"
-          description: "{{ $value }} server-error responses in the last 5 minutes."
+          summary: "NGINX returned {{ $labels.status }} on {{ $labels.vhost }}"
+          description: "{{ $value }} HTTP {{ $labels.status }} responses in the last 5 minutes."
+
+      # A bad gateway on other vhosts can indicate a broken upstream.
+      - alert: NginxBadGateway
+        expr: >-
+          _time:5m {host="pursotin",service="nginx",log_type="access"}
+          status:=502 NOT vhost:="forge.jan.systems:443"
+          | stats by (vhost) count() as errors
+          | filter errors:>0
+        labels:
+          severity: warning
+          instance: pursotin
+          resource: nginx
+        annotations:
+          summary: "NGINX returned 502 on {{ $labels.vhost }}"
+          description: "{{ $value }} bad-gateway responses in the last 5 minutes."
+
+      # Temporarily disabled: forge bot traffic produces expected 502s.
+      # - alert: NginxForgeBadGateway
+      #   expr: >-
+      #     _time:5m {host="pursotin",service="nginx",log_type="access"}
+      #     status:=502 vhost:="forge.jan.systems:443"
+      #     | stats by (vhost) count() as errors
+      #     | filter errors:>50
+      #   labels:
+      #     severity: warning
+      #     instance: pursotin
+      #     resource: nginx
+      #   annotations:
+      #     summary: "NGINX returned excessive 502s on {{ $labels.vhost }}"
+      #     description: "{{ $value }} bad-gateway responses in the last 5 minutes (threshold: more than 50)."
+
+      # Unavailability (503) and upstream timeouts (504) are noteworthy even
+      # on forge; do not apply the bot-related 502 exception to them.
+      - alert: NginxUpstreamUnavailable
+        expr: >-
+          _time:5m {host="pursotin",service="nginx",log_type="access"}
+          status:in(503, 504)
+          | stats by (vhost, status) count() as errors
+          | filter errors:>0
+        labels:
+          severity: warning
+          instance: pursotin
+          resource: nginx
+        annotations:
+          summary: "NGINX returned {{ $labels.status }} on {{ $labels.vhost }}"
+          description: "{{ $value }} HTTP {{ $labels.status }} responses in the last 5 minutes (503: service unavailable; 504: gateway timeout)."
 {% endraw %}
